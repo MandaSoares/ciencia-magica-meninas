@@ -8,17 +8,40 @@ import { ScienceModules } from "@/components/ScienceModules";
 import { ScientistProfiles } from "@/components/ScientistProfiles";
 import { VirtualLab } from "@/components/VirtualLab";
 import { Achievements } from "@/components/Achievements";
+import { Registration } from "@/components/Registration";
+import { STEMInterestSelection } from "@/components/STEMInterestSelection";
+
+interface UserData {
+  name: string;
+  email: string;
+  age: number;
+  interests: string[];
+}
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [userPoints, setUserPoints] = useState(1250);
   const [userLevel, setUserLevel] = useState(3);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [showInterestSelection, setShowInterestSelection] = useState(false);
 
   const addPoints = (points: number) => {
     setUserPoints(prev => prev + points);
     // Level up logic
     if (userPoints + points >= userLevel * 500) {
       setUserLevel(prev => prev + 1);
+    }
+  };
+
+  const handleRegistrationComplete = (userData: Omit<UserData, 'interests'>) => {
+    setUser({ ...userData, interests: [] });
+    setShowInterestSelection(true);
+  };
+
+  const handleInterestSelectionComplete = (interests: string[]) => {
+    if (user) {
+      setUser({ ...user, interests });
+      setShowInterestSelection(false);
     }
   };
 
@@ -41,6 +64,22 @@ const Index = () => {
     }
   };
 
+  // Show registration if no user
+  if (!user) {
+    return <Registration onComplete={handleRegistrationComplete} />;
+  }
+
+  // Show interest selection if user exists but hasn't selected interests
+  if (showInterestSelection || user.interests.length === 0) {
+    return (
+      <STEMInterestSelection 
+        userName={user.name}
+        onComplete={handleInterestSelectionComplete}
+      />
+    );
+  }
+
+  // Show main app
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <Header userPoints={userPoints} userLevel={userLevel} />
