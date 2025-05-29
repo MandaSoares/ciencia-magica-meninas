@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
 import { Dashboard } from "@/components/Dashboard";
+import { LearningPath } from "@/components/LearningPath";
 import { ScienceModules } from "@/components/ScienceModules";
 import { ScientistProfiles } from "@/components/ScientistProfiles";
 import { VirtualLab } from "@/components/VirtualLab";
@@ -25,6 +26,8 @@ const Index = () => {
     switch (activeSection) {
       case "dashboard":
         return <Dashboard userPoints={userPoints} userLevel={userLevel} />;
+      case "path":
+        return <LearningPath onPointsEarned={addPoints} />;
       case "modules":
         return <ScienceModules onPointsEarned={addPoints} />;
       case "scientists":
