@@ -10,6 +10,7 @@ import { VirtualLab } from "@/components/VirtualLab";
 import { Achievements } from "@/components/Achievements";
 import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
+import { UserProfile } from "@/components/UserProfile";
 
 interface UserData {
   name: string;
@@ -45,6 +46,10 @@ const Index = () => {
     }
   };
 
+  const handleUpdateUser = (userData: UserData) => {
+    setUser(userData);
+  };
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case "dashboard":
@@ -59,6 +64,15 @@ const Index = () => {
         return <VirtualLab onPointsEarned={addPoints} />;
       case "achievements":
         return <Achievements userPoints={userPoints} userLevel={userLevel} />;
+      case "profile":
+        return user ? (
+          <UserProfile 
+            user={user} 
+            userPoints={userPoints} 
+            userLevel={userLevel}
+            onUpdateUser={handleUpdateUser}
+          />
+        ) : null;
       default:
         return <Dashboard userPoints={userPoints} userLevel={userLevel} />;
     }

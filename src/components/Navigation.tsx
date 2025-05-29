@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Users, Lightbulb, Star, Map } from "lucide-react";
+import { Home, BookOpen, Users, Lightbulb, Star, Map, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -15,6 +15,7 @@ export const Navigation = ({ activeSection, setActiveSection }: NavigationProps)
     { id: "scientists", label: "Cientistas", icon: Users },
     { id: "lab", label: "Laboratório", icon: Lightbulb },
     { id: "achievements", label: "Conquistas", icon: Star },
+    { id: "profile", label: "Meu Perfil", icon: User },
   ];
 
   return (
