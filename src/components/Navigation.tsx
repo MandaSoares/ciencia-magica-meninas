@@ -1,29 +1,44 @@
-
 import { Home, BookOpen, Users, Lightbulb, Star, Map, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface NavItem {
+  id: string;
+  label: string;
+}
 
 interface NavigationProps {
   activeSection: string;
   setActiveSection: (section: string) => void;
+  navItems?: NavItem[];
 }
 
-export const Navigation = ({ activeSection, setActiveSection }: NavigationProps) => {
-  const navItems = [
-    { id: "dashboard", label: "Início", icon: Home },
-    { id: "path", label: "Trilha", icon: Map },
-    { id: "modules", label: "Módulos", icon: BookOpen },
-    { id: "scientists", label: "Cientistas", icon: Users },
-    { id: "lab", label: "Laboratório", icon: Lightbulb },
-    { id: "achievements", label: "Conquistas", icon: Star },
-    { id: "profile", label: "Meu Perfil", icon: User },
+const iconMap: Record<string, React.ElementType> = {
+  dashboard: Home,
+  path: Map,
+  modules: BookOpen,
+  scientists: Users,
+  lab: Lightbulb,
+  achievements: Star,
+  profile: User,
+};
+
+export const Navigation = ({ activeSection, setActiveSection, navItems }: NavigationProps) => {
+  const items = navItems || [
+    { id: "dashboard", label: "Início" },
+    { id: "path", label: "Trilha" },
+    { id: "modules", label: "Módulos" },
+    { id: "scientists", label: "Cientistas" },
+    { id: "lab", label: "Laboratório" },
+    { id: "achievements", label: "Conquistas" },
+    { id: "profile", label: "Meu Perfil" },
   ];
 
   return (
     <nav className="w-64 bg-white shadow-lg h-screen sticky top-0">
       <div className="p-6">
         <ul className="space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
+          {items.map((item) => {
+            const Icon = iconMap[item.id] || Home;
             return (
               <li key={item.id}>
                 <button

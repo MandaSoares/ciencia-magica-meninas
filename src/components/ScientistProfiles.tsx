@@ -1,68 +1,33 @@
-
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Award, Calendar } from "lucide-react";
+import { getScientistsByArea, getAreaLabel, Scientist } from "@/data/scientistsData";
+import { ScientistStoryModal } from "@/components/ScientistStoryModal";
 
 interface ScientistProfilesProps {
   onPointsEarned: (points: number) => void;
+  selectedArea?: string;
 }
 
-export const ScientistProfiles = ({ onPointsEarned }: ScientistProfilesProps) => {
-  const scientists = [
-    {
-      id: 1,
-      name: "Marie Curie",
-      field: "Física e Química",
-      achievement: "Primeira mulher a ganhar um Prêmio Nobel",
-      year: "1867-1934",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&h=300&fit=crop&crop=face",
-      description: "Pioneira no estudo da radioatividade e duas vezes ganhadora do Nobel.",
-      facts: [
-        "Primeira mulher professora na Universidade de Paris",
-        "Descobriu os elementos polônio e rádio",
-        "Única pessoa a ganhar Nobel em duas áreas diferentes"
-      ]
-    },
-    {
-      id: 2,
-      name: "Katherine Johnson",
-      field: "Matemática e Física",
-      achievement: "Calculou trajetórias para missões espaciais da NASA",
-      year: "1918-2020",
-      image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=300&h=300&fit=crop&crop=face",
-      description: "Matemática brilhante que ajudou a levar o homem à lua.",
-      facts: [
-        "Seus cálculos foram essenciais para o sucesso da Apollo 11",
-        "Trabalhou na NASA por mais de 30 anos",
-        "Recebeu a Medalha Presidencial da Liberdade"
-      ]
-    },
-    {
-      id: 3,
-      name: "Rosalind Franklin",
-      field: "Química e Biologia",
-      achievement: "Contribuições fundamentais para descoberta do DNA",
-      year: "1920-1958",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=300&fit=crop&crop=face",
-      description: "Suas fotografias de raio-X foram cruciais para entender a estrutura do DNA.",
-      facts: [
-        "Pioneira na cristalografia de raio-X",
-        "Estudou a estrutura do RNA e vírus",
-        "Suas pesquisas foram fundamentais para a medicina moderna"
-      ]
-    }
-  ];
+export const ScientistProfiles = ({ onPointsEarned, selectedArea = "Ciência" }: ScientistProfilesProps) => {
+  const [selectedScientist, setSelectedScientist] = useState<Scientist | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const scientists = getScientistsByArea(selectedArea);
+  const areaLabel = getAreaLabel(selectedArea);
 
-  const readMore = (scientistName: string) => {
+  const readMore = (scientist: Scientist) => {
     onPointsEarned(25);
-    console.log(`Lendo mais sobre: ${scientistName}`);
+    setSelectedScientist(scientist);
+    setIsModalOpen(true);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Cientistas Inspiradoras</h2>
-        <p className="text-gray-600">Conheça mulheres que mudaram o mundo com a ciência!</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">{areaLabel.plural} Inspiradoras</h2>
+        <p className="text-gray-600">Conheça mulheres que mudaram o mundo com {selectedArea.toLowerCase()}!</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -96,20 +61,8 @@ export const ScientistProfiles = ({ onPointsEarned }: ScientistProfilesProps) =>
 
               <p className="text-gray-600 text-sm mb-4">{scientist.description}</p>
 
-              <div className="space-y-2 mb-4">
-                <h4 className="font-semibold text-gray-800 text-sm">Fatos Interessantes:</h4>
-                <ul className="space-y-1">
-                  {scientist.facts.map((fact, index) => (
-                    <li key={index} className="text-xs text-gray-600 flex items-start">
-                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
-                      {fact}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
               <Button
-                onClick={() => readMore(scientist.name)}
+                onClick={() => readMore(scientist)}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 Ler História Completa
@@ -132,6 +85,13 @@ export const ScientistProfiles = ({ onPointsEarned }: ScientistProfilesProps) =>
           </div>
         </div>
       </Card>
+
+      <ScientistStoryModal
+        scientist={selectedScientist}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        areaLabel={areaLabel.singular}
+      />
     </div>
   );
 };
