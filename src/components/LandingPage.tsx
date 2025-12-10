@@ -22,7 +22,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
             <Sparkles className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">STEM Girls</span>
+          <span className="text-xl font-bold text-foreground">Conscientistas</span>
         </div>
         <Button variant="ghost" onClick={onLogin} className="text-muted-foreground hover:text-foreground">
           Entrar na conta
