@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
@@ -11,6 +10,7 @@ import { Achievements } from "@/components/Achievements";
 import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
 import { UserProfile } from "@/components/UserProfile";
+import { LandingPage } from "@/components/LandingPage";
 
 interface UserData {
   name: string;
@@ -25,7 +25,8 @@ const Index = () => {
   const [userLevel, setUserLevel] = useState(3);
   const [user, setUser] = useState<UserData | null>(null);
   const [showInterestSelection, setShowInterestSelection] = useState(false);
-
+  const [showLanding, setShowLanding] = useState(true);
+  const [showRegistration, setShowRegistration] = useState(false);
   const addPoints = (points: number) => {
     setUserPoints(prev => prev + points);
     // Level up logic
@@ -78,8 +79,24 @@ const Index = () => {
     }
   };
 
+  // Show landing page first
+  if (showLanding && !user) {
+    return (
+      <LandingPage 
+        onGetStarted={() => {
+          setShowLanding(false);
+          setShowRegistration(true);
+        }}
+        onLogin={() => {
+          setShowLanding(false);
+          setShowRegistration(true);
+        }}
+      />
+    );
+  }
+
   // Show registration if no user
-  if (!user) {
+  if (showRegistration && !user) {
     return <Registration onComplete={handleRegistrationComplete} />;
   }
 
