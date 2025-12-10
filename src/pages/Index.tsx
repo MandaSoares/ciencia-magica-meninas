@@ -11,6 +11,7 @@ import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
 import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
+import { Login } from "@/components/Login";
 
 interface UserData {
   name: string;
@@ -19,17 +20,17 @@ interface UserData {
   interests: string[];
 }
 
+type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app';
+
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [userPoints, setUserPoints] = useState(1250);
   const [userLevel, setUserLevel] = useState(3);
   const [user, setUser] = useState<UserData | null>(null);
-  const [showInterestSelection, setShowInterestSelection] = useState(false);
-  const [showLanding, setShowLanding] = useState(true);
-  const [showRegistration, setShowRegistration] = useState(false);
+  const [authView, setAuthView] = useState<AuthView>('landing');
+
   const addPoints = (points: number) => {
     setUserPoints(prev => prev + points);
-    // Level up logic
     if (userPoints + points >= userLevel * 500) {
       setUserLevel(prev => prev + 1);
     }
@@ -37,13 +38,18 @@ const Index = () => {
 
   const handleRegistrationComplete = (userData: Omit<UserData, 'interests'>) => {
     setUser({ ...userData, interests: [] });
-    setShowInterestSelection(true);
+    setAuthView('interests');
+  };
+
+  const handleLogin = (userData: UserData) => {
+    setUser(userData);
+    setAuthView('app');
   };
 
   const handleInterestSelectionComplete = (interests: string[]) => {
     if (user) {
       setUser({ ...user, interests });
-      setShowInterestSelection(false);
+      setAuthView('app');
     }
   };
 
@@ -79,29 +85,40 @@ const Index = () => {
     }
   };
 
-  // Show landing page first
-  if (showLanding && !user) {
+  // Landing page
+  if (authView === 'landing') {
     return (
       <LandingPage 
-        onGetStarted={() => {
-          setShowLanding(false);
-          setShowRegistration(true);
-        }}
-        onLogin={() => {
-          setShowLanding(false);
-          setShowRegistration(true);
-        }}
+        onGetStarted={() => setAuthView('register')}
+        onLogin={() => setAuthView('login')}
       />
     );
   }
 
-  // Show registration if no user
-  if (showRegistration && !user) {
-    return <Registration onComplete={handleRegistrationComplete} />;
+  // Login page
+  if (authView === 'login') {
+    return (
+      <Login 
+        onLogin={handleLogin}
+        onBack={() => setAuthView('landing')}
+        onGoToRegister={() => setAuthView('register')}
+      />
+    );
   }
 
-  // Show interest selection if user exists but hasn't selected interests
-  if (showInterestSelection || user.interests.length === 0) {
+  // Registration page
+  if (authView === 'register') {
+    return (
+      <Registration 
+        onComplete={handleRegistrationComplete}
+        onBack={() => setAuthView('landing')}
+        onGoToLogin={() => setAuthView('login')}
+      />
+    );
+  }
+
+  // Interest selection
+  if (authView === 'interests' && user) {
     return (
       <STEMInterestSelection 
         userName={user.name}
@@ -110,7 +127,7 @@ const Index = () => {
     );
   }
 
-  // Show main app
+  // Main app
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <Header userPoints={userPoints} userLevel={userLevel} />

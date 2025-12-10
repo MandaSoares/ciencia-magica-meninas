@@ -3,43 +3,40 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Mail, Calendar, ArrowLeft, Lock } from "lucide-react";
+import { Mail, Lock, ArrowLeft } from "lucide-react";
 
-interface RegistrationProps {
-  onComplete: (userData: {
-    name: string;
-    email: string;
-    age: number;
-  }) => void;
+interface LoginProps {
+  onLogin: (userData: { name: string; email: string; age: number; interests: string[] }) => void;
   onBack: () => void;
-  onGoToLogin: () => void;
+  onGoToRegister: () => void;
 }
 
-export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationProps) => {
+export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
-    age: "",
     password: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.name && formData.email && formData.age && formData.password) {
-      onComplete({
-        name: formData.name,
+    if (formData.email && formData.password) {
+      // Simulating login - in production this would validate against a backend
+      onLogin({
+        name: "Usuária",
         email: formData.email,
-        age: parseInt(formData.age)
+        age: 14,
+        interests: ["science", "technology"]
       });
     }
   };
 
-  const handleGoogleSignup = () => {
-    // Simulating Google signup
-    onComplete({
+  const handleGoogleLogin = () => {
+    // Simulating Google login
+    onLogin({
       name: "Usuária Google",
       email: "usuario@gmail.com",
-      age: 14
+      age: 14,
+      interests: ["science", "technology"]
     });
   };
 
@@ -56,21 +53,21 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
 
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-10 h-10 text-white" />
+            <Lock className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            Bem-vinda ao ScienceGirls!
+            Bem-vinda de volta!
           </h1>
           <p className="text-muted-foreground">
-            Vamos começar sua jornada científica!
+            Entre na sua conta para continuar aprendendo
           </p>
         </div>
 
-        {/* Google Signup Button */}
+        {/* Google Login Button */}
         <Button
           type="button"
           variant="outline"
-          onClick={handleGoogleSignup}
+          onClick={handleGoogleLogin}
           className="w-full py-6 mb-6 border-2 hover:bg-muted/50 flex items-center justify-center gap-3"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -91,7 +88,7 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span className="font-medium">Cadastrar com Google</span>
+          <span className="font-medium">Continuar com Google</span>
         </Button>
 
         <div className="relative mb-6">
@@ -103,27 +100,11 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="flex items-center space-x-2">
-              <User className="w-4 h-4" />
-              <span>Seu nome</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Digite seu nome"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full"
-              required
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center space-x-2">
               <Mail className="w-4 h-4" />
-              <span>Seu email</span>
+              <span>Email</span>
             </Label>
             <Input
               id="email"
@@ -131,7 +112,7 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
               placeholder="Digite seu email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full"
+              className="w-full py-5"
               required
             />
           </div>
@@ -139,33 +120,15 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
           <div className="space-y-2">
             <Label htmlFor="password" className="flex items-center space-x-2">
               <Lock className="w-4 h-4" />
-              <span>Sua senha</span>
+              <span>Senha</span>
             </Label>
             <Input
               id="password"
               type="password"
-              placeholder="Crie uma senha"
+              placeholder="Digite sua senha"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="age" className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4" />
-              <span>Sua idade</span>
-            </Label>
-            <Input
-              id="age"
-              type="number"
-              placeholder="Digite sua idade"
-              min="6"
-              max="18"
-              value={formData.age}
-              onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-              className="w-full"
+              className="w-full py-5"
               required
             />
           </div>
@@ -174,25 +137,19 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
             type="submit"
             className="w-full py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
           >
-            Criar conta
+            Entrar
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-muted-foreground">
-            Já tem uma conta?{" "}
+            Não tem uma conta?{" "}
             <button 
-              onClick={onGoToLogin}
+              onClick={onGoToRegister}
               className="text-primary font-semibold hover:underline"
             >
-              Entrar
+              Cadastre-se
             </button>
-          </p>
-        </div>
-
-        <div className="mt-4 text-center">
-          <p className="text-xs text-muted-foreground">
-            Ao continuar, você concorda com nossos termos de uso
           </p>
         </div>
       </Card>
