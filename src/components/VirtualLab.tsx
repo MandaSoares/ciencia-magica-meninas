@@ -2,17 +2,35 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Beaker, Zap, Sparkles } from "lucide-react";
+import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet } from "lucide-react";
+import { ExperimentComments } from "./ExperimentComments";
 
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
+  onExperimentComplete: () => void;
 }
 
-export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
+interface Experiment {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  time: string;
+  materials: string[];
+  steps: string[];
+  icon: any;
+  color: string;
+  image: string;
+  stepImages: string[];
+}
+
+export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabProps) => {
   const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
   const [experimentStep, setExperimentStep] = useState(0);
+  const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
+  const [showComments, setShowComments] = useState(false);
 
-  const experiments = [
+  const experiments: Experiment[] = [
     {
       id: "volcano",
       title: "Vulcão de Bicarbonato",
@@ -21,51 +39,118 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
       time: "15 min",
       materials: ["Bicarbonato", "Vinagre", "Corante", "Detergente"],
       steps: [
-        "Misture bicarbonato com algumas gotas de corante",
-        "Adicione uma gota de detergente",
-        "Despeje o vinagre lentamente",
-        "Observe a reação efervescente!"
+        "Monte uma estrutura em forma de vulcão usando argila ou garrafa plástica cortada",
+        "Coloque 3 colheres de bicarbonato de sódio dentro do vulcão",
+        "Adicione algumas gotas de corante alimentício (vermelho ou laranja ficam incríveis!)",
+        "Coloque uma gota de detergente para criar mais espuma",
+        "Despeje lentamente meio copo de vinagre e observe a erupção!"
       ],
-      icon: Lightbulb,
-      color: "bg-red-500"
+      icon: Flame,
+      color: "bg-red-500",
+      image: "🌋",
+      stepImages: ["🏔️", "🥄", "🎨", "🧴", "💥"]
     },
     {
       id: "slime",
-      title: "Slime Inteligente",
-      description: "Faça um slime que muda de cor!",
+      title: "Slime Mágico",
+      description: "Faça um slime que muda de cor com temperatura!",
       difficulty: "Médio",
       time: "20 min",
-      materials: ["Cola branca", "Borax", "Água", "Tinta termocromática"],
+      materials: ["Cola branca", "Bórax ou solução de lentes", "Água morna", "Corante"],
       steps: [
-        "Misture cola com água em proporção 1:1",
-        "Adicione algumas gotas de tinta termocromática",
-        "Prepare solução de borax (1 colher + 1 copo de água)",
-        "Misture tudo devagar até formar o slime!"
+        "Em um recipiente, despeje 100ml de cola branca",
+        "Adicione 50ml de água morna e misture bem",
+        "Coloque algumas gotas de corante da sua cor favorita",
+        "Prepare a solução ativadora: 1 colher de bórax em 1 copo de água",
+        "Adicione a solução ativadora aos poucos, mexendo até formar o slime!"
       ],
-      icon: Beaker,
-      color: "bg-green-500"
+      icon: Droplets,
+      color: "bg-green-500",
+      image: "🟢",
+      stepImages: ["🧪", "💧", "🎨", "🥄", "✨"]
     },
     {
       id: "circuit",
-      title: "Circuito de LED",
-      description: "Acenda LEDs com frutas!",
+      title: "Circuito de Limões",
+      description: "Acenda LEDs usando frutas como bateria!",
       difficulty: "Avançado",
       time: "30 min",
-      materials: ["LEDs", "Fios", "Limões", "Moedas de cobre"],
+      materials: ["4 Limões", "4 Moedas de cobre", "4 Pregos de zinco", "Fios", "LED"],
       steps: [
-        "Insira moedas de cobre nos limões",
-        "Conecte os fios aos LEDs",
-        "Ligue os circuitos usando os limões como bateria",
-        "Veja a mágica da eletricidade natural!"
+        "Espete uma moeda de cobre em cada limão (ela será o polo positivo)",
+        "Espete um prego de zinco em cada limão (ele será o polo negativo)",
+        "Conecte a moeda do primeiro limão ao prego do segundo com um fio",
+        "Continue conectando todos os limões em série",
+        "Conecte a ponta do fio livre ao LED e veja a mágica acontecer!"
       ],
       icon: Zap,
-      color: "bg-yellow-500"
+      color: "bg-yellow-500",
+      image: "🍋",
+      stepImages: ["🪙", "🔩", "🔌", "⛓️", "💡"]
+    },
+    {
+      id: "tornado",
+      title: "Tornado na Garrafa",
+      description: "Crie um vórtice impressionante!",
+      difficulty: "Fácil",
+      time: "10 min",
+      materials: ["2 Garrafas PET", "Conector de garrafas (ou fita adesiva forte)", "Água", "Glitter"],
+      steps: [
+        "Encha uma garrafa PET com água até 2/3",
+        "Adicione um pouco de glitter ou corante para visualizar melhor",
+        "Conecte a segunda garrafa vazia na primeira usando o conector",
+        "Vire as garrafas para que a cheia fique em cima",
+        "Gire em movimentos circulares e observe o tornado se formar!"
+      ],
+      icon: Wind,
+      color: "bg-cyan-500",
+      image: "🌪️",
+      stepImages: ["🍶", "✨", "🔗", "🔄", "🌀"]
+    },
+    {
+      id: "magnet",
+      title: "Bússola Caseira",
+      description: "Construa uma bússola usando materiais simples!",
+      difficulty: "Médio",
+      time: "15 min",
+      materials: ["Agulha", "Ímã", "Rolha ou isopor", "Recipiente com água"],
+      steps: [
+        "Magnetize a agulha esfregando-a no ímã sempre na mesma direção (30 vezes)",
+        "Corte um pedaço pequeno de rolha ou isopor",
+        "Espete a agulha no centro da rolha/isopor",
+        "Coloque água no recipiente e flutue a rolha com a agulha",
+        "Espere estabilizar e a agulha apontará para o Norte magnético!"
+      ],
+      icon: Magnet,
+      color: "bg-purple-500",
+      image: "🧭",
+      stepImages: ["📍", "🧲", "✂️", "💧", "🌍"]
+    },
+    {
+      id: "density",
+      title: "Torre de Líquidos",
+      description: "Empilhe líquidos de diferentes densidades!",
+      difficulty: "Fácil",
+      time: "15 min",
+      materials: ["Mel", "Xarope de milho", "Detergente", "Água", "Óleo vegetal", "Álcool"],
+      steps: [
+        "Pegue um copo alto e transparente",
+        "Despeje cuidadosamente o mel no fundo",
+        "Adicione o xarope de milho lentamente pela lateral",
+        "Continue com detergente, água, óleo e álcool (nessa ordem)",
+        "Observe as camadas se formarem! Cada líquido tem uma densidade diferente."
+      ],
+      icon: Beaker,
+      color: "bg-amber-500",
+      image: "🏺",
+      stepImages: ["🥃", "🍯", "🧴", "💧", "🌈"]
     }
   ];
 
   const startExperiment = (experimentId: string) => {
     setActiveExperiment(experimentId);
     setExperimentStep(0);
+    setShowComments(false);
     onPointsEarned(30);
   };
 
@@ -73,12 +158,20 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
     const experiment = experiments.find(exp => exp.id === activeExperiment);
     if (experiment && experimentStep < experiment.steps.length - 1) {
       setExperimentStep(prev => prev + 1);
+      onPointsEarned(20);
     } else {
-      // Experiment completed
+      // Experiment completed - show comments
+      setShowComments(true);
+      setCompletedExperiments(prev => new Set([...prev, activeExperiment!]));
       onPointsEarned(100);
-      setActiveExperiment(null);
-      setExperimentStep(0);
+      onExperimentComplete();
     }
+  };
+
+  const finishExperiment = () => {
+    setActiveExperiment(null);
+    setExperimentStep(0);
+    setShowComments(false);
   };
 
   const currentExperiment = experiments.find(exp => exp.id === activeExperiment);
@@ -95,13 +188,17 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {experiments.map((experiment) => {
               const Icon = experiment.icon;
+              const isCompleted = completedExperiments.has(experiment.id);
               return (
                 <Card key={experiment.id} className="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-12 h-12 ${experiment.color} rounded-lg flex items-center justify-center`}>
                       <Icon className="w-6 h-6 text-white" />
                     </div>
-                    <div className="text-right">
+                    <div className="flex items-center space-x-2">
+                      {isCompleted && (
+                        <span className="text-green-500 text-sm font-medium">✓ Concluído</span>
+                      )}
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         experiment.difficulty === 'Fácil' ? 'bg-green-100 text-green-700' :
                         experiment.difficulty === 'Médio' ? 'bg-yellow-100 text-yellow-700' :
@@ -111,6 +208,8 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
                       </span>
                     </div>
                   </div>
+
+                  <div className="text-center text-6xl mb-4">{experiment.image}</div>
 
                   <h3 className="text-xl font-semibold mb-2 text-gray-800">{experiment.title}</h3>
                   <p className="text-gray-600 text-sm mb-4">{experiment.description}</p>
@@ -136,7 +235,7 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Começar Experimento
+                    {isCompleted ? "Refazer Experimento" : "Começar Experimento"}
                   </Button>
                 </Card>
               );
@@ -144,7 +243,7 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
           </div>
 
           <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">Dicas de Segurança</h3>
+            <h3 className="text-xl font-semibold mb-4 text-gray-800">🛡️ Dicas de Segurança</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
@@ -178,49 +277,83 @@ export const VirtualLab = ({ onPointsEarned }: VirtualLabProps) => {
           </Card>
         </>
       ) : currentExperiment && (
-        <Card className="p-6">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className={`w-12 h-12 ${currentExperiment.color} rounded-lg flex items-center justify-center`}>
-              <currentExperiment.icon className="w-6 h-6 text-white" />
+        <div className="space-y-6">
+          <Card className="p-6">
+            <div className="flex items-center space-x-4 mb-6">
+              <div className={`w-12 h-12 ${currentExperiment.color} rounded-lg flex items-center justify-center`}>
+                <currentExperiment.icon className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-gray-800">{currentExperiment.title}</h3>
+                <p className="text-gray-600">
+                  {showComments ? "Experimento concluído!" : `Passo ${experimentStep + 1} de ${currentExperiment.steps.length}`}
+                </p>
+              </div>
+              <Button variant="outline" onClick={finishExperiment}>
+                Sair
+              </Button>
             </div>
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800">{currentExperiment.title}</h3>
-              <p className="text-gray-600">Passo {experimentStep + 1} de {currentExperiment.steps.length}</p>
-            </div>
-          </div>
 
-          <div className="mb-6">
-            <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-              <div
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${((experimentStep + 1) / currentExperiment.steps.length) * 100}%` }}
-              ></div>
-            </div>
-          </div>
+            {!showComments && (
+              <>
+                <div className="mb-6">
+                  <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${((experimentStep + 1) / currentExperiment.steps.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg mb-6">
-            <h4 className="font-semibold text-lg mb-3 text-gray-800">
-              Passo {experimentStep + 1}:
-            </h4>
-            <p className="text-gray-700 text-lg">{currentExperiment.steps[experimentStep]}</p>
-          </div>
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg mb-6">
+                  <div className="text-center mb-4">
+                    <span className="text-6xl">{currentExperiment.stepImages[experimentStep]}</span>
+                  </div>
+                  <h4 className="font-semibold text-lg mb-3 text-gray-800">
+                    Passo {experimentStep + 1}:
+                  </h4>
+                  <p className="text-gray-700 text-lg">{currentExperiment.steps[experimentStep]}</p>
+                </div>
 
-          <div className="flex space-x-4">
-            <Button
-              onClick={() => setActiveExperiment(null)}
-              variant="outline"
-              className="flex-1"
-            >
-              Sair do Experimento
-            </Button>
-            <Button
-              onClick={nextStep}
-              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-            >
-              {experimentStep < currentExperiment.steps.length - 1 ? "Próximo Passo" : "Finalizar Experimento"}
-            </Button>
-          </div>
-        </Card>
+                <div className="flex space-x-4">
+                  <Button
+                    onClick={finishExperiment}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Sair do Experimento
+                  </Button>
+                  <Button
+                    onClick={nextStep}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    {experimentStep < currentExperiment.steps.length - 1 ? "Próximo Passo" : "Finalizar Experimento"}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {showComments && (
+              <div className="space-y-6">
+                <div className="text-center py-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                  <span className="text-6xl mb-4 block">🎉</span>
+                  <h4 className="text-xl font-bold text-green-700 mb-2">Parabéns!</h4>
+                  <p className="text-gray-600">Você concluiu o experimento "{currentExperiment.title}"!</p>
+                  <p className="text-purple-600 font-semibold mt-2">+100 pontos ganhos!</p>
+                </div>
+
+                <ExperimentComments experimentId={currentExperiment.id} experimentTitle={currentExperiment.title} />
+
+                <Button
+                  onClick={finishExperiment}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                >
+                  Voltar ao Laboratório
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
       )}
     </div>
   );
