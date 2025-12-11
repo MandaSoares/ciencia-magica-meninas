@@ -1,4 +1,4 @@
-import { Home, BookOpen, Users, Lightbulb, Star, Map, User } from "lucide-react";
+import { Home, BookOpen, Briefcase, Lightbulb, Star, Map, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -16,7 +16,7 @@ const iconMap: Record<string, React.ElementType> = {
   dashboard: Home,
   path: Map,
   modules: BookOpen,
-  scientists: Users,
+  areas: Briefcase, // Changed from scientists to areas
   lab: Lightbulb,
   achievements: Star,
   profile: User,
@@ -27,7 +27,7 @@ export const Navigation = ({ activeSection, setActiveSection, navItems }: Naviga
     { id: "dashboard", label: "Início" },
     { id: "path", label: "Trilha" },
     { id: "modules", label: "Módulos" },
-    { id: "scientists", label: "Cientistas" },
+    { id: "areas", label: "Áreas de Atuação" }, // Changed from Cientistas
     { id: "lab", label: "Laboratório" },
     { id: "achievements", label: "Conquistas" },
     { id: "profile", label: "Meu Perfil" },

@@ -1,27 +1,28 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Atom, 
-  Microscope, 
-  Dna, 
-  Rocket, 
-  Cpu, 
-  Zap, 
   Star, 
   Lock, 
   CheckCircle,
   Crown,
-  Award,
+  Sparkles,
+  Brain,
   Calculator,
+  Smartphone,
   Wrench,
-  Lightbulb,
+  Beaker,
   Code,
-  Palette
+  Heart,
+  Trophy,
+  Bot,
+  Shapes,
+  Leaf,
+  Rocket,
+  type LucideIcon
 } from "lucide-react";
-import { sciencePathLevels, technologyPathLevels, engineeringPathLevels, mathPathLevels, PathLevel } from "@/data/learningPathData";
+import { introductoryPath, PathLevel } from "@/data/learningPathData";
 import { LessonContent } from "./LessonContent";
 
 interface LearningPathProps {
@@ -30,32 +31,22 @@ interface LearningPathProps {
   onLessonComplete: () => void;
 }
 
-const learningPaths: Record<string, PathLevel[]> = {
-  science: sciencePathLevels,
-  technology: technologyPathLevels,
-  engineering: engineeringPathLevels,
-  math: mathPathLevels,
-};
-
-const areaIcons: Record<string, any> = {
-  science: [Star, Atom, Microscope, Dna, Zap, Cpu, Rocket, Lightbulb, Palette, Code],
-  technology: [Star, Cpu, Code, Zap, Rocket, Lightbulb, Atom, Microscope, Dna, Palette],
-  engineering: [Star, Wrench, Cpu, Zap, Rocket, Lightbulb, Atom, Microscope, Dna, Palette],
-  math: [Star, Calculator, Atom, Cpu, Zap, Rocket, Lightbulb, Microscope, Dna, Palette],
-};
-
-const areaColors: Record<string, string[]> = {
-  science: ["bg-green-500", "bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-yellow-500", "bg-indigo-500", "bg-red-500", "bg-cyan-500", "bg-orange-500", "bg-teal-500"],
-  technology: ["bg-cyan-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-pink-500", "bg-green-500", "bg-yellow-500", "bg-red-500", "bg-orange-500", "bg-teal-500"],
-  engineering: ["bg-orange-500", "bg-yellow-500", "bg-red-500", "bg-purple-500", "bg-blue-500", "bg-green-500", "bg-pink-500", "bg-indigo-500", "bg-cyan-500", "bg-teal-500"],
-  math: ["bg-blue-500", "bg-purple-500", "bg-pink-500", "bg-green-500", "bg-yellow-500", "bg-indigo-500", "bg-red-500", "bg-cyan-500", "bg-orange-500", "bg-teal-500"],
-};
-
-const areaTitles: Record<string, string> = {
-  science: "Trilha da Descoberta Científica",
-  technology: "Trilha da Tecnologia",
-  engineering: "Trilha da Engenharia",
-  math: "Trilha da Matemática",
+const iconMap: Record<string, LucideIcon> = {
+  Star,
+  Sparkles,
+  Brain,
+  Calculator,
+  Smartphone,
+  Wrench,
+  Beaker,
+  Code,
+  Heart,
+  Trophy,
+  Bot,
+  Shapes,
+  Leaf,
+  Rocket,
+  Crown,
 };
 
 export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }: LearningPathProps) => {
@@ -63,19 +54,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
 
-  const pathData = learningPaths[selectedArea] || learningPaths.science;
-  const icons = areaIcons[selectedArea] || areaIcons.science;
-  const colors = areaColors[selectedArea] || areaColors.science;
-
-  const pathLevels = pathData.map((level, index) => ({
-    ...level,
-    icon: icons[index % icons.length],
-    color: colors[index % colors.length],
-    position: {
-      x: index % 2 === 0 ? 30 + (index * 5) % 40 : 70 - (index * 5) % 40,
-      y: 95 - (index * (90 / pathData.length))
-    }
-  }));
+  const pathLevels = introductoryPath;
 
   const startLevel = (levelId: number) => {
     if (isLevelUnlocked(levelId)) {
@@ -129,8 +108,8 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">{areaTitles[selectedArea]}</h2>
-        <p className="text-gray-600 mb-4">Complete cada nível para desbloquear o próximo!</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha STEM</h2>
+        <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em ciência, tecnologia, engenharia e matemática!</p>
         
         <Card className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -140,132 +119,138 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
             </span>
           </div>
           <Progress value={getOverallProgress()} className="h-3" />
+          <p className="text-xs text-gray-500 mt-2">Complete a trilha para desbloquear os Módulos avançados!</p>
         </Card>
       </div>
 
-      {/* Trilha Visual */}
-      <div className="relative min-h-[600px] bg-gradient-to-b from-blue-50 to-green-50 rounded-2xl overflow-hidden border-4 border-purple-200 p-4">
-        {/* Linha conectora */}
-        <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-          {pathLevels.slice(0, -1).map((level, index) => {
-            const nextLevel = pathLevels[index + 1];
+      {/* Trilha Visual Linear */}
+      <div className="relative bg-gradient-to-b from-purple-50 via-pink-50 to-blue-50 rounded-2xl overflow-hidden border-4 border-purple-200 p-6">
+        {/* Linha central */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-300 via-pink-300 to-blue-300 transform -translate-x-1/2" />
+
+        <div className="relative space-y-4">
+          {pathLevels.map((level, index) => {
+            const IconComponent = iconMap[level.icon] || Star;
+            const unlocked = isLevelUnlocked(level.id);
+            const completed = isLevelCompleted(level.id);
+            const isLeft = index % 2 === 0;
+            
             return (
-              <line
-                key={`line-${level.id}`}
-                x1={`${level.position.x}%`}
-                y1={`${level.position.y}%`}
-                x2={`${nextLevel.position.x}%`}
-                y2={`${nextLevel.position.y}%`}
-                stroke={isLevelCompleted(nextLevel.id) ? "#10b981" : "#d1d5db"}
-                strokeWidth="4"
-                strokeDasharray={isLevelCompleted(nextLevel.id) ? "0" : "8,4"}
-                className="transition-all duration-500"
-              />
+              <div
+                key={level.id}
+                className={`flex items-center gap-4 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}
+              >
+                {/* Card de conteúdo */}
+                <div className={`flex-1 ${isLeft ? 'text-right pr-4' : 'text-left pl-4'}`}>
+                  <Card 
+                    className={`inline-block p-4 max-w-sm transition-all ${
+                      unlocked ? 'hover:shadow-lg cursor-pointer' : 'opacity-60'
+                    } ${completed ? 'bg-green-50 border-green-200' : ''}`}
+                    onClick={() => unlocked && startLevel(level.id)}
+                  >
+                    <div className={`flex items-start gap-3 ${isLeft ? 'flex-row-reverse' : ''}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        completed ? 'bg-green-500' : unlocked ? level.color : 'bg-gray-300'
+                      }`}>
+                        {completed ? (
+                          <CheckCircle className="w-6 h-6 text-white" />
+                        ) : unlocked ? (
+                          <IconComponent className="w-6 h-6 text-white" />
+                        ) : (
+                          <Lock className="w-5 h-5 text-white" />
+                        )}
+                      </div>
+                      <div className={isLeft ? 'text-right' : 'text-left'}>
+                        <h3 className="font-bold text-gray-800 text-sm">{level.title}</h3>
+                        <p className="text-xs text-gray-500 mt-1">{level.description}</p>
+                        <div className={`flex items-center gap-2 mt-2 ${isLeft ? 'justify-end' : ''}`}>
+                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+                            {level.difficulty}
+                          </span>
+                          <span className="text-xs text-yellow-600 font-medium">
+                            +{level.points}pts
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Círculo central */}
+                <div className="relative z-10">
+                  <button
+                    onClick={() => unlocked && startLevel(level.id)}
+                    disabled={!unlocked}
+                    className={`
+                      w-14 h-14 rounded-full flex items-center justify-center
+                      transition-all duration-300 shadow-lg
+                      ${completed ? 'bg-green-500 text-white ring-4 ring-green-200' : 
+                        unlocked ? `${level.color} text-white hover:scale-110 cursor-pointer` : 
+                        'bg-gray-300 text-gray-500 cursor-not-allowed'}
+                    `}
+                  >
+                    {completed ? (
+                      <CheckCircle className="w-7 h-7" />
+                    ) : unlocked ? (
+                      <span className="text-xl font-bold">{level.id}</span>
+                    ) : (
+                      <Lock className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Espaço vazio para balanceamento */}
+                <div className="flex-1" />
+              </div>
             );
           })}
-        </svg>
-
-        {/* Níveis */}
-        {pathLevels.map((level) => {
-          const Icon = level.icon;
-          const unlocked = isLevelUnlocked(level.id);
-          const completed = isLevelCompleted(level.id);
-          
-          return (
-            <div
-              key={level.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{ 
-                left: `${level.position.x}%`, 
-                top: `${level.position.y}%`,
-                zIndex: 2
-              }}
-            >
-              <div className="flex flex-col items-center space-y-2">
-                <button
-                  onClick={() => startLevel(level.id)}
-                  disabled={!unlocked}
-                  className={`
-                    w-16 h-16 rounded-full flex items-center justify-center
-                    transition-all duration-300 hover:scale-110 shadow-lg
-                    ${completed ? 'bg-green-500 text-white ring-4 ring-green-200' : 
-                      unlocked ? `${level.color} text-white hover:shadow-xl cursor-pointer` : 
-                      'bg-gray-300 text-gray-500 cursor-not-allowed'}
-                  `}
-                >
-                  {completed ? (
-                    <CheckCircle className="w-8 h-8" />
-                  ) : unlocked ? (
-                    <Icon className="w-8 h-8" />
-                  ) : (
-                    <Lock className="w-6 h-6" />
-                  )}
-                </button>
-                
-                <div className="text-center bg-white px-3 py-1 rounded-full shadow-md border-2 border-purple-200 max-w-[120px]">
-                  <p className="text-xs font-semibold text-gray-700 truncate">{level.title}</p>
-                  <p className="text-xs text-gray-500">{level.points}pts</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Decorações */}
-        <div className="absolute top-4 right-4">
-          <Crown className="w-8 h-8 text-yellow-500" />
         </div>
-        <div className="absolute bottom-4 left-4">
-          <Award className="w-6 h-6 text-purple-500" />
+
+        {/* Topo da trilha */}
+        <div className="flex justify-center mt-6">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-lg">
+            <Crown className="w-6 h-6" />
+            <span className="font-bold">Mestra STEM</span>
+          </div>
         </div>
       </div>
 
-      {/* Lista de Níveis */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {pathLevels.map((level) => {
-          const Icon = level.icon;
-          const unlocked = isLevelUnlocked(level.id);
-          const completed = isLevelCompleted(level.id);
-          
-          return (
-            <Card 
-              key={level.id} 
-              className={`p-4 transition-all ${unlocked ? 'hover:shadow-lg cursor-pointer' : 'opacity-60'}`}
-              onClick={() => unlocked && startLevel(level.id)}
-            >
-              <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 ${completed ? 'bg-green-500' : level.color} rounded-xl flex items-center justify-center`}>
-                  {completed ? (
-                    <CheckCircle className="w-6 h-6 text-white" />
-                  ) : unlocked ? (
-                    <Icon className="w-6 h-6 text-white" />
-                  ) : (
-                    <Lock className="w-6 h-6 text-white" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-800">{level.title}</h3>
-                  <p className="text-sm text-gray-600">{level.description}</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
-                      {level.difficulty}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {level.lessons.length} lições
-                    </span>
-                    <span className="text-xs text-yellow-600 font-medium">
-                      +{level.points}pts
-                    </span>
-                  </div>
-                </div>
-                {completed && (
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Lista de Níveis Simplificada */}
+      <Card className="p-4">
+        <h3 className="font-semibold text-gray-800 mb-3">Sobre a Trilha</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <p className="text-2xl font-bold text-purple-600">{pathLevels.length}</p>
+            <p className="text-xs text-gray-600">Níveis</p>
+          </div>
+          <div className="p-3 bg-pink-50 rounded-lg">
+            <p className="text-2xl font-bold text-pink-600">{completedLevels.size}</p>
+            <p className="text-xs text-gray-600">Completados</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <p className="text-2xl font-bold text-blue-600">
+              {pathLevels.reduce((sum, l) => sum + l.points, 0)}
+            </p>
+            <p className="text-xs text-gray-600">Pontos Totais</p>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg">
+            <p className="text-2xl font-bold text-green-600">
+              {Array.from(completedLevels).reduce((sum, id) => {
+                const level = pathLevels.find(l => l.id === id);
+                return sum + (level?.points || 0);
+              }, 0)}
+            </p>
+            <p className="text-xs text-gray-600">Seus Pontos</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4 bg-gradient-to-r from-blue-50 to-purple-50">
+        <p className="text-sm text-gray-700 text-center">
+          💡 <strong>Dica:</strong> A Trilha é introdutória e rápida! Complete para desbloquear os Módulos, 
+          que são cursos mais completos com projetos finais e certificados.
+        </p>
+      </Card>
     </div>
   );
 };
