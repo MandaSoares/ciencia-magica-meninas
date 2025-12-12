@@ -27,7 +27,7 @@ interface AreaData {
 
 const areasData: AreaData[] = [
   {
-    id: "ciencia",
+    id: "science",
     name: "Ciências",
     icon: "🔬",
     color: "bg-green-500",
@@ -78,7 +78,7 @@ const areasData: AreaData[] = [
     ]
   },
   {
-    id: "tecnologia",
+    id: "technology",
     name: "Tecnologia",
     icon: "💻",
     color: "bg-blue-500",
@@ -129,7 +129,7 @@ const areasData: AreaData[] = [
     ]
   },
   {
-    id: "engenharia",
+    id: "engineering",
     name: "Engenharia",
     icon: "⚙️",
     color: "bg-orange-500",
@@ -174,7 +174,7 @@ const areasData: AreaData[] = [
     ]
   },
   {
-    id: "matematica",
+    id: "math",
     name: "Matemática",
     icon: "📐",
     color: "bg-purple-500",
@@ -220,21 +220,28 @@ const areasData: AreaData[] = [
   }
 ];
 
+// Get label based on area (Cientistas, Engenheiras, etc.)
+const getAreaLabel = (areaId: string): string => {
+  const labels: Record<string, string> = {
+    science: "Cientistas",
+    technology: "Tecnólogas",
+    engineering: "Engenheiras",
+    math: "Matemáticas"
+  };
+  return labels[areaId] || "Profissionais";
+};
+
 interface AreasDeAtuacaoProps {
   onPointsEarned: (points: number) => void;
+  selectedArea?: string;
 }
 
-export const AreasDeAtuacao = ({ onPointsEarned }: AreasDeAtuacaoProps) => {
-  const [selectedArea, setSelectedArea] = useState<AreaData | null>(null);
+export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: AreasDeAtuacaoProps) => {
   const [selectedCareer, setSelectedCareer] = useState<Career | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<WomanProfile | null>(null);
 
-  const handleSelectArea = (area: AreaData) => {
-    setSelectedArea(area);
-    setSelectedCareer(null);
-    setSelectedWoman(null);
-    onPointsEarned(10);
-  };
+  // Filter to show only the area that matches selectedArea
+  const currentArea = areasData.find(a => a.id === selectedArea) || areasData[0];
 
   const handleSelectCareer = (career: Career) => {
     setSelectedCareer(career);
@@ -252,8 +259,6 @@ export const AreasDeAtuacao = ({ onPointsEarned }: AreasDeAtuacaoProps) => {
       setSelectedWoman(null);
     } else if (selectedCareer) {
       setSelectedCareer(null);
-    } else if (selectedArea) {
-      setSelectedArea(null);
     }
   };
 
@@ -304,7 +309,7 @@ export const AreasDeAtuacao = ({ onPointsEarned }: AreasDeAtuacaoProps) => {
       <div className="space-y-6 animate-fade-in">
         <Button variant="ghost" onClick={goBack} className="mb-4">
           <ChevronLeft className="w-4 h-4 mr-2" />
-          Voltar para {selectedArea?.name}
+          Voltar para {currentArea.name}
         </Button>
 
         <div>
@@ -312,7 +317,7 @@ export const AreasDeAtuacao = ({ onPointsEarned }: AreasDeAtuacaoProps) => {
           <p className="text-gray-600 mb-4">{selectedCareer.description}</p>
         </div>
 
-        <h3 className="text-xl font-semibold text-gray-800">Mulheres Inspiradoras</h3>
+        <h3 className="text-xl font-semibold text-gray-800">{getAreaLabel(selectedArea)} Inspiradoras</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {selectedCareer.women.map((woman, index) => (
@@ -343,106 +348,42 @@ export const AreasDeAtuacao = ({ onPointsEarned }: AreasDeAtuacaoProps) => {
     );
   }
 
-  // Vista das carreiras em uma área
-  if (selectedArea) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <Button variant="ghost" onClick={goBack} className="mb-4">
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          Voltar para Áreas de Atuação
-        </Button>
-
-        <div className={`${selectedArea.color} text-white p-6 rounded-xl`}>
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{selectedArea.icon}</span>
-            <div>
-              <h2 className="text-2xl font-bold">{selectedArea.name}</h2>
-              <p className="opacity-90">{selectedArea.description}</p>
-            </div>
-          </div>
-        </div>
-
-        <h3 className="text-xl font-semibold text-gray-800">Carreiras em {selectedArea.name}</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {selectedArea.careers.map((career, index) => (
-            <Card 
-              key={index}
-              className="p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105"
-              onClick={() => handleSelectCareer(career)}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className={`w-10 h-10 ${selectedArea.color} rounded-lg flex items-center justify-center`}>
-                  <Briefcase className="w-5 h-5 text-white" />
-                </div>
-                <h4 className="font-bold text-gray-800">{career.name}</h4>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">{career.description}</p>
-              <p className="text-xs text-purple-600 font-medium">
-                {career.women.length} {career.women.length === 1 ? 'mulher inspiradora' : 'mulheres inspiradoras'}
-              </p>
-              <ChevronRight className="w-5 h-5 text-gray-400 mt-2 ml-auto" />
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Vista principal - todas as áreas
+  // Vista principal - carreiras da área selecionada
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Áreas de Atuação</h2>
-        <p className="text-gray-600">Explore carreiras em STEM e conheça mulheres que fizeram história!</p>
+      <div className={`${currentArea.color} text-white p-6 rounded-xl`}>
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">{currentArea.icon}</span>
+          <div>
+            <h2 className="text-2xl font-bold">Áreas de Atuação em {currentArea.name}</h2>
+            <p className="opacity-90">{currentArea.description}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {areasData.map((area) => (
+      <h3 className="text-xl font-semibold text-gray-800">Carreiras em {currentArea.name}</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {currentArea.careers.map((career, index) => (
           <Card 
-            key={area.id}
-            className="overflow-hidden hover:shadow-xl transition-all cursor-pointer hover:scale-105"
-            onClick={() => handleSelectArea(area)}
+            key={index}
+            className="p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+            onClick={() => handleSelectCareer(career)}
           >
-            <div className={`${area.color} p-6 text-white`}>
-              <div className="flex items-center gap-3">
-                <span className="text-5xl">{area.icon}</span>
-                <div>
-                  <h3 className="text-xl font-bold">{area.name}</h3>
-                  <p className="text-sm opacity-90">{area.description}</p>
-                </div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className={`w-10 h-10 ${currentArea.color} rounded-lg flex items-center justify-center`}>
+                <Briefcase className="w-5 h-5 text-white" />
               </div>
+              <h4 className="font-bold text-gray-800">{career.name}</h4>
             </div>
-            <div className="p-4">
-              <p className="text-gray-600 text-sm mb-2">
-                {area.careers.length} carreiras disponíveis
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {area.careers.slice(0, 3).map((career, idx) => (
-                  <span 
-                    key={idx}
-                    className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700"
-                  >
-                    {career.name}
-                  </span>
-                ))}
-              </div>
-              <Button variant="link" className="mt-3 p-0 text-purple-600">
-                Explorar carreiras
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <p className="text-sm text-gray-600 mb-3">{career.description}</p>
+            <p className="text-xs text-purple-600 font-medium">
+              {career.women.length} {career.women.length === 1 ? `${getAreaLabel(selectedArea).slice(0, -1)} inspiradora` : `${getAreaLabel(selectedArea).toLowerCase()} inspiradoras`}
+            </p>
+            <ChevronRight className="w-5 h-5 text-gray-400 mt-2 ml-auto" />
           </Card>
         ))}
       </div>
-
-      <Card className="p-6 bg-gradient-to-r from-purple-100 to-pink-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">💡 Você Sabia?</h3>
-        <p className="text-gray-700">
-          Meninas em STEM estão mudando o mundo! Cada área oferece oportunidades incríveis 
-          para fazer a diferença. Explore, descubra e inspire-se!
-        </p>
-      </Card>
     </div>
   );
 };

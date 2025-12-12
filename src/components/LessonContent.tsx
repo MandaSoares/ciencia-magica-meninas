@@ -9,7 +9,8 @@ import {
   CheckCircle, 
   ArrowLeft, 
   ArrowRight,
-  Award
+  Award,
+  X
 } from "lucide-react";
 
 interface LessonStep {
@@ -17,6 +18,7 @@ interface LessonStep {
   title: string;
   content: string;
   videoUrl?: string;
+  correctAnswer?: string;
 }
 
 interface LessonContentProps {
@@ -29,16 +31,55 @@ interface LessonContentProps {
 export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: LessonContentProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
+  const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   const progress = ((completedSteps.size) / lessonSteps.length) * 100;
 
+  // Parse quiz options from content (e.g., "A) Option 1\nB) Option 2...")
+  const parseQuizOptions = (content: string): { question: string; options: { letter: string; text: string }[] } => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const optionPattern = /^([A-D])\)\s*(.+)/;
+    
+    const options: { letter: string; text: string }[] = [];
+    const questionLines: string[] = [];
+    
+    for (const line of lines) {
+      const match = line.match(optionPattern);
+      if (match) {
+        options.push({ letter: match[1], text: match[2] });
+      } else {
+        questionLines.push(line);
+      }
+    }
+    
+    return { question: questionLines.join('\n'), options };
+  };
+
+  const handleSelectAnswer = (letter: string) => {
+    if (answerSubmitted) return;
+    
+    setQuizAnswer(letter);
+    setAnswerSubmitted(true);
+    
+    const step = lessonSteps[currentStep];
+    const correct = step.correctAnswer === letter;
+    setIsCorrect(correct);
+  };
+
   const handleNextStep = () => {
+    if (!isCorrect && lessonSteps[currentStep].type === 'quiz') {
+      return; // Não pode avançar se errou o quiz
+    }
+    
     setCompletedSteps(prev => new Set([...prev, currentStep]));
     
     if (currentStep < lessonSteps.length - 1) {
       setCurrentStep(prev => prev + 1);
       setQuizAnswer(null);
+      setAnswerSubmitted(false);
+      setIsCorrect(null);
     } else {
       onComplete();
     }
@@ -47,6 +88,9 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
   const handlePreviousStep = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      setQuizAnswer(null);
+      setAnswerSubmitted(false);
+      setIsCorrect(null);
     }
   };
 
@@ -64,6 +108,9 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
   };
 
   const StepIcon = getStepIcon(step.type);
+
+  // Parse quiz data if it's a quiz step
+  const quizData = step.type === 'quiz' ? parseQuizOptions(step.content) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
@@ -145,31 +192,82 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
             </div>
           )}
 
-          {/* Reading/Practice content */}
-          <div className="prose max-w-none mb-6">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-700 whitespace-pre-line">{step.content}</p>
+          {/* Reading/Practice/Inspiration content */}
+          {step.type !== 'quiz' && (
+            <div className="prose max-w-none mb-6">
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <p className="text-gray-700 whitespace-pre-line">{step.content}</p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Quiz options */}
-          {step.type === 'quiz' && (
-            <div className="space-y-3 mb-6">
-              {['A', 'B', 'C', 'D'].map((option, index) => (
-                <button
-                  key={option}
-                  onClick={() => setQuizAnswer(index)}
-                  className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                    quizAnswer === index
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                >
-                  <span className="font-bold text-purple-600 mr-2">{option})</span>
-                  Opção de resposta {index + 1}
-                </button>
-              ))}
-            </div>
+          {/* Quiz options with correct/incorrect feedback */}
+          {step.type === 'quiz' && quizData && (
+            <>
+              <div className="prose max-w-none mb-6">
+                <div className="bg-gray-900 p-6 rounded-lg">
+                  <p className="text-white whitespace-pre-line">{quizData.question}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                {quizData.options.map((option) => {
+                  const isSelected = quizAnswer === option.letter;
+                  const showCorrect = answerSubmitted && step.correctAnswer === option.letter;
+                  const showIncorrect = answerSubmitted && isSelected && step.correctAnswer !== option.letter;
+                  
+                  return (
+                    <button
+                      key={option.letter}
+                      onClick={() => handleSelectAnswer(option.letter)}
+                      disabled={answerSubmitted}
+                      className={`w-full p-4 text-left rounded-lg border-l-4 transition-all ${
+                        showCorrect
+                          ? 'bg-green-800 border-green-500 text-white'
+                          : showIncorrect
+                          ? 'bg-red-800 border-red-500 text-white'
+                          : isSelected && !answerSubmitted
+                          ? 'border-purple-500 bg-purple-50 text-gray-800'
+                          : 'border-gray-700 bg-gray-800 text-white hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {showCorrect && (
+                          <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center flex-shrink-0">
+                            <CheckCircle className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {showIncorrect && (
+                          <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center flex-shrink-0">
+                            <X className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        <span className={showCorrect || showIncorrect ? '' : 'ml-11'}>
+                          <span className="font-bold mr-2">{option.letter})</span>
+                          {option.text}
+                        </span>
+                      </div>
+                      
+                      {/* Feedback text */}
+                      {showCorrect && (
+                        <div className="mt-3 p-3 bg-green-900/50 rounded border border-green-700 ml-11">
+                          <p className="text-green-200 text-sm">
+                            Correta! Parabéns, você acertou!
+                          </p>
+                        </div>
+                      )}
+                      {showIncorrect && (
+                        <div className="mt-3 p-3 bg-red-900/50 rounded border border-red-700 ml-11">
+                          <p className="text-red-200 text-sm">
+                            Incorreta. A resposta correta é a opção {step.correctAnswer}.
+                          </p>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
 
           <div className="flex justify-between">
@@ -185,7 +283,7 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
             <Button
               onClick={handleNextStep}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              disabled={step.type === 'quiz' && quizAnswer === null}
+              disabled={(step.type === 'quiz' && !answerSubmitted) || (step.type === 'quiz' && !isCorrect)}
             >
               {currentStep < lessonSteps.length - 1 ? (
                 <>

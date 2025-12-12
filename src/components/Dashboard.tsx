@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, BookOpen, Target, Zap, ArrowRight, Sparkles } from "lucide-react";
+import { BookOpen, Target, Zap, Sparkles, Plus, Play } from "lucide-react";
 
 interface DashboardProps {
   userPoints: number;
@@ -10,6 +10,7 @@ interface DashboardProps {
   selectedAreas?: string[];
   onAreaChange?: (area: string) => void;
   currentActiveArea?: string;
+  onAddArea?: () => void;
 }
 
 const areaInfo: Record<string, { icon: string; color: string; name: string }> = {
@@ -25,17 +26,23 @@ export const Dashboard = ({
   userName = "Estudante", 
   selectedAreas = ["science"],
   onAreaChange,
-  currentActiveArea = "science"
+  currentActiveArea = "science",
+  onAddArea
 }: DashboardProps) => {
-  const nextLevelPoints = userLevel * 500;
-  const progressPercentage = (userPoints % 500) / 5;
 
   const stats = [
     { label: "Lições Completadas", value: "0", icon: BookOpen, color: "bg-blue-500" },
     { label: "Experimentos Feitos", value: "0", icon: Zap, color: "bg-green-500" },
-    { label: "Conquistas", value: "0", icon: Trophy, color: "bg-yellow-500" },
     { label: "Streak Diário", value: "1 dia", icon: Target, color: "bg-purple-500" },
   ];
+
+  // Dados simulados do progresso atual
+  const currentProgress = {
+    courseName: "Introdução à Ciência",
+    currentLesson: "Método Científico",
+    progress: 35,
+    estimatedTime: "25 min"
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -45,61 +52,49 @@ export const Dashboard = ({
       </div>
 
       {/* Seletor de Área - Estilo Duolingo */}
-      {selectedAreas.length > 1 && (
-        <Card className="p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-500" />
-            Suas Áreas de Estudo
-          </h3>
-          <div className="flex flex-wrap gap-3">
-            {selectedAreas.map((area) => {
-              const info = areaInfo[area] || areaInfo.science;
-              const isActive = area === currentActiveArea;
-              
-              return (
-                <button
-                  key={area}
-                  onClick={() => onAreaChange?.(area)}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
-                    ${isActive 
-                      ? `${info.color} text-white shadow-lg scale-105` 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-                  `}
-                >
-                  <span className="text-xl">{info.icon}</span>
-                  <span className="font-medium">{info.name}</span>
-                  {isActive && <ArrowRight className="w-4 h-4 ml-1" />}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Clique para alternar entre as áreas. Seu progresso é salvo separadamente!
-          </p>
-        </Card>
-      )}
-
-      <Card className="p-6 bg-gradient-to-r from-purple-400 to-pink-400 text-white">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-semibold">Seu Progresso</h3>
-            <p className="opacity-90">Nível {userLevel} • {userPoints} pontos</p>
-          </div>
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <Trophy className="w-8 h-8" />
-          </div>
+      <Card className="p-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-purple-500" />
+          Suas Áreas de Estudo
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {selectedAreas.map((area) => {
+            const info = areaInfo[area] || areaInfo.science;
+            const isActive = area === currentActiveArea;
+            
+            return (
+              <button
+                key={area}
+                onClick={() => onAreaChange?.(area)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
+                  ${isActive 
+                    ? `${info.color} text-white shadow-lg scale-105` 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+                `}
+              >
+                <span className="text-xl">{info.icon}</span>
+                <span className="font-medium">{info.name}</span>
+              </button>
+            );
+          })}
+          
+          {/* Botão de adicionar área */}
+          <button
+            onClick={onAddArea}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-purple-400 hover:text-purple-500 transition-all duration-200"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="font-medium">Adicionar</span>
+          </button>
         </div>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Próximo nível</span>
-            <span>{Math.max(0, nextLevelPoints - (userPoints % 500))} pontos restantes</span>
-          </div>
-          <Progress value={progressPercentage} className="h-3" />
-        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Clique para alternar entre as áreas. Seu progresso é salvo separadamente!
+        </p>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -118,55 +113,37 @@ export const Dashboard = ({
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Continue Aprendendo</h3>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-              <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">1</span>
+      {/* Continue Aprendendo - Estilo da imagem de referência */}
+      <Card className="p-6">
+        <h3 className="text-xl font-semibold mb-4 text-gray-800">Continue Aprendendo</h3>
+        
+        <div className="border-l-4 border-pink-500 bg-white rounded-lg shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
+            <Progress value={currentProgress.progress} className="flex-1 h-2 mr-4" />
+            <span className="text-sm text-gray-500">{currentProgress.progress}%</span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-pink-100 rounded-xl flex items-center justify-center">
+                <BookOpen className="w-7 h-7 text-pink-500" />
               </div>
               <div>
-                <p className="font-medium">Comece pela Trilha!</p>
-                <p className="text-sm text-gray-600">Conteúdo introdutório rápido e gamificado</p>
+                <p className="text-xs text-gray-500 uppercase font-medium">CURSO</p>
+                <h4 className="font-bold text-gray-800">{currentProgress.courseName}</h4>
+                <p className="text-sm text-gray-600">
+                  Aula atual: {currentProgress.currentLesson} - {currentProgress.estimatedTime}
+                </p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-pink-50 rounded-lg">
-              <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">2</span>
-              </div>
-              <div>
-                <p className="font-medium">Depois, explore os Módulos</p>
-                <p className="text-sm text-gray-600">Cursos completos com projetos e certificados</p>
-              </div>
-            </div>
+            
+            <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6">
+              <Play className="w-4 h-4 mr-2" />
+              Continuar onde parou
+            </Button>
           </div>
-        </Card>
-
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold mb-4 text-gray-800">Diferença: Trilha vs Módulos</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <h4 className="font-semibold text-blue-700 mb-1">📚 Trilha</h4>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li>• Introdutória</li>
-                <li>• Rápida e linear</li>
-                <li>• Gamificada</li>
-                <li>• Despertar interesse</li>
-              </ul>
-            </div>
-            <div className="p-3 bg-green-50 rounded-lg">
-              <h4 className="font-semibold text-green-700 mb-1">🎓 Módulos</h4>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li>• Cursos completos</li>
-                <li>• Mais profundos</li>
-                <li>• Projeto final</li>
-                <li>• Certificado!</li>
-              </ul>
-            </div>
-          </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 };

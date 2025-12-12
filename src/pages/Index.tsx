@@ -13,6 +13,7 @@ import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { AreaSelection } from "@/components/AreaSelection";
+import { Footer } from "@/components/Footer";
 
 interface UserData {
   name: string;
@@ -40,6 +41,7 @@ const Index = () => {
   const [user, setUser] = useState<UserData | null>(null);
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
+  const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [userStats, setUserStats] = useState<UserStats>({
     modulesCompleted: 0,
     experimentsCompleted: 0,
@@ -124,6 +126,20 @@ const Index = () => {
     setSelectedArea(area);
   };
 
+  const handleAddArea = () => {
+    // Show area selection for adding new areas
+    setShowAddAreaModal(true);
+  };
+
+  const handleAddNewInterest = (interest: string) => {
+    if (user && !user.interests.includes(interest)) {
+      const newInterests = [...user.interests, interest];
+      setUser({ ...user, interests: newInterests });
+      setSelectedArea(interest);
+    }
+    setShowAddAreaModal(false);
+  };
+
   const getNavItems = () => {
     return [
       { id: "dashboard", label: "Início" },
@@ -147,6 +163,7 @@ const Index = () => {
             selectedAreas={user?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
+            onAddArea={handleAddArea}
           />
         );
       case "path":
@@ -161,7 +178,7 @@ const Index = () => {
         return (
           <ScienceModules 
             onPointsEarned={addPoints} 
-            selectedArea={selectedArea || "Ciência"}
+            selectedArea={selectedArea || "science"}
             userName={user?.name || "Estudante"}
             onModuleComplete={handleModuleComplete}
           />
@@ -170,6 +187,7 @@ const Index = () => {
         return (
           <AreasDeAtuacao 
             onPointsEarned={addPoints}
+            selectedArea={selectedArea || "science"}
           />
         );
       case "lab":
@@ -207,6 +225,7 @@ const Index = () => {
             selectedAreas={user?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
+            onAddArea={handleAddArea}
           />
         );
     }
@@ -265,10 +284,33 @@ const Index = () => {
     setSelectedArea(user.interests[0]);
   }
 
+  // Modal for adding new area
+  if (showAddAreaModal) {
+    const availableAreas = ['science', 'technology', 'engineering', 'math'].filter(
+      a => !user?.interests.includes(a)
+    );
+
+    if (availableAreas.length === 0) {
+      setShowAddAreaModal(false);
+    } else {
+      return (
+        <AreaSelection 
+          interests={availableAreas}
+          onSelectArea={handleAddNewInterest}
+        />
+      );
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <Header userPoints={userPoints} userLevel={userLevel} />
-      <div className="flex">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col">
+      <Header 
+        userPoints={userPoints} 
+        userLevel={userLevel} 
+        userName={user?.name}
+        userProfileImage={user?.profileImage}
+      />
+      <div className="flex flex-1">
         <Navigation 
           activeSection={activeSection} 
           setActiveSection={setActiveSection}
@@ -278,6 +320,7 @@ const Index = () => {
           {renderActiveSection()}
         </main>
       </div>
+      <Footer />
     </div>
   );
 };
