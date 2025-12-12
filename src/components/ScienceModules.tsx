@@ -5,7 +5,6 @@ import { Progress } from "@/components/ui/progress";
 import { 
   BookOpen, 
   Play, 
-  Lock, 
   CheckCircle, 
   Video, 
   FileText, 
@@ -23,6 +22,9 @@ import {
   Shield,
   Leaf,
   Zap,
+  MessageCircle,
+  Lightbulb,
+  X,
   type LucideIcon
 } from "lucide-react";
 import { CertificateModal } from "./CertificateModal";
@@ -56,6 +58,14 @@ const contentIcons: Record<string, LucideIcon> = {
   project: Award,
 };
 
+// Map area keys to category names
+const areaToCategory: Record<string, string> = {
+  technology: "Tecnologia",
+  science: "Ciência",
+  engineering: "Engenharia",
+  math: "Matemática",
+};
+
 export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete }: ScienceModulesProps) => {
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [activeContentIndex, setActiveContentIndex] = useState(0);
@@ -64,18 +74,41 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [showCertificate, setShowCertificate] = useState(false);
   const [completedModuleName, setCompletedModuleName] = useState("");
   const [showProject, setShowProject] = useState(false);
+  const [showInstructorOpinion, setShowInstructorOpinion] = useState(false);
+  const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  const modules = allModules;
+  // Filter modules by selected area
+  const categoryName = areaToCategory[selectedArea] || "Ciência";
+  const modules = allModules.filter(m => m.category === categoryName);
 
   const startModule = (module: Module) => {
     setActiveModule(module);
     setActiveContentIndex(moduleProgress[module.id] || 0);
     setShowProject(false);
+    setQuizAnswer(null);
+    setAnswerSubmitted(false);
+    setIsCorrect(null);
     onPointsEarned(20);
+  };
+
+  const previousContent = () => {
+    if (activeContentIndex > 0) {
+      setActiveContentIndex(prev => prev - 1);
+      setQuizAnswer(null);
+      setAnswerSubmitted(false);
+      setIsCorrect(null);
+    }
   };
 
   const nextContent = () => {
     if (!activeModule) return;
+
+    // Can't proceed if quiz was wrong
+    if (activeModule.lessons[activeContentIndex]?.type === 'quiz' && !isCorrect) {
+      return;
+    }
 
     if (activeContentIndex < activeModule.lessons.length - 1) {
       setActiveContentIndex(prev => prev + 1);
@@ -83,9 +116,11 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
         ...prev,
         [activeModule.id]: activeContentIndex + 1
       }));
+      setQuizAnswer(null);
+      setAnswerSubmitted(false);
+      setIsCorrect(null);
       onPointsEarned(30);
     } else {
-      // Mostrar projeto final
       setShowProject(true);
     }
   };
@@ -105,15 +140,46 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
 
   const getModuleProgress = (moduleId: string) => {
     if (completedModules.has(moduleId)) return 100;
-    const module = modules.find(m => m.id === moduleId);
+    const module = allModules.find(m => m.id === moduleId);
     if (!module) return 0;
     const progress = moduleProgress[moduleId] || 0;
     return Math.round((progress / module.lessons.length) * 100);
   };
 
+  // Parse quiz options from content
+  const parseQuizOptions = (content: string): { question: string; options: { letter: string; text: string }[] } => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const optionPattern = /^([A-D])\)\s*(.+)/;
+    
+    const options: { letter: string; text: string }[] = [];
+    const questionLines: string[] = [];
+    
+    for (const line of lines) {
+      const match = line.match(optionPattern);
+      if (match) {
+        options.push({ letter: match[1], text: match[2] });
+      } else {
+        questionLines.push(line);
+      }
+    }
+    
+    return { question: questionLines.join('\n'), options };
+  };
+
+  const handleSelectAnswer = (letter: string) => {
+    if (answerSubmitted) return;
+    
+    setQuizAnswer(letter);
+    setAnswerSubmitted(true);
+    
+    const currentContent = activeModule?.lessons[activeContentIndex];
+    const correct = currentContent?.correctAnswer === letter;
+    setIsCorrect(correct);
+  };
+
   const currentContent = activeModule?.lessons[activeContentIndex];
 
-  // Vista do projeto final
+  // Vista do projeto final (Desafio)
   if (showProject && activeModule) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -123,33 +189,54 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           className="mb-4"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
-          Voltar para a lição
+          Anterior
         </Button>
 
         <Card className="p-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
           <div className="flex items-center gap-3 mb-4">
             <Award className="w-10 h-10" />
             <div>
-              <h2 className="text-2xl font-bold">Projeto Final</h2>
+              <h2 className="text-2xl font-bold">Desafio Final</h2>
               <p className="opacity-90">{activeModule.title}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-2">{activeModule.finalProject.title}</h3>
-          <p className="text-gray-600 mb-6">{activeModule.finalProject.description}</p>
+        <Card className="p-6 bg-gray-900 text-white">
+          <h3 className="text-xl font-bold mb-2">{activeModule.finalProject.title}</h3>
+          <p className="text-gray-300 mb-6">{activeModule.finalProject.description}</p>
 
-          <h4 className="font-semibold text-gray-800 mb-3">Passo a Passo:</h4>
-          <div className="space-y-3">
-            {activeModule.finalProject.steps.map((step, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
-                  {index + 1}
-                </div>
-                <p className="text-gray-700 pt-1">{step}</p>
+          <p className="text-gray-400 mb-4">
+            Para entender melhor como elaborar uma solução para esse desafio, clique na <em>Opinião da Pessoa Instrutora</em>.
+          </p>
+
+          {showInstructorOpinion && (
+            <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+              <h4 className="text-lg font-bold mb-3 bg-gray-600 -m-4 mb-4 p-3 rounded-t-lg">Opinião do instrutor</h4>
+              <div className="space-y-4">
+                {activeModule.finalProject.steps.map((step, index) => (
+                  <p key={index} className="text-gray-200">{step}</p>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-4 mt-6">
+            <Button 
+              variant="outline"
+              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+              onClick={() => {/* Forum functionality */}}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              DISCUTIR NO FÓRUM
+            </Button>
+            <Button
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => setShowInstructorOpinion(!showInstructorOpinion)}
+            >
+              <Lightbulb className="w-4 h-4 mr-2" />
+              VER OPINIÃO DO INSTRUTOR
+            </Button>
           </div>
         </Card>
 
@@ -168,7 +255,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             onClick={completeModule}
           >
             <CheckCircle className="w-4 h-4 mr-2" />
-            Completei o Projeto!
+            Completei o Desafio!
           </Button>
         </div>
       </div>
@@ -178,6 +265,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   // Vista de uma lição
   if (activeModule && currentContent) {
     const ContentIcon = contentIcons[currentContent.type];
+    const quizData = currentContent.type === 'quiz' ? parseQuizOptions(currentContent.content) : null;
     
     return (
       <div className="space-y-6 animate-fade-in">
@@ -187,6 +275,9 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             onClick={() => {
               setActiveModule(null);
               setActiveContentIndex(0);
+              setQuizAnswer(null);
+              setAnswerSubmitted(false);
+              setIsCorrect(null);
             }}
           >
             <ChevronLeft className="w-4 h-4 mr-2" />
@@ -214,7 +305,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
               <span className="text-xs text-purple-600 font-medium uppercase">
                 {currentContent.type === 'video' ? 'Vídeo' : 
                  currentContent.type === 'reading' ? 'Leitura' :
-                 currentContent.type === 'practice' ? 'Prática' :
+                 currentContent.type === 'practice' ? 'Desafio' :
                  currentContent.type === 'quiz' ? 'Quiz' : 'Projeto'}
               </span>
               <h3 className="text-xl font-bold text-gray-800">{currentContent.title}</h3>
@@ -233,42 +324,132 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             </div>
           )}
 
-          <div className="prose max-w-none">
-            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {currentContent.content.split('\n').map((line, i) => {
-                if (line.startsWith('# ')) {
-                  return <h2 key={i} className="text-2xl font-bold mt-6 mb-3">{line.slice(2)}</h2>;
-                }
-                if (line.startsWith('## ')) {
-                  return <h3 key={i} className="text-xl font-semibold mt-4 mb-2">{line.slice(3)}</h3>;
-                }
-                if (line.startsWith('**') && line.endsWith('**')) {
-                  return <p key={i} className="font-bold mt-2">{line.slice(2, -2)}</p>;
-                }
-                if (line.startsWith('- ')) {
-                  return <p key={i} className="ml-4">• {line.slice(2)}</p>;
-                }
-                if (line.trim() === '') {
-                  return <br key={i} />;
-                }
-                return <p key={i} className="mb-2">{line}</p>;
-              })}
+          {currentContent.type !== 'quiz' && (
+            <div className="prose max-w-none">
+              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {currentContent.content.split('\n').map((line, i) => {
+                  if (line.startsWith('# ')) {
+                    return <h2 key={i} className="text-2xl font-bold mt-6 mb-3">{line.slice(2)}</h2>;
+                  }
+                  if (line.startsWith('## ')) {
+                    return <h3 key={i} className="text-xl font-semibold mt-4 mb-2">{line.slice(3)}</h3>;
+                  }
+                  if (line.startsWith('**') && line.endsWith('**')) {
+                    return <p key={i} className="font-bold mt-2">{line.slice(2, -2)}</p>;
+                  }
+                  if (line.startsWith('- ')) {
+                    return <p key={i} className="ml-4">• {line.slice(2)}</p>;
+                  }
+                  if (line.trim() === '') {
+                    return <br key={i} />;
+                  }
+                  return <p key={i} className="mb-2">{line}</p>;
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          {currentContent.type === 'quiz' && (
-            <div className="mt-6 p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-700">
-                💡 Pense bem antes de responder! A resposta correta é "{currentContent.correctAnswer}"
-              </p>
+          {/* Quiz with feedback */}
+          {currentContent.type === 'quiz' && quizData && (
+            <>
+              <div className="prose max-w-none mb-6">
+                <div className="bg-gray-900 p-6 rounded-lg">
+                  <p className="text-white whitespace-pre-line">{quizData.question}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                {quizData.options.map((option) => {
+                  const isSelected = quizAnswer === option.letter;
+                  const showCorrect = answerSubmitted && currentContent.correctAnswer === option.letter;
+                  const showIncorrect = answerSubmitted && isSelected && currentContent.correctAnswer !== option.letter;
+                  
+                  return (
+                    <button
+                      key={option.letter}
+                      onClick={() => handleSelectAnswer(option.letter)}
+                      disabled={answerSubmitted}
+                      className={`w-full p-4 text-left rounded-lg border-l-4 transition-all ${
+                        showCorrect
+                          ? 'bg-green-800 border-green-500 text-white'
+                          : showIncorrect
+                          ? 'bg-red-800 border-red-500 text-white'
+                          : isSelected && !answerSubmitted
+                          ? 'border-purple-500 bg-purple-50 text-gray-800'
+                          : 'border-gray-700 bg-gray-800 text-white hover:bg-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {showCorrect && (
+                          <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center flex-shrink-0">
+                            <CheckCircle className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {showIncorrect && (
+                          <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center flex-shrink-0">
+                            <X className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        <span className={showCorrect || showIncorrect ? '' : 'ml-11'}>
+                          <span className="font-bold mr-2">{option.letter})</span>
+                          {option.text}
+                        </span>
+                      </div>
+                      
+                      {showCorrect && (
+                        <div className="mt-3 p-3 bg-green-900/50 rounded border border-green-700 ml-11">
+                          <p className="text-green-200 text-sm">
+                            Correta! Parabéns, você acertou!
+                          </p>
+                        </div>
+                      )}
+                      {showIncorrect && (
+                        <div className="mt-3 p-3 bg-red-900/50 rounded border border-red-700 ml-11">
+                          <p className="text-red-200 text-sm">
+                            Incorreta. A resposta correta é a opção {currentContent.correctAnswer}.
+                          </p>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Botões Forum e Instrutor para Desafios */}
+          {currentContent.type === 'practice' && (
+            <div className="flex justify-end gap-4 mt-6 border-t pt-4">
+              <Button 
+                variant="outline"
+                className="bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                DISCUTIR NO FÓRUM
+              </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                <Lightbulb className="w-4 h-4 mr-2" />
+                VER OPINIÃO DO INSTRUTOR
+              </Button>
             </div>
           )}
         </Card>
 
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={previousContent}
+            disabled={activeContentIndex === 0}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Anterior
+          </Button>
           <Button
             className="bg-gradient-to-r from-purple-500 to-pink-500"
             onClick={nextContent}
+            disabled={currentContent.type === 'quiz' && (!answerSubmitted || !isCorrect)}
           >
             {activeContentIndex < activeModule.lessons.length - 1 ? (
               <>
@@ -277,7 +458,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
               </>
             ) : (
               <>
-                Ver Projeto Final
+                Ver Desafio Final
                 <Award className="w-4 h-4 ml-2" />
               </>
             )}
@@ -287,81 +468,71 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
     );
   }
 
-  // Vista principal - lista de módulos
+  // Vista principal - lista de módulos filtrada por área
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de Aprendizado</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de {categoryName}</h2>
         <p className="text-gray-600">
-          Cursos completos com 3-6 lições, projeto final e certificado de conclusão!
+          Cursos completos com 3-6 lições, desafio final e certificado de conclusão!
         </p>
       </div>
 
-      <Card className="p-4 bg-gradient-to-r from-blue-50 to-purple-50">
-        <p className="text-sm text-gray-700">
-          💡 <strong>Diferença entre Trilha e Módulos:</strong> A Trilha é introdutória e rápida. 
-          Os Módulos são cursos mais profundos sobre temas específicos, com projeto final e certificado!
-        </p>
-      </Card>
+      {modules.length === 0 ? (
+        <Card className="p-8 text-center">
+          <p className="text-gray-500">
+            Ainda não há módulos disponíveis para {categoryName}. Em breve teremos novos conteúdos!
+          </p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {modules.map((module) => {
+            const ModuleIcon = iconMap[module.icon] || BookOpen;
+            const completed = completedModules.has(module.id);
+            const progress = getModuleProgress(module.id);
 
-      {/* Agrupar por categoria */}
-      {['Tecnologia', 'Engenharia', 'Ciência', 'Matemática'].map(category => {
-        const categoryModules = modules.filter(m => m.category === category);
-        if (categoryModules.length === 0) return null;
-
-        return (
-          <div key={category}>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">{category}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {categoryModules.map((module) => {
-                const ModuleIcon = iconMap[module.icon] || BookOpen;
-                const completed = completedModules.has(module.id);
-                const progress = getModuleProgress(module.id);
-
-                return (
-                  <Card 
-                    key={module.id}
-                    className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
-                    onClick={() => startModule(module)}
-                  >
-                    <div className={`${module.color} p-4 text-white`}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                          {completed ? (
-                            <CheckCircle className="w-6 h-6" />
-                          ) : (
-                            <ModuleIcon className="w-6 h-6" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-bold">{module.title}</h4>
-                          <p className="text-sm opacity-90">{module.estimatedTime}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-gray-600 mb-3">{module.description}</p>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                        <span>{module.totalLessons} lições + projeto</span>
-                        <span>{progress}%</span>
-                      </div>
-                      <Progress value={progress} className="h-2" />
-
-                      {completed && (
-                        <div className="mt-3 flex items-center gap-2 text-green-600 text-sm">
-                          <Award className="w-4 h-4" />
-                          Certificado Conquistado!
-                        </div>
+            return (
+              <Card 
+                key={module.id}
+                className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                onClick={() => startModule(module)}
+              >
+                <div className={`${module.color} p-4 text-white`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      {completed ? (
+                        <CheckCircle className="w-6 h-6" />
+                      ) : (
+                        <ModuleIcon className="w-6 h-6" />
                       )}
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+                    <div>
+                      <h4 className="font-bold">{module.title}</h4>
+                      <p className="text-sm opacity-90">{module.estimatedTime}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm text-gray-600 mb-3">{module.description}</p>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                    <span>{module.totalLessons} lições + desafio</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+
+                  {completed && (
+                    <div className="mt-3 flex items-center gap-2 text-green-600 text-sm">
+                      <Award className="w-4 h-4" />
+                      Certificado Conquistado!
+                    </div>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <CertificateModal
         isOpen={showCertificate}

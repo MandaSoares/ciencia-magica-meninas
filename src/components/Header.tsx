@@ -1,12 +1,18 @@
-
 import { Crown, Star } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface HeaderProps {
   userPoints: number;
   userLevel: number;
+  userName?: string;
+  userProfileImage?: string;
 }
 
-export const Header = ({ userPoints, userLevel }: HeaderProps) => {
+export const Header = ({ userPoints, userLevel, userName = "Estudante", userProfileImage }: HeaderProps) => {
+  const getUserInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
     <header className="bg-white shadow-lg border-b-4 border-purple-400">
       <div className="px-6 py-4 flex items-center justify-between">
@@ -33,9 +39,12 @@ export const Header = ({ userPoints, userLevel }: HeaderProps) => {
             <span className="font-semibold text-purple-700">Nível {userLevel}</span>
           </div>
           
-          <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-lg">M</span>
-          </div>
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={userProfileImage} />
+            <AvatarFallback className="bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold">
+              {getUserInitials(userName)}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </header>
