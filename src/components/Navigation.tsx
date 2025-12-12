@@ -16,7 +16,8 @@ const iconMap: Record<string, React.ElementType> = {
   dashboard: Home,
   path: Map,
   modules: BookOpen,
-  areas: Briefcase, // Changed from scientists to areas
+  areas: Briefcase,
+  scientists: Briefcase, // Fallback for old code
   lab: Lightbulb,
   achievements: Star,
   profile: User,

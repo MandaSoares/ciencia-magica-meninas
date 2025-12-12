@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 interface LessonStep {
-  type: 'video' | 'reading' | 'practice' | 'quiz';
+  type: 'video' | 'reading' | 'practice' | 'quiz' | 'inspiration';
   title: string;
   content: string;
   videoUrl?: string;
@@ -58,6 +58,7 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
       case 'reading': return BookOpen;
       case 'practice': return PenTool;
       case 'quiz': return CheckCircle;
+      case 'inspiration': return Award;
       default: return BookOpen;
     }
   };
@@ -109,19 +110,21 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
 
         <Card className="p-8">
           <div className="flex items-center space-x-3 mb-6">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
               step.type === 'video' ? 'bg-red-500' :
               step.type === 'reading' ? 'bg-blue-500' :
-              step.type === 'practice' ? 'bg-green-500' : 'bg-purple-500'
+              step.type === 'practice' ? 'bg-green-500' :
+              step.type === 'inspiration' ? 'bg-yellow-500' : 'bg-purple-500'
             }`}>
               <StepIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="text-sm text-gray-500 uppercase">
+            <span className="text-sm text-gray-500 uppercase">
                 {step.type === 'video' && 'Vídeo'}
                 {step.type === 'reading' && 'Leitura'}
                 {step.type === 'practice' && 'Prática'}
                 {step.type === 'quiz' && 'Quiz'}
+                {step.type === 'inspiration' && 'Inspiração'}
               </span>
               <h2 className="text-xl font-bold text-gray-800">{step.title}</h2>
             </div>
