@@ -4,7 +4,7 @@ import { Navigation } from "@/components/Navigation";
 import { Dashboard } from "@/components/Dashboard";
 import { LearningPath } from "@/components/LearningPath";
 import { ScienceModules } from "@/components/ScienceModules";
-import { ScientistProfiles } from "@/components/ScientistProfiles";
+import { AreasDeAtuacao } from "@/components/AreasDeAtuacao";
 import { VirtualLab } from "@/components/VirtualLab";
 import { Achievements } from "@/components/Achievements";
 import { Registration } from "@/components/Registration";
@@ -13,7 +13,6 @@ import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { AreaSelection } from "@/components/AreaSelection";
-import { getAreaLabel } from "@/data/scientistsData";
 
 interface UserData {
   name: string;
@@ -125,14 +124,12 @@ const Index = () => {
     setSelectedArea(area);
   };
 
-  const areaLabel = selectedArea ? getAreaLabel(selectedArea) : { singular: "Cientista", plural: "Cientistas" };
-
   const getNavItems = () => {
     return [
       { id: "dashboard", label: "Início" },
       { id: "path", label: "Trilha" },
       { id: "modules", label: "Módulos" },
-      { id: "scientists", label: areaLabel.plural },
+      { id: "areas", label: "Áreas de Atuação" },
       { id: "lab", label: "Laboratório" },
       { id: "achievements", label: "Conquistas" },
       { id: "profile", label: "Meu Perfil" },
@@ -147,7 +144,9 @@ const Index = () => {
             userPoints={userPoints} 
             userLevel={userLevel} 
             userName={user?.name || "Estudante"}
-            selectedArea={selectedArea}
+            selectedAreas={user?.interests || [selectedArea || "science"]}
+            currentActiveArea={selectedArea || "science"}
+            onAreaChange={handleSelectArea}
           />
         );
       case "path":
@@ -167,11 +166,10 @@ const Index = () => {
             onModuleComplete={handleModuleComplete}
           />
         );
-      case "scientists":
+      case "areas":
         return (
-          <ScientistProfiles 
-            onPointsEarned={addPoints} 
-            selectedArea={selectedArea || "Ciência"}
+          <AreasDeAtuacao 
+            onPointsEarned={addPoints}
           />
         );
       case "lab":
@@ -201,7 +199,16 @@ const Index = () => {
           />
         ) : null;
       default:
-        return <Dashboard userPoints={userPoints} userLevel={userLevel} userName={user?.name || "Estudante"} selectedArea={selectedArea} />;
+        return (
+          <Dashboard 
+            userPoints={userPoints} 
+            userLevel={userLevel} 
+            userName={user?.name || "Estudante"} 
+            selectedAreas={user?.interests || [selectedArea || "science"]}
+            currentActiveArea={selectedArea || "science"}
+            onAreaChange={handleSelectArea}
+          />
+        );
     }
   };
 
