@@ -58,14 +58,19 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
   };
 
   const handleSelectAnswer = (letter: string) => {
-    if (answerSubmitted) return;
+    const step = lessonSteps[currentStep];
+    const correct = step.correctAnswer === letter;
     
     setQuizAnswer(letter);
     setAnswerSubmitted(true);
-    
-    const step = lessonSteps[currentStep];
-    const correct = step.correctAnswer === letter;
     setIsCorrect(correct);
+    
+    // Se errou, permite tentar novamente após um breve delay
+    if (!correct) {
+      setTimeout(() => {
+        setAnswerSubmitted(false);
+      }, 1500);
+    }
   };
 
   const handleNextStep = () => {
@@ -201,34 +206,34 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
             </div>
           )}
 
-          {/* Quiz options with correct/incorrect feedback */}
+          {/* Quiz options with correct/incorrect feedback - fundo branco */}
           {step.type === 'quiz' && quizData && (
             <>
               <div className="prose max-w-none mb-6">
-                <div className="bg-gray-900 p-6 rounded-lg">
-                  <p className="text-white whitespace-pre-line">{quizData.question}</p>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <p className="text-gray-800 whitespace-pre-line font-medium">{quizData.question}</p>
                 </div>
               </div>
               
               <div className="space-y-3 mb-6">
                 {quizData.options.map((option) => {
                   const isSelected = quizAnswer === option.letter;
-                  const showCorrect = answerSubmitted && step.correctAnswer === option.letter;
-                  const showIncorrect = answerSubmitted && isSelected && step.correctAnswer !== option.letter;
+                  const showCorrect = answerSubmitted && isCorrect && isSelected;
+                  const showIncorrect = answerSubmitted && isSelected && !isCorrect;
                   
                   return (
                     <button
                       key={option.letter}
                       onClick={() => handleSelectAnswer(option.letter)}
-                      disabled={answerSubmitted}
-                      className={`w-full p-4 text-left rounded-lg border-l-4 transition-all ${
+                      disabled={showCorrect}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
                         showCorrect
-                          ? 'bg-green-800 border-green-500 text-white'
+                          ? 'bg-green-100 border-green-500 text-green-800'
                           : showIncorrect
-                          ? 'bg-red-800 border-red-500 text-white'
+                          ? 'bg-red-100 border-red-500 text-red-800'
                           : isSelected && !answerSubmitted
                           ? 'border-purple-500 bg-purple-50 text-gray-800'
-                          : 'border-gray-700 bg-gray-800 text-white hover:bg-gray-700'
+                          : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -250,16 +255,16 @@ export const LessonContent = ({ lessonTitle, lessonSteps, onComplete, onBack }: 
                       
                       {/* Feedback text */}
                       {showCorrect && (
-                        <div className="mt-3 p-3 bg-green-900/50 rounded border border-green-700 ml-11">
-                          <p className="text-green-200 text-sm">
+                        <div className="mt-3 p-3 bg-green-200 rounded border border-green-400 ml-11">
+                          <p className="text-green-800 text-sm font-medium">
                             Correta! Parabéns, você acertou!
                           </p>
                         </div>
                       )}
                       {showIncorrect && (
-                        <div className="mt-3 p-3 bg-red-900/50 rounded border border-red-700 ml-11">
-                          <p className="text-red-200 text-sm">
-                            Incorreta. A resposta correta é a opção {step.correctAnswer}.
+                        <div className="mt-3 p-3 bg-red-200 rounded border border-red-400 ml-11">
+                          <p className="text-red-800 text-sm font-medium">
+                            Incorreta. Tente novamente!
                           </p>
                         </div>
                       )}
