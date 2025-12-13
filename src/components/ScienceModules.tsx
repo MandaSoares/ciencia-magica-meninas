@@ -74,6 +74,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [showCertificate, setShowCertificate] = useState(false);
   const [completedModuleName, setCompletedModuleName] = useState("");
   const [showProject, setShowProject] = useState(false);
+  const [showForumComments, setShowForumComments] = useState(false);
   const [showInstructorOpinion, setShowInstructorOpinion] = useState(false);
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
@@ -167,14 +168,19 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   };
 
   const handleSelectAnswer = (letter: string) => {
-    if (answerSubmitted) return;
+    const currentContent = activeModule?.lessons[activeContentIndex];
+    const correct = currentContent?.correctAnswer === letter;
     
     setQuizAnswer(letter);
     setAnswerSubmitted(true);
-    
-    const currentContent = activeModule?.lessons[activeContentIndex];
-    const correct = currentContent?.correctAnswer === letter;
     setIsCorrect(correct);
+    
+    // Se errou, permite tentar novamente
+    if (!correct) {
+      setTimeout(() => {
+        setAnswerSubmitted(false);
+      }, 1500);
+    }
   };
 
   const currentContent = activeModule?.lessons[activeContentIndex];
@@ -192,31 +198,48 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           Anterior
         </Button>
 
-        <Card className="p-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+        <Card className="p-6 bg-white border border-gray-200">
           <div className="flex items-center gap-3 mb-4">
-            <Award className="w-10 h-10" />
+            <Award className="w-10 h-10 text-purple-500" />
             <div>
-              <h2 className="text-2xl font-bold">Desafio Final</h2>
-              <p className="opacity-90">{activeModule.title}</p>
+              <h2 className="text-2xl font-bold text-gray-800">Desafio Final</h2>
+              <p className="text-gray-600">{activeModule.title}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 bg-gray-900 text-white">
-          <h3 className="text-xl font-bold mb-2">{activeModule.finalProject.title}</h3>
-          <p className="text-gray-300 mb-6">{activeModule.finalProject.description}</p>
+        <Card className="p-6 bg-white border border-gray-200">
+          <h3 className="text-xl font-bold mb-2 text-gray-800">{activeModule.finalProject.title}</h3>
+          <p className="text-gray-600 mb-6">{activeModule.finalProject.description}</p>
 
-          <p className="text-gray-400 mb-4">
+          <p className="text-gray-500 mb-4">
             Para entender melhor como elaborar uma solução para esse desafio, clique na <em>Opinião da Pessoa Instrutora</em>.
           </p>
 
           {showInstructorOpinion && (
-            <div className="mb-6 p-4 bg-gray-700 rounded-lg">
-              <h4 className="text-lg font-bold mb-3 bg-gray-600 -m-4 mb-4 p-3 rounded-t-lg">Opinião do instrutor</h4>
+            <div className="mb-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
+              <h4 className="text-lg font-bold mb-3 text-gray-800">Opinião do instrutor</h4>
               <div className="space-y-4">
                 {activeModule.finalProject.steps.map((step, index) => (
-                  <p key={index} className="text-gray-200">{step}</p>
+                  <p key={index} className="text-gray-700">{step}</p>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {showForumComments && (
+            <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <h4 className="text-lg font-bold mb-3 text-purple-800">Fórum de Discussão</h4>
+              <p className="text-gray-600 mb-4">Compartilhe suas ideias e veja o que outras meninas estão criando!</p>
+              <div className="space-y-3">
+                <div className="p-3 bg-white rounded border">
+                  <p className="text-sm text-gray-500">Maria S. • há 2 dias</p>
+                  <p className="text-gray-700">Adorei esse desafio! Fiz usando materiais reciclados.</p>
+                </div>
+                <div className="p-3 bg-white rounded border">
+                  <p className="text-sm text-gray-500">Ana P. • há 1 dia</p>
+                  <p className="text-gray-700">Tive dificuldade no início mas consegui terminar!</p>
+                </div>
               </div>
             </div>
           )}
@@ -224,8 +247,8 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           <div className="flex justify-end gap-4 mt-6">
             <Button 
               variant="outline"
-              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-              onClick={() => {/* Forum functionality */}}
+              className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+              onClick={() => setShowForumComments(!showForumComments)}
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               DISCUTIR NO FÓRUM
@@ -349,34 +372,34 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             </div>
           )}
 
-          {/* Quiz with feedback */}
+          {/* Quiz with feedback - fundo branco */}
           {currentContent.type === 'quiz' && quizData && (
             <>
               <div className="prose max-w-none mb-6">
-                <div className="bg-gray-900 p-6 rounded-lg">
-                  <p className="text-white whitespace-pre-line">{quizData.question}</p>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <p className="text-gray-800 whitespace-pre-line font-medium">{quizData.question}</p>
                 </div>
               </div>
               
               <div className="space-y-3 mb-6">
                 {quizData.options.map((option) => {
                   const isSelected = quizAnswer === option.letter;
-                  const showCorrect = answerSubmitted && currentContent.correctAnswer === option.letter;
-                  const showIncorrect = answerSubmitted && isSelected && currentContent.correctAnswer !== option.letter;
+                  const showCorrect = answerSubmitted && isCorrect && isSelected;
+                  const showIncorrect = answerSubmitted && isSelected && !isCorrect;
                   
                   return (
                     <button
                       key={option.letter}
                       onClick={() => handleSelectAnswer(option.letter)}
-                      disabled={answerSubmitted}
-                      className={`w-full p-4 text-left rounded-lg border-l-4 transition-all ${
+                      disabled={showCorrect}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
                         showCorrect
-                          ? 'bg-green-800 border-green-500 text-white'
+                          ? 'bg-green-100 border-green-500 text-green-800'
                           : showIncorrect
-                          ? 'bg-red-800 border-red-500 text-white'
+                          ? 'bg-red-100 border-red-500 text-red-800'
                           : isSelected && !answerSubmitted
                           ? 'border-purple-500 bg-purple-50 text-gray-800'
-                          : 'border-gray-700 bg-gray-800 text-white hover:bg-gray-700'
+                          : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -397,16 +420,16 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
                       </div>
                       
                       {showCorrect && (
-                        <div className="mt-3 p-3 bg-green-900/50 rounded border border-green-700 ml-11">
-                          <p className="text-green-200 text-sm">
+                        <div className="mt-3 p-3 bg-green-200 rounded border border-green-400 ml-11">
+                          <p className="text-green-800 text-sm font-medium">
                             Correta! Parabéns, você acertou!
                           </p>
                         </div>
                       )}
                       {showIncorrect && (
-                        <div className="mt-3 p-3 bg-red-900/50 rounded border border-red-700 ml-11">
-                          <p className="text-red-200 text-sm">
-                            Incorreta. A resposta correta é a opção {currentContent.correctAnswer}.
+                        <div className="mt-3 p-3 bg-red-200 rounded border border-red-400 ml-11">
+                          <p className="text-red-800 text-sm font-medium">
+                            Incorreta. Tente novamente!
                           </p>
                         </div>
                       )}

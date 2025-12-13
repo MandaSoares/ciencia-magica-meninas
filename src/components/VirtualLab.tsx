@@ -147,11 +147,18 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabP
     }
   ];
 
+  const [showSafetyWarning, setShowSafetyWarning] = useState(true);
+
   const startExperiment = (experimentId: string) => {
     setActiveExperiment(experimentId);
     setExperimentStep(0);
     setShowComments(false);
+    setShowSafetyWarning(true);
     onPointsEarned(30);
+  };
+
+  const dismissSafetyWarning = () => {
+    setShowSafetyWarning(false);
   };
 
   const nextStep = () => {
@@ -278,6 +285,34 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabP
         </>
       ) : currentExperiment && (
         <div className="space-y-6">
+          {/* Aviso de Segurança */}
+          {showSafetyWarning && (
+            <Card className="p-6 bg-yellow-50 border-2 border-yellow-400">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-yellow-800 mb-2">Aviso de Segurança</h3>
+                  <ul className="space-y-2 text-yellow-700">
+                    <li>✅ Sempre peça ajuda de um adulto antes de começar</li>
+                    <li>✅ Use óculos de proteção quando necessário</li>
+                    <li>✅ Mantenha o ambiente limpo e organizado</li>
+                    <li>✅ Lave as mãos antes e depois do experimento</li>
+                    <li>✅ Não leve materiais à boca</li>
+                  </ul>
+                  <Button 
+                    onClick={dismissSafetyWarning}
+                    className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white"
+                  >
+                    Entendi! Vamos começar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {!showSafetyWarning && (
           <Card className="p-6">
             <div className="flex items-center space-x-4 mb-6">
               <div className={`w-12 h-12 ${currentExperiment.color} rounded-lg flex items-center justify-center`}>
@@ -353,6 +388,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabP
               </div>
             )}
           </Card>
+          )}
         </div>
       )}
     </div>

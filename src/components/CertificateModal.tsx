@@ -14,6 +14,7 @@ interface CertificateModalProps {
   userName: string;
   moduleName: string;
   completionDate: string;
+  moduleHours?: string;
 }
 
 export const CertificateModal = ({
@@ -22,6 +23,7 @@ export const CertificateModal = ({
   userName,
   moduleName,
   completionDate,
+  moduleHours = "3 horas",
 }: CertificateModalProps) => {
   const certificateRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +94,9 @@ export const CertificateModal = ({
             </h4>
 
             <div className="pt-4">
+              <p className="text-sm text-gray-500">
+                Carga horária: {moduleHours}
+              </p>
               <p className="text-sm text-gray-500">
                 Concluído em {completionDate}
               </p>

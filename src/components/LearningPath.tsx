@@ -22,7 +22,7 @@ import {
   Rocket,
   type LucideIcon
 } from "lucide-react";
-import { introductoryPath, PathLevel } from "@/data/learningPathData";
+import { getPathByArea, getAreaName, PathLevel } from "@/data/learningPathData";
 import { LessonContent } from "./LessonContent";
 
 interface LearningPathProps {
@@ -54,7 +54,8 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
 
-  const pathLevels = introductoryPath;
+  const pathLevels = getPathByArea(selectedArea);
+  const areaName = getAreaName(selectedArea);
 
   const startLevel = (levelId: number) => {
     if (isLevelUnlocked(levelId)) {
@@ -108,8 +109,8 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha STEM</h2>
-        <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em ciência, tecnologia, engenharia e matemática!</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha de {areaName}</h2>
+        <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em {areaName.toLowerCase()}!</p>
         
         <Card className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
           <div className="flex items-center justify-between mb-2">

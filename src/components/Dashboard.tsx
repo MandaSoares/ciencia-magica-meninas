@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, Target, Zap, Sparkles, Plus, Play } from "lucide-react";
 
+interface ProgressData {
+  courseName: string;
+  currentLesson: string;
+  progress: number;
+  estimatedTime: string;
+  type: 'trilha' | 'modulo';
+}
+
 interface DashboardProps {
   userPoints: number;
   userLevel: number;
@@ -11,6 +19,10 @@ interface DashboardProps {
   onAreaChange?: (area: string) => void;
   currentActiveArea?: string;
   onAddArea?: () => void;
+  trilhaProgress?: ProgressData | null;
+  moduloProgress?: ProgressData | null;
+  onContinueTrilha?: () => void;
+  onContinueModulo?: () => void;
 }
 
 const areaInfo: Record<string, { icon: string; color: string; name: string }> = {
@@ -27,7 +39,11 @@ export const Dashboard = ({
   selectedAreas = ["science"],
   onAreaChange,
   currentActiveArea = "science",
-  onAddArea
+  onAddArea,
+  trilhaProgress,
+  moduloProgress,
+  onContinueTrilha,
+  onContinueModulo
 }: DashboardProps) => {
 
   const stats = [
@@ -36,13 +52,7 @@ export const Dashboard = ({
     { label: "Streak Diário", value: "1 dia", icon: Target, color: "bg-purple-500" },
   ];
 
-  // Dados simulados do progresso atual
-  const currentProgress = {
-    courseName: "Introdução à Ciência",
-    currentLesson: "Método Científico",
-    progress: 35,
-    estimatedTime: "25 min"
-  };
+  const hasAnyProgress = trilhaProgress || moduloProgress;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -113,37 +123,74 @@ export const Dashboard = ({
         })}
       </div>
 
-      {/* Continue Aprendendo - Estilo da imagem de referência */}
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-4 text-gray-800">Continue Aprendendo</h3>
-        
-        <div className="border-l-4 border-pink-500 bg-white rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <Progress value={currentProgress.progress} className="flex-1 h-2 mr-4" />
-            <span className="text-sm text-gray-500">{currentProgress.progress}%</span>
-          </div>
+      {/* Continue Aprendendo - Só aparece se tiver progresso */}
+      {hasAnyProgress && (
+        <Card className="p-6">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Continue Aprendendo</h3>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-pink-100 rounded-xl flex items-center justify-center">
-                <BookOpen className="w-7 h-7 text-pink-500" />
+          <div className="space-y-4">
+            {/* Progresso da Trilha */}
+            {trilhaProgress && (
+              <div className="border-l-4 border-purple-500 bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Progress value={trilhaProgress.progress} className="flex-1 h-2 mr-4" />
+                  <span className="text-sm text-gray-500">{trilhaProgress.progress}%</span>
+                </div>
+                
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
+                      <BookOpen className="w-7 h-7 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-purple-600 uppercase font-medium">TRILHA</p>
+                      <h4 className="font-bold text-gray-800">{trilhaProgress.courseName}</h4>
+                      <p className="text-sm text-gray-600">
+                        Aula atual: {trilhaProgress.currentLesson} - {trilhaProgress.estimatedTime}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button onClick={onContinueTrilha} className="bg-purple-500 hover:bg-purple-600 text-white px-6">
+                    <Play className="w-4 h-4 mr-2" />
+                    Continuar Trilha
+                  </Button>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-medium">CURSO</p>
-                <h4 className="font-bold text-gray-800">{currentProgress.courseName}</h4>
-                <p className="text-sm text-gray-600">
-                  Aula atual: {currentProgress.currentLesson} - {currentProgress.estimatedTime}
-                </p>
+            )}
+
+            {/* Progresso do Módulo */}
+            {moduloProgress && (
+              <div className="border-l-4 border-pink-500 bg-white rounded-lg shadow-sm p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Progress value={moduloProgress.progress} className="flex-1 h-2 mr-4" />
+                  <span className="text-sm text-gray-500">{moduloProgress.progress}%</span>
+                </div>
+                
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-pink-100 rounded-xl flex items-center justify-center">
+                      <BookOpen className="w-7 h-7 text-pink-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-pink-600 uppercase font-medium">MÓDULO</p>
+                      <h4 className="font-bold text-gray-800">{moduloProgress.courseName}</h4>
+                      <p className="text-sm text-gray-600">
+                        Aula atual: {moduloProgress.currentLesson} - {moduloProgress.estimatedTime}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Button onClick={onContinueModulo} className="bg-pink-500 hover:bg-pink-600 text-white px-6">
+                    <Play className="w-4 h-4 mr-2" />
+                    Continuar Módulo
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6">
-              <Play className="w-4 h-4 mr-2" />
-              Continuar onde parou
-            </Button>
+            )}
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 };
