@@ -14,6 +14,8 @@ import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
+import { About } from "@/pages/About";
+import { Blog } from "@/pages/Blog";
 
 interface UserData {
   name: string;
@@ -33,6 +35,7 @@ interface UserStats {
 }
 
 type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app';
+type FooterPage = 'about' | 'blog' | null;
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -42,6 +45,7 @@ const Index = () => {
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
+  const [footerPage, setFooterPage] = useState<FooterPage>(null);
   const [userStats, setUserStats] = useState<UserStats>({
     modulesCompleted: 0,
     experimentsCompleted: 0,
@@ -127,7 +131,6 @@ const Index = () => {
   };
 
   const handleAddArea = () => {
-    // Show area selection for adding new areas
     setShowAddAreaModal(true);
   };
 
@@ -138,6 +141,12 @@ const Index = () => {
       setSelectedArea(interest);
     }
     setShowAddAreaModal(false);
+  };
+
+  const handleFooterNavigate = (page: string) => {
+    if (page === 'about' || page === 'blog') {
+      setFooterPage(page);
+    }
   };
 
   const getNavItems = () => {
@@ -170,7 +179,7 @@ const Index = () => {
         return (
           <LearningPath 
             onPointsEarned={addPoints} 
-            selectedArea={selectedArea || "Ciência"}
+            selectedArea={selectedArea || "science"}
             onLessonComplete={handleLessonComplete}
           />
         );
@@ -204,6 +213,7 @@ const Index = () => {
             userPoints={userPoints} 
             userLevel={userLevel}
             stats={userStats}
+            selectedArea={selectedArea || "science"}
           />
         );
       case "profile":
@@ -231,6 +241,15 @@ const Index = () => {
         );
     }
   };
+
+  // Footer pages
+  if (footerPage === 'about') {
+    return <About onBack={() => setFooterPage(null)} />;
+  }
+
+  if (footerPage === 'blog') {
+    return <Blog onBack={() => setFooterPage(null)} />;
+  }
 
   if (authView === 'landing') {
     return (
@@ -321,7 +340,7 @@ const Index = () => {
           {renderActiveSection()}
         </main>
       </div>
-      <Footer />
+      <Footer onNavigate={handleFooterNavigate} />
     </div>
   );
 };
