@@ -1,15 +1,15 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Atom, Code, Cog, Calculator, Sparkles } from "lucide-react";
+import { Microscope, Cpu, Wrench, Calculator, Sparkles } from "lucide-react";
 
 interface STEMInterest {
   id: string;
   title: string;
   description: string;
   icon: any;
-  color: string;
+  bgColor: string;
+  iconBgColor: string;
   examples: string[];
 }
 
@@ -26,32 +26,36 @@ export const STEMInterestSelection = ({ userName, onComplete }: STEMInterestSele
       id: "science",
       title: "Ciência",
       description: "Explore os mistérios do universo",
-      icon: Atom,
-      color: "bg-blue-500",
+      icon: Microscope,
+      bgColor: "bg-white hover:bg-blue-50",
+      iconBgColor: "bg-blue-100",
       examples: ["Química", "Física", "Biologia", "Astronomia"]
     },
     {
       id: "technology",
       title: "Tecnologia",
       description: "Domine as ferramentas do futuro",
-      icon: Code,
-      color: "bg-green-500",
+      icon: Cpu,
+      bgColor: "bg-white hover:bg-green-50",
+      iconBgColor: "bg-green-100",
       examples: ["Programação", "Apps", "Inteligência Artificial", "Robôs"]
     },
     {
       id: "engineering",
       title: "Engenharia",
       description: "Construa soluções incríveis",
-      icon: Cog,
-      color: "bg-purple-500",
+      icon: Wrench,
+      bgColor: "bg-white hover:bg-orange-50",
+      iconBgColor: "bg-orange-100",
       examples: ["Mecânica", "Civil", "Eletrônica", "Biomédica"]
     },
     {
-      id: "mathematics",
+      id: "math",
       title: "Matemática",
       description: "Desvende padrões e lógica",
       icon: Calculator,
-      color: "bg-pink-500",
+      bgColor: "bg-white hover:bg-pink-50",
+      iconBgColor: "bg-pink-100",
       examples: ["Álgebra", "Geometria", "Estatística", "Cálculo"]
     }
   ];
@@ -96,16 +100,16 @@ export const STEMInterestSelection = ({ userName, onComplete }: STEMInterestSele
             return (
               <Card
                 key={area.id}
-                className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 border-2 ${
                   isSelected 
-                    ? 'ring-4 ring-purple-300 bg-gradient-to-br from-purple-50 to-pink-50' 
-                    : 'hover:shadow-xl'
+                    ? 'ring-4 ring-purple-300 border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50' 
+                    : `border-gray-100 ${area.bgColor} hover:shadow-xl`
                 }`}
                 onClick={() => toggleInterest(area.id)}
               >
                 <div className="flex items-start space-x-4">
-                  <div className={`w-12 h-12 ${area.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className={`w-14 h-14 ${area.iconBgColor} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-7 h-7 text-gray-700" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">

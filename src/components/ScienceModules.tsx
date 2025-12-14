@@ -258,7 +258,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
               onClick={() => setShowInstructorOpinion(!showInstructorOpinion)}
             >
               <Lightbulb className="w-4 h-4 mr-2" />
-              VER OPINIÃO DO INSTRUTOR
+              DICA
             </Button>
           </div>
         </Card>
@@ -440,24 +440,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             </>
           )}
 
-          {/* Botões Forum e Instrutor para Desafios */}
-          {currentContent.type === 'practice' && (
-            <div className="flex justify-end gap-4 mt-6 border-t pt-4">
-              <Button 
-                variant="outline"
-                className="bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                DISCUTIR NO FÓRUM
-              </Button>
-              <Button
-                className="bg-green-500 hover:bg-green-600 text-white"
-              >
-                <Lightbulb className="w-4 h-4 mr-2" />
-                VER OPINIÃO DO INSTRUTOR
-              </Button>
-            </div>
-          )}
+          {/* Removido - Botões Forum e Instrutor aparecem apenas no Desafio Final */}
         </Card>
 
         <div className="flex justify-between">

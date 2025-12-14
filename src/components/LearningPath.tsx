@@ -124,94 +124,90 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
         </Card>
       </div>
 
-      {/* Trilha Visual Linear */}
-      <div className="relative bg-gradient-to-b from-purple-50 via-pink-50 to-blue-50 rounded-2xl overflow-hidden border-4 border-purple-200 p-6">
-        {/* Linha central */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-300 via-pink-300 to-blue-300 transform -translate-x-1/2" />
+      {/* Trilha Visual com Scroll Animado estilo Duolingo */}
+      <div className="relative bg-gradient-to-b from-purple-50 via-pink-50 to-blue-50 rounded-2xl overflow-hidden border-4 border-purple-200">
+        <div className="max-h-[600px] overflow-y-auto p-6 scroll-smooth">
+          {/* Linha central animada */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-300 via-pink-300 to-blue-300 transform -translate-x-1/2" />
 
-        <div className="relative space-y-4">
-          {pathLevels.map((level, index) => {
-            const IconComponent = iconMap[level.icon] || Star;
-            const unlocked = isLevelUnlocked(level.id);
-            const completed = isLevelCompleted(level.id);
-            const isLeft = index % 2 === 0;
-            
-            return (
-              <div
-                key={level.id}
-                className={`flex items-center gap-4 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}
-              >
-                {/* Card de conteúdo */}
-                <div className={`flex-1 ${isLeft ? 'text-right pr-4' : 'text-left pl-4'}`}>
-                  <Card 
-                    className={`inline-block p-4 max-w-sm transition-all ${
-                      unlocked ? 'hover:shadow-lg cursor-pointer' : 'opacity-60'
-                    } ${completed ? 'bg-green-50 border-green-200' : ''}`}
-                    onClick={() => unlocked && startLevel(level.id)}
-                  >
-                    <div className={`flex items-start gap-3 ${isLeft ? 'flex-row-reverse' : ''}`}>
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        completed ? 'bg-green-500' : unlocked ? level.color : 'bg-gray-300'
-                      }`}>
-                        {completed ? (
-                          <CheckCircle className="w-6 h-6 text-white" />
-                        ) : unlocked ? (
-                          <IconComponent className="w-6 h-6 text-white" />
-                        ) : (
-                          <Lock className="w-5 h-5 text-white" />
-                        )}
-                      </div>
-                      <div className={isLeft ? 'text-right' : 'text-left'}>
-                        <h3 className="font-bold text-gray-800 text-sm">{level.title}</h3>
-                        <p className="text-xs text-gray-500 mt-1">{level.description}</p>
-                        <div className={`flex items-center gap-2 mt-2 ${isLeft ? 'justify-end' : ''}`}>
-                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
-                            {level.difficulty}
-                          </span>
-                          <span className="text-xs text-yellow-600 font-medium">
-                            +{level.points}pts
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                {/* Círculo central */}
-                <div className="relative z-10">
-                  <button
-                    onClick={() => unlocked && startLevel(level.id)}
-                    disabled={!unlocked}
-                    className={`
-                      w-14 h-14 rounded-full flex items-center justify-center
-                      transition-all duration-300 shadow-lg
-                      ${completed ? 'bg-green-500 text-white ring-4 ring-green-200' : 
-                        unlocked ? `${level.color} text-white hover:scale-110 cursor-pointer` : 
-                        'bg-gray-300 text-gray-500 cursor-not-allowed'}
-                    `}
-                  >
-                    {completed ? (
-                      <CheckCircle className="w-7 h-7" />
-                    ) : unlocked ? (
-                      <span className="text-xl font-bold">{level.id}</span>
-                    ) : (
-                      <Lock className="w-5 h-5" />
+          <div className="relative space-y-6">
+            {pathLevels.map((level, index) => {
+              const IconComponent = iconMap[level.icon] || Star;
+              const unlocked = isLevelUnlocked(level.id);
+              const completed = isLevelCompleted(level.id);
+              
+              // Cria o efeito de "serpente" alternando posições
+              const position = index % 4;
+              const translateX = position === 0 ? '-60%' : 
+                                 position === 1 ? '-20%' : 
+                                 position === 2 ? '20%' : '60%';
+              
+              return (
+                <div
+                  key={level.id}
+                  className="flex justify-center transition-transform duration-300"
+                  style={{ 
+                    transform: `translateX(${translateX})`,
+                  }}
+                >
+                  <div className="relative">
+                    {/* Linha conectora */}
+                    {index < pathLevels.length - 1 && (
+                      <div className="absolute top-full left-1/2 w-1 h-6 bg-gradient-to-b from-purple-300 to-pink-300 transform -translate-x-1/2" />
                     )}
-                  </button>
+                    
+                    {/* Botão do nível */}
+                    <button
+                      onClick={() => unlocked && startLevel(level.id)}
+                      disabled={!unlocked}
+                      className={`
+                        w-20 h-20 rounded-full flex flex-col items-center justify-center
+                        transition-all duration-300 shadow-lg relative
+                        ${completed ? 'bg-green-500 text-white ring-4 ring-green-200' : 
+                          unlocked ? `${level.color} text-white hover:scale-110 cursor-pointer hover:shadow-xl` : 
+                          'bg-gray-300 text-gray-500 cursor-not-allowed'}
+                      `}
+                    >
+                      {completed ? (
+                        <CheckCircle className="w-8 h-8" />
+                      ) : unlocked ? (
+                        <IconComponent className="w-8 h-8" />
+                      ) : (
+                        <Lock className="w-6 h-6" />
+                      )}
+                      
+                      {/* Badge de pontos */}
+                      {unlocked && !completed && (
+                        <span className="absolute -bottom-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full font-bold">
+                          +{level.points}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {/* Título do nível */}
+                    <div className="text-center mt-3 max-w-[120px]">
+                      <p className={`text-sm font-bold ${completed ? 'text-green-600' : unlocked ? 'text-gray-800' : 'text-gray-400'}`}>
+                        {level.title}
+                      </p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        completed ? 'bg-green-100 text-green-700' :
+                        unlocked ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {level.difficulty}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Espaço vazio para balanceamento */}
-                <div className="flex-1" />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Topo da trilha */}
-        <div className="flex justify-center mt-6">
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-lg">
-            <Crown className="w-6 h-6" />
-            <span className="font-bold">Mestra STEM</span>
+          {/* Topo da trilha */}
+          <div className="flex justify-center mt-8">
+            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-lg">
+              <Crown className="w-6 h-6" />
+              <span className="font-bold">Mestra STEM</span>
+            </div>
           </div>
         </div>
       </div>
