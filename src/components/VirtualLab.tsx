@@ -8,6 +8,7 @@ import { ExperimentComments } from "./ExperimentComments";
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
   onExperimentComplete: () => void;
+  selectedArea?: string;
 }
 
 interface Experiment {
@@ -22,130 +23,295 @@ interface Experiment {
   color: string;
   image: string;
   stepImages: string[];
+  area: string;
 }
 
-export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabProps) => {
+// Experimentos por área
+const scienceExperiments: Experiment[] = [
+  {
+    id: "volcano",
+    title: "Vulcão de Bicarbonato",
+    description: "Crie uma erupção segura e colorida!",
+    difficulty: "Fácil",
+    time: "15 min",
+    materials: ["Bicarbonato", "Vinagre", "Corante", "Detergente"],
+    steps: [
+      "Monte uma estrutura em forma de vulcão usando argila ou garrafa plástica cortada",
+      "Coloque 3 colheres de bicarbonato de sódio dentro do vulcão",
+      "Adicione algumas gotas de corante alimentício (vermelho ou laranja ficam incríveis!)",
+      "Coloque uma gota de detergente para criar mais espuma",
+      "Despeje lentamente meio copo de vinagre e observe a erupção!"
+    ],
+    icon: Flame,
+    color: "bg-red-500",
+    image: "🌋",
+    stepImages: ["🏔️", "🥄", "🎨", "🧴", "💥"],
+    area: "science"
+  },
+  {
+    id: "slime",
+    title: "Slime Mágico",
+    description: "Faça um slime que muda de cor com temperatura!",
+    difficulty: "Médio",
+    time: "20 min",
+    materials: ["Cola branca", "Bórax ou solução de lentes", "Água morna", "Corante"],
+    steps: [
+      "Em um recipiente, despeje 100ml de cola branca",
+      "Adicione 50ml de água morna e misture bem",
+      "Coloque algumas gotas de corante da sua cor favorita",
+      "Prepare a solução ativadora: 1 colher de bórax em 1 copo de água",
+      "Adicione a solução ativadora aos poucos, mexendo até formar o slime!"
+    ],
+    icon: Droplets,
+    color: "bg-green-500",
+    image: "🟢",
+    stepImages: ["🧪", "💧", "🎨", "🥄", "✨"],
+    area: "science"
+  },
+  {
+    id: "density",
+    title: "Torre de Líquidos",
+    description: "Empilhe líquidos de diferentes densidades!",
+    difficulty: "Fácil",
+    time: "15 min",
+    materials: ["Mel", "Xarope de milho", "Detergente", "Água", "Óleo vegetal", "Álcool"],
+    steps: [
+      "Pegue um copo alto e transparente",
+      "Despeje cuidadosamente o mel no fundo",
+      "Adicione o xarope de milho lentamente pela lateral",
+      "Continue com detergente, água, óleo e álcool (nessa ordem)",
+      "Observe as camadas se formarem! Cada líquido tem uma densidade diferente."
+    ],
+    icon: Beaker,
+    color: "bg-amber-500",
+    image: "🏺",
+    stepImages: ["🥃", "🍯", "🧴", "💧", "🌈"],
+    area: "science"
+  }
+];
+
+const technologyExperiments: Experiment[] = [
+  {
+    id: "circuit",
+    title: "Circuito de Limões",
+    description: "Acenda LEDs usando frutas como bateria!",
+    difficulty: "Avançado",
+    time: "30 min",
+    materials: ["4 Limões", "4 Moedas de cobre", "4 Pregos de zinco", "Fios", "LED"],
+    steps: [
+      "Espete uma moeda de cobre em cada limão (ela será o polo positivo)",
+      "Espete um prego de zinco em cada limão (ele será o polo negativo)",
+      "Conecte a moeda do primeiro limão ao prego do segundo com um fio",
+      "Continue conectando todos os limões em série",
+      "Conecte a ponta do fio livre ao LED e veja a mágica acontecer!"
+    ],
+    icon: Zap,
+    color: "bg-yellow-500",
+    image: "🍋",
+    stepImages: ["🪙", "🔩", "🔌", "⛓️", "💡"],
+    area: "technology"
+  },
+  {
+    id: "binary",
+    title: "Código Binário com Lanternas",
+    description: "Aprenda a linguagem dos computadores!",
+    difficulty: "Médio",
+    time: "20 min",
+    materials: ["2 Lanternas", "Papel", "Caneta", "Tabela de código binário"],
+    steps: [
+      "Imprima ou desenhe a tabela de código binário (onde cada letra = 8 bits)",
+      "Combine com uma amiga: lanterna ligada = 1, desligada = 0",
+      "Escolha uma palavra curta para enviar (ex: OI = 01001111 01001001)",
+      "Pratique piscar a lanterna no ritmo certo para cada bit",
+      "Tente enviar mensagens secretas usando o código binário!"
+    ],
+    icon: Lightbulb,
+    color: "bg-blue-500",
+    image: "💡",
+    stepImages: ["📄", "🔦", "✏️", "0️⃣1️⃣", "💬"],
+    area: "technology"
+  },
+  {
+    id: "algorithm",
+    title: "Algoritmo de Ordenação",
+    description: "Aprenda a pensar como um computador!",
+    difficulty: "Fácil",
+    time: "15 min",
+    materials: ["10 Cartas de baralho", "Mesa", "Cronômetro"],
+    steps: [
+      "Embaralhe 10 cartas de baralho numeradas",
+      "Coloque as cartas em fileira sobre a mesa",
+      "Use o algoritmo 'bolha': compare cartas adjacentes e troque se estiverem fora de ordem",
+      "Continue passando pela fileira até que todas estejam ordenadas",
+      "Cronometre quanto tempo levou e tente novamente para melhorar!"
+    ],
+    icon: Beaker,
+    color: "bg-purple-500",
+    image: "🃏",
+    stepImages: ["🎴", "📊", "↔️", "🔄", "⏱️"],
+    area: "technology"
+  }
+];
+
+const engineeringExperiments: Experiment[] = [
+  {
+    id: "bridge",
+    title: "Ponte de Palitos",
+    description: "Construa uma ponte resistente com palitos!",
+    difficulty: "Médio",
+    time: "45 min",
+    materials: ["50 Palitos de picolé", "Cola quente", "Linha", "Peso para teste"],
+    steps: [
+      "Desenhe o projeto da ponte em papel (formato triangular é mais resistente)",
+      "Monte a base usando palitos colados lado a lado",
+      "Construa as estruturas laterais com triângulos de palitos",
+      "Una as laterais com travessas horizontais",
+      "Teste a resistência colocando peso gradualmente no centro!"
+    ],
+    icon: Beaker,
+    color: "bg-orange-500",
+    image: "🌉",
+    stepImages: ["📝", "📏", "🔺", "🔗", "⚖️"],
+    area: "engineering"
+  },
+  {
+    id: "catapult",
+    title: "Catapulta Medieval",
+    description: "Construa uma máquina de lançamento!",
+    difficulty: "Avançado",
+    time: "40 min",
+    materials: ["Palitos de churrasco", "Elásticos", "Colher de plástico", "Tampinha", "Pompom"],
+    steps: [
+      "Monte uma base estável com 4 palitos formando um quadrado",
+      "Adicione estruturas verticais nos cantos traseiros",
+      "Prenda a colher como braço da catapulta usando elásticos",
+      "Adicione mais elásticos para criar a tensão de lançamento",
+      "Teste diferentes ângulos e tensões para otimizar o alcance!"
+    ],
+    icon: Wind,
+    color: "bg-red-600",
+    image: "🏰",
+    stepImages: ["📐", "🔧", "🥄", "➰", "🎯"],
+    area: "engineering"
+  },
+  {
+    id: "tornado",
+    title: "Tornado na Garrafa",
+    description: "Crie um vórtice impressionante!",
+    difficulty: "Fácil",
+    time: "10 min",
+    materials: ["2 Garrafas PET", "Conector de garrafas (ou fita adesiva forte)", "Água", "Glitter"],
+    steps: [
+      "Encha uma garrafa PET com água até 2/3",
+      "Adicione um pouco de glitter ou corante para visualizar melhor",
+      "Conecte a segunda garrafa vazia na primeira usando o conector",
+      "Vire as garrafas para que a cheia fique em cima",
+      "Gire em movimentos circulares e observe o tornado se formar!"
+    ],
+    icon: Wind,
+    color: "bg-cyan-500",
+    image: "🌪️",
+    stepImages: ["🍶", "✨", "🔗", "🔄", "🌀"],
+    area: "engineering"
+  }
+];
+
+const mathExperiments: Experiment[] = [
+  {
+    id: "fibonacci",
+    title: "Espiral de Fibonacci na Natureza",
+    description: "Descubra a matemática escondida nas plantas!",
+    difficulty: "Fácil",
+    time: "20 min",
+    materials: ["Girassol ou pinha", "Lupa", "Papel quadriculado", "Lápis de cor"],
+    steps: [
+      "Observe o centro de um girassol ou as escamas de uma pinha",
+      "Conte quantas espirais vão para a esquerda e quantas para a direita",
+      "Anote os números - eles fazem parte da sequência de Fibonacci!",
+      "No papel quadriculado, desenhe quadrados seguindo a sequência: 1, 1, 2, 3, 5, 8...",
+      "Conecte os cantos dos quadrados para criar sua própria espiral dourada!"
+    ],
+    icon: Beaker,
+    color: "bg-green-600",
+    image: "🌻",
+    stepImages: ["🔍", "🌀", "✏️", "📊", "✨"],
+    area: "math"
+  },
+  {
+    id: "probability",
+    title: "Jogo de Probabilidades",
+    description: "Aprenda probabilidade com dados e moedas!",
+    difficulty: "Médio",
+    time: "25 min",
+    materials: ["2 Dados", "1 Moeda", "Papel", "Caneta", "Calculadora"],
+    steps: [
+      "Jogue a moeda 20 vezes e anote quantas vezes deu cara e coroa",
+      "Compare com a probabilidade teórica de 50% para cada lado",
+      "Agora jogue 2 dados 30 vezes e anote a soma de cada jogada",
+      "Faça um gráfico de barras com as somas que apareceram",
+      "Descubra por que a soma 7 aparece mais vezes que as outras!"
+    ],
+    icon: Beaker,
+    color: "bg-purple-600",
+    image: "🎲",
+    stepImages: ["🪙", "📊", "🎯", "📈", "🧮"],
+    area: "math"
+  },
+  {
+    id: "magnet",
+    title: "Geometria com Bússola Caseira",
+    description: "Construa uma bússola e explore ângulos!",
+    difficulty: "Médio",
+    time: "15 min",
+    materials: ["Agulha", "Ímã", "Rolha ou isopor", "Recipiente com água", "Transferidor"],
+    steps: [
+      "Magnetize a agulha esfregando-a no ímã sempre na mesma direção (30 vezes)",
+      "Corte um pedaço pequeno de rolha ou isopor",
+      "Espete a agulha no centro da rolha/isopor",
+      "Coloque água no recipiente e flutue a rolha com a agulha",
+      "Use o transferidor para medir os ângulos e direções - a agulha aponta para o Norte magnético!"
+    ],
+    icon: Magnet,
+    color: "bg-indigo-500",
+    image: "🧭",
+    stepImages: ["📍", "🧲", "✂️", "💧", "📐"],
+    area: "math"
+  }
+];
+
+const getExperimentsByArea = (area: string): Experiment[] => {
+  switch (area) {
+    case "science":
+      return scienceExperiments;
+    case "technology":
+      return technologyExperiments;
+    case "engineering":
+      return engineeringExperiments;
+    case "math":
+      return mathExperiments;
+    default:
+      return scienceExperiments;
+  }
+};
+
+const getAreaName = (area: string): string => {
+  const names: Record<string, string> = {
+    science: "Ciências",
+    technology: "Tecnologia",
+    engineering: "Engenharia",
+    math: "Matemática"
+  };
+  return names[area] || "Ciências";
+};
+
+export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science" }: VirtualLabProps) => {
   const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
   const [experimentStep, setExperimentStep] = useState(0);
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
 
-  const experiments: Experiment[] = [
-    {
-      id: "volcano",
-      title: "Vulcão de Bicarbonato",
-      description: "Crie uma erupção segura e colorida!",
-      difficulty: "Fácil",
-      time: "15 min",
-      materials: ["Bicarbonato", "Vinagre", "Corante", "Detergente"],
-      steps: [
-        "Monte uma estrutura em forma de vulcão usando argila ou garrafa plástica cortada",
-        "Coloque 3 colheres de bicarbonato de sódio dentro do vulcão",
-        "Adicione algumas gotas de corante alimentício (vermelho ou laranja ficam incríveis!)",
-        "Coloque uma gota de detergente para criar mais espuma",
-        "Despeje lentamente meio copo de vinagre e observe a erupção!"
-      ],
-      icon: Flame,
-      color: "bg-red-500",
-      image: "🌋",
-      stepImages: ["🏔️", "🥄", "🎨", "🧴", "💥"]
-    },
-    {
-      id: "slime",
-      title: "Slime Mágico",
-      description: "Faça um slime que muda de cor com temperatura!",
-      difficulty: "Médio",
-      time: "20 min",
-      materials: ["Cola branca", "Bórax ou solução de lentes", "Água morna", "Corante"],
-      steps: [
-        "Em um recipiente, despeje 100ml de cola branca",
-        "Adicione 50ml de água morna e misture bem",
-        "Coloque algumas gotas de corante da sua cor favorita",
-        "Prepare a solução ativadora: 1 colher de bórax em 1 copo de água",
-        "Adicione a solução ativadora aos poucos, mexendo até formar o slime!"
-      ],
-      icon: Droplets,
-      color: "bg-green-500",
-      image: "🟢",
-      stepImages: ["🧪", "💧", "🎨", "🥄", "✨"]
-    },
-    {
-      id: "circuit",
-      title: "Circuito de Limões",
-      description: "Acenda LEDs usando frutas como bateria!",
-      difficulty: "Avançado",
-      time: "30 min",
-      materials: ["4 Limões", "4 Moedas de cobre", "4 Pregos de zinco", "Fios", "LED"],
-      steps: [
-        "Espete uma moeda de cobre em cada limão (ela será o polo positivo)",
-        "Espete um prego de zinco em cada limão (ele será o polo negativo)",
-        "Conecte a moeda do primeiro limão ao prego do segundo com um fio",
-        "Continue conectando todos os limões em série",
-        "Conecte a ponta do fio livre ao LED e veja a mágica acontecer!"
-      ],
-      icon: Zap,
-      color: "bg-yellow-500",
-      image: "🍋",
-      stepImages: ["🪙", "🔩", "🔌", "⛓️", "💡"]
-    },
-    {
-      id: "tornado",
-      title: "Tornado na Garrafa",
-      description: "Crie um vórtice impressionante!",
-      difficulty: "Fácil",
-      time: "10 min",
-      materials: ["2 Garrafas PET", "Conector de garrafas (ou fita adesiva forte)", "Água", "Glitter"],
-      steps: [
-        "Encha uma garrafa PET com água até 2/3",
-        "Adicione um pouco de glitter ou corante para visualizar melhor",
-        "Conecte a segunda garrafa vazia na primeira usando o conector",
-        "Vire as garrafas para que a cheia fique em cima",
-        "Gire em movimentos circulares e observe o tornado se formar!"
-      ],
-      icon: Wind,
-      color: "bg-cyan-500",
-      image: "🌪️",
-      stepImages: ["🍶", "✨", "🔗", "🔄", "🌀"]
-    },
-    {
-      id: "magnet",
-      title: "Bússola Caseira",
-      description: "Construa uma bússola usando materiais simples!",
-      difficulty: "Médio",
-      time: "15 min",
-      materials: ["Agulha", "Ímã", "Rolha ou isopor", "Recipiente com água"],
-      steps: [
-        "Magnetize a agulha esfregando-a no ímã sempre na mesma direção (30 vezes)",
-        "Corte um pedaço pequeno de rolha ou isopor",
-        "Espete a agulha no centro da rolha/isopor",
-        "Coloque água no recipiente e flutue a rolha com a agulha",
-        "Espere estabilizar e a agulha apontará para o Norte magnético!"
-      ],
-      icon: Magnet,
-      color: "bg-purple-500",
-      image: "🧭",
-      stepImages: ["📍", "🧲", "✂️", "💧", "🌍"]
-    },
-    {
-      id: "density",
-      title: "Torre de Líquidos",
-      description: "Empilhe líquidos de diferentes densidades!",
-      difficulty: "Fácil",
-      time: "15 min",
-      materials: ["Mel", "Xarope de milho", "Detergente", "Água", "Óleo vegetal", "Álcool"],
-      steps: [
-        "Pegue um copo alto e transparente",
-        "Despeje cuidadosamente o mel no fundo",
-        "Adicione o xarope de milho lentamente pela lateral",
-        "Continue com detergente, água, óleo e álcool (nessa ordem)",
-        "Observe as camadas se formarem! Cada líquido tem uma densidade diferente."
-      ],
-      icon: Beaker,
-      color: "bg-amber-500",
-      image: "🏺",
-      stepImages: ["🥃", "🍯", "🧴", "💧", "🌈"]
-    }
-  ];
+  const experiments = getExperimentsByArea(selectedArea);
+  const areaName = getAreaName(selectedArea);
 
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
 
@@ -186,8 +352,8 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete }: VirtualLabP
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório Virtual</h2>
-        <p className="text-gray-600">Experimente, descubra e se divirta com ciência segura!</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
+        <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
       </div>
 
       {!activeExperiment ? (

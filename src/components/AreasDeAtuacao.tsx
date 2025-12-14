@@ -35,7 +35,7 @@ const areasData: AreaData[] = [
     careers: [
       {
         name: "Biologia",
-        description: "Estudo da vida e dos seres vivos",
+        description: "Estudo da vida e dos seres vivos, desde microrganismos até ecossistemas complexos. Biólogas pesquisam genética, evolução, ecologia, microbiologia, zoologia e botânica. Podem trabalhar em laboratórios, hospitais, reservas naturais, universidades e empresas de biotecnologia. Salário médio: R$ 4.000 a R$ 12.000.",
         women: [
           {
             name: "Rosalind Franklin",
@@ -53,7 +53,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Química",
-        description: "Estudo da matéria e suas transformações",
+        description: "Estudo da matéria, suas propriedades e transformações. Químicas trabalham em indústrias farmacêuticas, cosméticas, alimentícias, petroquímicas e ambientais. Desenvolvem novos materiais, medicamentos e processos sustentáveis. Áreas incluem química orgânica, inorgânica, analítica e bioquímica. Salário médio: R$ 5.000 a R$ 15.000.",
         women: [
           {
             name: "Marie Curie",
@@ -65,7 +65,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Física",
-        description: "Estudo das leis do universo",
+        description: "Estudo das leis fundamentais do universo, da mecânica quântica à cosmologia. Físicas trabalham em pesquisa acadêmica, indústria aeroespacial, energia nuclear, tecnologia médica e desenvolvimento de semicondutores. Áreas incluem astrofísica, física de partículas e física médica. Salário médio: R$ 6.000 a R$ 20.000.",
         women: [
           {
             name: "Chien-Shiung Wu",
@@ -86,7 +86,7 @@ const areasData: AreaData[] = [
     careers: [
       {
         name: "Desenvolvimento de Software",
-        description: "Criação de programas e aplicativos",
+        description: "Criação de aplicativos, websites, sistemas e jogos. Desenvolvedoras trabalham em startups, grandes empresas de tecnologia, bancos e como freelancers. Linguagens populares incluem Python, JavaScript, Java e C++. Uma das carreiras mais bem pagas e com maior demanda no mercado. Salário médio: R$ 8.000 a R$ 25.000.",
         women: [
           {
             name: "Grace Hopper",
@@ -104,7 +104,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Inteligência Artificial",
-        description: "Máquinas que aprendem e pensam",
+        description: "Desenvolvimento de sistemas que simulam inteligência humana: visão computacional, processamento de linguagem natural, robótica e machine learning. Profissionais trabalham em carros autônomos, assistentes virtuais, diagnóstico médico e análise de dados. Uma das áreas mais promissoras e inovadoras. Salário médio: R$ 12.000 a R$ 40.000.",
         women: [
           {
             name: "Fei-Fei Li",
@@ -116,7 +116,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Segurança da Informação",
-        description: "Proteção de dados e sistemas",
+        description: "Proteção de sistemas, redes e dados contra ataques cibernéticos. Profissionais atuam como hackers éticos, analistas de segurança, consultoras de privacidade e especialistas em criptografia. Trabalham em bancos, governos, empresas de tecnologia e consultorias. Demanda altíssima no mercado. Salário médio: R$ 10.000 a R$ 30.000.",
         women: [
           {
             name: "Parisa Tabriz",
@@ -137,7 +137,7 @@ const areasData: AreaData[] = [
     careers: [
       {
         name: "Engenharia Civil",
-        description: "Construção de estruturas e infraestrutura",
+        description: "Projeto e construção de edifícios, pontes, estradas, barragens e infraestrutura urbana. Engenheiras civis trabalham em construtoras, escritórios de arquitetura, órgãos públicos e empresas de consultoria. Áreas incluem estruturas, geotecnia, hidráulica e transportes. Salário médio: R$ 7.000 a R$ 18.000.",
         women: [
           {
             name: "Emily Warren Roebling",
@@ -149,7 +149,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Engenharia Aeroespacial",
-        description: "Aviões, foguetes e exploração espacial",
+        description: "Projeto de aeronaves, satélites, foguetes e veículos espaciais. Engenheiras aeroespaciais trabalham em agências espaciais (NASA, ESA), fabricantes de aviões, startups de exploração espacial e defesa. Combinam física, matemática e engenharia para criar o impossível. Salário médio: R$ 10.000 a R$ 25.000.",
         women: [
           {
             name: "Katherine Johnson",
@@ -161,7 +161,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Engenharia Elétrica",
-        description: "Circuitos, energia e eletrônica",
+        description: "Projeto de sistemas elétricos, eletrônicos e de telecomunicações. Engenheiras elétricas trabalham em geração de energia, automação industrial, eletrônica de consumo e telecomunicações. Áreas incluem energia renovável, robótica e sistemas embarcados. Salário médio: R$ 8.000 a R$ 20.000.",
         women: [
           {
             name: "Edith Clarke",
@@ -182,7 +182,7 @@ const areasData: AreaData[] = [
     careers: [
       {
         name: "Matemática Pura",
-        description: "Teoria e descoberta de novos conceitos",
+        description: "Pesquisa e desenvolvimento de teorias matemáticas fundamentais: álgebra, análise, geometria e topologia. Matemáticas puras trabalham em universidades, institutos de pesquisa e think tanks. Suas descobertas frequentemente têm aplicações décadas depois em física, computação e criptografia. Salário médio: R$ 5.000 a R$ 15.000.",
         women: [
           {
             name: "Emmy Noether",
@@ -194,7 +194,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Estatística",
-        description: "Análise de dados e probabilidades",
+        description: "Coleta, análise e interpretação de dados para tomada de decisões. Estatísticas trabalham em pesquisa de mercado, saúde pública, finanças, esportes e ciência de dados. Utilizam software como R e Python. Uma das áreas mais valorizadas na era do Big Data. Salário médio: R$ 7.000 a R$ 20.000.",
         women: [
           {
             name: "Florence Nightingale",
@@ -206,7 +206,7 @@ const areasData: AreaData[] = [
       },
       {
         name: "Matemática Aplicada",
-        description: "Soluções matemáticas para problemas reais",
+        description: "Uso de modelos matemáticos para resolver problemas práticos em engenharia, física, biologia e economia. Matemáticas aplicadas trabalham em bancos (análise de risco), empresas de tecnologia, consultoria e pesquisa. Áreas incluem otimização, modelagem computacional e simulação. Salário médio: R$ 8.000 a R$ 22.000.",
         women: [
           {
             name: "Maryam Mirzakhani",

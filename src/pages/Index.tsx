@@ -195,6 +195,7 @@ const Index = () => {
           <VirtualLab 
             onPointsEarned={addPoints}
             onExperimentComplete={handleExperimentComplete}
+            selectedArea={selectedArea || "science"}
           />
         );
       case "achievements":
