@@ -1,4 +1,4 @@
-import { Crown, Star } from "lucide-react";
+import { Crown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface HeaderProps {
@@ -29,11 +29,6 @@ export const Header = ({ userPoints, userLevel, userName = "Estudante", userProf
         </div>
         
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2 bg-yellow-100 px-4 py-2 rounded-full">
-            <Star className="w-5 h-5 text-yellow-500" />
-            <span className="font-semibold text-yellow-700">{userPoints} pontos</span>
-          </div>
-          
           <div className="flex items-center space-x-2 bg-purple-100 px-4 py-2 rounded-full">
             <Crown className="w-5 h-5 text-purple-500" />
             <span className="font-semibold text-purple-700">Nível {userLevel}</span>

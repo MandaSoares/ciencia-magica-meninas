@@ -28,9 +28,8 @@ export const Navigation = ({ activeSection, setActiveSection, navItems }: Naviga
     { id: "dashboard", label: "Início" },
     { id: "path", label: "Trilha" },
     { id: "modules", label: "Módulos" },
-    { id: "areas", label: "Áreas de Atuação" }, // Changed from Cientistas
+    { id: "areas", label: "Áreas de Atuação" },
     { id: "lab", label: "Laboratório" },
-    { id: "achievements", label: "Conquistas" },
     { id: "profile", label: "Meu Perfil" },
   ];
 

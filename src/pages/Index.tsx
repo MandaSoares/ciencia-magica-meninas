@@ -6,7 +6,7 @@ import { LearningPath } from "@/components/LearningPath";
 import { ScienceModules } from "@/components/ScienceModules";
 import { AreasDeAtuacao } from "@/components/AreasDeAtuacao";
 import { VirtualLab } from "@/components/VirtualLab";
-import { Achievements } from "@/components/Achievements";
+
 import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
 import { UserProfile } from "@/components/UserProfile";
@@ -156,7 +156,6 @@ const Index = () => {
       { id: "modules", label: "Módulos" },
       { id: "areas", label: "Áreas de Atuação" },
       { id: "lab", label: "Laboratório" },
-      { id: "achievements", label: "Conquistas" },
       { id: "profile", label: "Meu Perfil" },
     ];
   };
@@ -173,6 +172,8 @@ const Index = () => {
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
+            modulesCompleted={userStats.modulesCompleted}
+            experimentsCompleted={userStats.experimentsCompleted}
           />
         );
       case "path":
@@ -207,15 +208,6 @@ const Index = () => {
             selectedArea={selectedArea || "science"}
           />
         );
-      case "achievements":
-        return (
-          <Achievements 
-            userPoints={userPoints} 
-            userLevel={userLevel}
-            stats={userStats}
-            selectedArea={selectedArea || "science"}
-          />
-        );
       case "profile":
         return user ? (
           <UserProfile 
@@ -237,6 +229,8 @@ const Index = () => {
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
+            modulesCompleted={userStats.modulesCompleted}
+            experimentsCompleted={userStats.experimentsCompleted}
           />
         );
     }
@@ -317,6 +311,7 @@ const Index = () => {
         <AreaSelection 
           interests={availableAreas}
           onSelectArea={handleAddNewInterest}
+          onBack={() => setShowAddAreaModal(false)}
         />
       );
     }

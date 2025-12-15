@@ -23,6 +23,8 @@ interface DashboardProps {
   moduloProgress?: ProgressData | null;
   onContinueTrilha?: () => void;
   onContinueModulo?: () => void;
+  modulesCompleted?: number;
+  experimentsCompleted?: number;
 }
 
 const areaInfo: Record<string, { icon: string; color: string; name: string }> = {
@@ -43,14 +45,17 @@ export const Dashboard = ({
   trilhaProgress,
   moduloProgress,
   onContinueTrilha,
-  onContinueModulo
+  onContinueModulo,
+  modulesCompleted = 0,
+  experimentsCompleted = 0
 }: DashboardProps) => {
 
   const stats = [
-    { label: "Lições Completadas", value: "0", icon: BookOpen, color: "bg-blue-500" },
-    { label: "Experimentos Feitos", value: "0", icon: Zap, color: "bg-green-500" },
-    { label: "Streak Diário", value: "1 dia", icon: Target, color: "bg-purple-500" },
+    { label: "Módulos Completos", value: modulesCompleted.toString(), icon: BookOpen, color: "bg-blue-500" },
+    { label: "Experimentos Feitos", value: experimentsCompleted.toString(), icon: Zap, color: "bg-green-500" },
+    { label: "Nível", value: userLevel.toString(), icon: Target, color: "bg-purple-500" },
   ];
+
 
   const hasAnyProgress = trilhaProgress || moduloProgress;
 
