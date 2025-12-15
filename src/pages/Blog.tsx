@@ -2,7 +2,65 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+const NewsletterSection = () => {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = () => {
+    if (email.trim() && email.includes("@")) {
+      setSubscribed(true);
+      toast({
+        title: "Inscrição confirmada! 🎉",
+        description: "Você receberá nossas novidades sobre STEM no seu email.",
+      });
+      setEmail("");
+    } else {
+      toast({
+        title: "Email inválido",
+        description: "Por favor, insira um email válido.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="text-center mt-12">
+      <Card className="p-8 bg-gradient-to-r from-purple-100 to-pink-100">
+        <h3 className="text-xl font-bold text-gray-800 mb-3">
+          Quer receber novidades?
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Inscreva-se para receber artigos e dicas sobre STEM diretamente no seu email.
+        </p>
+        {subscribed ? (
+          <div className="flex items-center justify-center gap-2 text-green-600">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">Você está inscrita! Obrigada!</span>
+          </div>
+        ) : (
+          <div className="flex justify-center gap-2 max-w-md mx-auto">
+            <input 
+              type="email" 
+              placeholder="Seu melhor email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <Button 
+              onClick={handleSubscribe}
+              className="bg-gradient-to-r from-purple-500 to-pink-500"
+            >
+              Inscrever
+            </Button>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
 
 interface BlogProps {
   onBack: () => void;
@@ -404,26 +462,7 @@ export const Blog = ({ onBack }: BlogProps) => {
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <Card className="p-8 bg-gradient-to-r from-purple-100 to-pink-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-3">
-              Quer receber novidades?
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Inscreva-se para receber artigos e dicas sobre STEM diretamente no seu email.
-            </p>
-            <div className="flex justify-center gap-2 max-w-md mx-auto">
-              <input 
-                type="email" 
-                placeholder="Seu melhor email"
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500">
-                Inscrever
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <NewsletterSection />
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { CertificateModal } from "./CertificateModal";
+import { ForumSection } from "./ForumSection";
 import { allModules, Module, ModuleLesson } from "@/data/modulesData";
 
 interface ScienceModulesProps {
@@ -228,20 +229,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           )}
 
           {showForumComments && (
-            <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h4 className="text-lg font-bold mb-3 text-purple-800">Fórum de Discussão</h4>
-              <p className="text-gray-600 mb-4">Compartilhe suas ideias e veja o que outras meninas estão criando!</p>
-              <div className="space-y-3">
-                <div className="p-3 bg-white rounded border">
-                  <p className="text-sm text-gray-500">Maria S. • há 2 dias</p>
-                  <p className="text-gray-700">Adorei esse desafio! Fiz usando materiais reciclados.</p>
-                </div>
-                <div className="p-3 bg-white rounded border">
-                  <p className="text-sm text-gray-500">Ana P. • há 1 dia</p>
-                  <p className="text-gray-700">Tive dificuldade no início mas consegui terminar!</p>
-                </div>
-              </div>
-            </div>
+            <ForumSection moduleId={activeModule.id} />
           )}
 
           <div className="flex justify-end gap-4 mt-6">
