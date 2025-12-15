@@ -56,20 +56,19 @@ const Index = () => {
   });
 
   const addPoints = (points: number) => {
-    setUserPoints(prev => {
-      const newPoints = prev + points;
-      if (newPoints >= userLevel * 500) {
-        setUserLevel(l => l + 1);
-      }
-      return newPoints;
-    });
+    setUserPoints(prev => prev + points);
   };
 
-  const handleLessonComplete = () => {
+  const levelUp = () => {
+    setUserLevel(l => l + 1);
+  };
+
+  const handleTrilhaComplete = () => {
     setUserStats(prev => ({
       ...prev,
       lessonsCompleted: prev.lessonsCompleted + 1,
     }));
+    levelUp();
   };
 
   const handleModuleComplete = (moduleId: string) => {
@@ -78,6 +77,7 @@ const Index = () => {
       modulesCompleted: prev.modulesCompleted + 1,
       completedModules: new Set([...prev.completedModules, moduleId]),
     }));
+    levelUp();
   };
 
   const handleExperimentComplete = () => {
@@ -85,6 +85,7 @@ const Index = () => {
       ...prev,
       experimentsCompleted: prev.experimentsCompleted + 1,
     }));
+    levelUp();
   };
 
   const handleRegistrationComplete = (userData: Omit<UserData, 'interests'>) => {
@@ -181,7 +182,7 @@ const Index = () => {
           <LearningPath 
             onPointsEarned={addPoints} 
             selectedArea={selectedArea || "science"}
-            onLessonComplete={handleLessonComplete}
+            onLessonComplete={handleTrilhaComplete}
           />
         );
       case "modules":
