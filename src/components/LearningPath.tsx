@@ -206,7 +206,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
           <div className="flex justify-center mt-8">
             <div className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-lg">
               <Crown className="w-6 h-6" />
-              <span className="font-bold">Mestra STEM</span>
+              <span className="font-bold">Mestra em {areaName}</span>
             </div>
           </div>
         </div>

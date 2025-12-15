@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Microscope, Cpu, Wrench, Calculator } from "lucide-react";
+import { Microscope, Cpu, Wrench, Calculator, ArrowLeft } from "lucide-react";
 
 interface AreaSelectionProps {
   interests: string[];
   onSelectArea: (area: string) => void;
+  onBack?: () => void;
 }
 
 const areaConfig: Record<string, { icon: React.ElementType; iconBgColor: string; gradient: string; description: string }> = {
@@ -66,10 +67,20 @@ const areaNames: Record<string, string> = {
   "math": "Matemática",
 };
 
-export const AreaSelection = ({ interests, onSelectArea }: AreaSelectionProps) => {
+export const AreaSelection = ({ interests, onSelectArea, onBack }: AreaSelectionProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
       <div className="max-w-4xl w-full">
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            onClick={onBack}
+            className="mb-6"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+        )}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">Escolha sua Trilha</h1>
           <p className="text-xl text-gray-600">Qual área você quer explorar hoje?</p>

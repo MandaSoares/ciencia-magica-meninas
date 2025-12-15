@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Edit3, Save, X, Calendar, BookOpen, Star, Trophy, LogOut, Camera } from "lucide-react";
+import { Edit3, Save, X, LogOut, Camera } from "lucide-react";
 
 interface UserData {
   name: string;
@@ -59,12 +59,6 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
-  const statsDisplay = [
-    { label: "Dias consecutivos", value: stats.daysStreak.toString(), icon: Calendar },
-    { label: "Módulos concluídos", value: stats.modulesCompleted.toString(), icon: BookOpen },
-    { label: "Pontos totais", value: userPoints.toString(), icon: Star },
-    { label: "Nível atual", value: userLevel.toString(), icon: Trophy },
-  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -191,21 +185,6 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
         </div>
       </Card>
 
-      <Card className="p-6">
-        <h3 className="text-xl font-semibold mb-4">Estatísticas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {statsDisplay.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                <Icon className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.label}</p>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
     </div>
   );
 };
