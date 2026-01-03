@@ -14,7 +14,214 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      completed_experiments: {
+        Row: {
+          completed_at: string
+          experiment_id: string
+          id: string
+          stem_area: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          experiment_id: string
+          id?: string
+          stem_area: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          experiment_id?: string
+          id?: string
+          stem_area?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      completed_lessons: {
+        Row: {
+          completed_at: string
+          id: string
+          lesson_id: number
+          stem_area: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          lesson_id: number
+          stem_area: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          lesson_id?: number
+          stem_area?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      completed_modules: {
+        Row: {
+          completed_at: string
+          id: string
+          module_id: string
+          stem_area: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          module_id: string
+          stem_area: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          module_id?: string
+          stem_area?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      experiment_comments: {
+        Row: {
+          content: string
+          created_at: string
+          experiment_id: string
+          id: string
+          likes: number | null
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          experiment_id: string
+          id?: string
+          likes?: number | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          experiment_id?: string
+          id?: string
+          likes?: number | null
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experiment_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "experiment_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          created_at: string
+          email: string
+          id: string
+          interests: string[] | null
+          name: string
+          profile_image: string | null
+          updated_at: string
+        }
+        Insert: {
+          age?: number | null
+          created_at?: string
+          email: string
+          id: string
+          interests?: string[] | null
+          name: string
+          profile_image?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age?: number | null
+          created_at?: string
+          email?: string
+          id?: string
+          interests?: string[] | null
+          name?: string
+          profile_image?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          created_at: string
+          current_lesson: number | null
+          id: string
+          level: number | null
+          points: number | null
+          stem_area: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_lesson?: number | null
+          id?: string
+          level?: number | null
+          points?: number | null
+          stem_area: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_lesson?: number | null
+          id?: string
+          level?: number | null
+          points?: number | null
+          stem_area?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
