@@ -3,41 +3,34 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginProps {
-  onLogin: (userData: { name: string; email: string; age: number; interests: string[] }) => void;
+  onLogin: () => void;
   onBack: () => void;
   onGoToRegister: () => void;
 }
 
 export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
+  const { signIn } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.email && formData.password) {
-      // Simulating login - in production this would validate against a backend
-      onLogin({
-        name: "Usuária",
-        email: formData.email,
-        age: 14,
-        interests: ["science", "technology"]
-      });
-    }
-  };
+    if (!formData.email || !formData.password) return;
 
-  const handleGoogleLogin = () => {
-    // Simulating Google login
-    onLogin({
-      name: "Usuária Google",
-      email: "usuario@gmail.com",
-      age: 14,
-      interests: ["science", "technology"]
-    });
+    setLoading(true);
+    const { error } = await signIn(formData.email, formData.password);
+    setLoading(false);
+
+    if (!error) {
+      onLogin();
+    }
   };
 
   return (
@@ -63,43 +56,6 @@ export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
           </p>
         </div>
 
-        {/* Google Login Button */}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleGoogleLogin}
-          className="w-full py-6 mb-6 border-2 hover:bg-muted/50 flex items-center justify-center gap-3"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          <span className="font-medium">Continuar com Google</span>
-        </Button>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground">ou</span>
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center space-x-2">
@@ -114,6 +70,7 @@ export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="w-full py-5"
               required
+              disabled={loading}
             />
           </div>
 
@@ -130,14 +87,23 @@ export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
               className="w-full py-5"
               required
+              disabled={loading}
             />
           </div>
 
           <Button
             type="submit"
             className="w-full py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
+            disabled={loading}
           >
-            Entrar
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              'Entrar'
+            )}
           </Button>
         </form>
 

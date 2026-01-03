@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
 import { Dashboard } from "@/components/Dashboard";
@@ -6,7 +6,6 @@ import { LearningPath } from "@/components/LearningPath";
 import { ScienceModules } from "@/components/ScienceModules";
 import { AreasDeAtuacao } from "@/components/AreasDeAtuacao";
 import { VirtualLab } from "@/components/VirtualLab";
-
 import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
 import { UserProfile } from "@/components/UserProfile";
@@ -16,115 +15,52 @@ import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
 import { About } from "@/pages/About";
 import { Blog } from "@/pages/Blog";
-
-interface UserData {
-  name: string;
-  email: string;
-  age: number;
-  interests: string[];
-  profileImage?: string;
-}
-
-interface UserStats {
-  modulesCompleted: number;
-  experimentsCompleted: number;
-  lessonsCompleted: number;
-  daysStreak: number;
-  completedLevels: Set<string>;
-  completedModules: Set<string>;
-}
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useUserProgress } from "@/hooks/useUserProgress";
+import { Loader2 } from "lucide-react";
 
 type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app';
 type FooterPage = 'about' | 'blog' | null;
 
-const Index = () => {
+const AppContent = () => {
+  const { user, profile, loading: authLoading, signOut, updateProfile } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
-  const [userPoints, setUserPoints] = useState(0);
-  const [userLevel, setUserLevel] = useState(1);
-  const [user, setUser] = useState<UserData | null>(null);
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
-  const [userStats, setUserStats] = useState<UserStats>({
-    modulesCompleted: 0,
-    experimentsCompleted: 0,
-    lessonsCompleted: 0,
-    daysStreak: 1,
-    completedLevels: new Set(),
-    completedModules: new Set(),
-  });
 
-  const addPoints = (points: number) => {
-    setUserPoints(prev => prev + points);
-  };
+  const { progress, stats, addPoints, completeLesson, completeModule, completeExperiment } = 
+    useUserProgress(selectedArea || 'science');
 
-  const levelUp = () => {
-    setUserLevel(l => l + 1);
-  };
+  // Handle auth state changes
+  useEffect(() => {
+    if (!authLoading) {
+      if (user && profile) {
+        if (profile.interests && profile.interests.length > 0) {
+          setAuthView('app');
+          if (!selectedArea && profile.interests.length === 1) {
+            setSelectedArea(profile.interests[0]);
+          }
+        } else {
+          setAuthView('interests');
+        }
+      } else if (!user) {
+        setAuthView('landing');
+      }
+    }
+  }, [user, profile, authLoading, selectedArea]);
 
-  const handleTrilhaComplete = () => {
-    setUserStats(prev => ({
-      ...prev,
-      lessonsCompleted: prev.lessonsCompleted + 1,
-    }));
-    levelUp();
-  };
-
-  const handleModuleComplete = (moduleId: string) => {
-    setUserStats(prev => ({
-      ...prev,
-      modulesCompleted: prev.modulesCompleted + 1,
-      completedModules: new Set([...prev.completedModules, moduleId]),
-    }));
-    levelUp();
-  };
-
-  const handleExperimentComplete = () => {
-    setUserStats(prev => ({
-      ...prev,
-      experimentsCompleted: prev.experimentsCompleted + 1,
-    }));
-    levelUp();
-  };
-
-  const handleRegistrationComplete = (userData: Omit<UserData, 'interests'>) => {
-    setUser({ ...userData, interests: [] });
-    setUserPoints(0);
-    setUserLevel(1);
-    setUserStats({
-      modulesCompleted: 0,
-      experimentsCompleted: 0,
-      lessonsCompleted: 0,
-      daysStreak: 1,
-      completedLevels: new Set(),
-      completedModules: new Set(),
-    });
-    setAuthView('interests');
-  };
-
-  const handleLogin = (userData: UserData) => {
-    setUser(userData);
-    setAuthView('app');
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setUserPoints(0);
-    setUserLevel(1);
+  const handleLogout = async () => {
+    await signOut();
     setSelectedArea(null);
     setAuthView('landing');
   };
 
-  const handleInterestSelectionComplete = (interests: string[]) => {
-    if (user) {
-      setUser({ ...user, interests });
-      setAuthView('app');
-    }
-  };
-
-  const handleUpdateUser = (userData: UserData) => {
-    setUser(userData);
+  const handleInterestSelectionComplete = async (interests: string[]) => {
+    await updateProfile({ interests });
+    setSelectedArea(interests[0]);
+    setAuthView('app');
   };
 
   const handleSelectArea = (area: string) => {
@@ -135,10 +71,10 @@ const Index = () => {
     setShowAddAreaModal(true);
   };
 
-  const handleAddNewInterest = (interest: string) => {
-    if (user && !user.interests.includes(interest)) {
-      const newInterests = [...user.interests, interest];
-      setUser({ ...user, interests: newInterests });
+  const handleAddNewInterest = async (interest: string) => {
+    if (profile && !profile.interests.includes(interest)) {
+      const newInterests = [...profile.interests, interest];
+      await updateProfile({ interests: newInterests });
       setSelectedArea(interest);
     }
     setShowAddAreaModal(false);
@@ -161,20 +97,30 @@ const Index = () => {
     ];
   };
 
+  const handleUpdateUser = async (userData: { name: string; email: string; age: number; interests: string[]; profileImage?: string }) => {
+    await updateProfile({
+      name: userData.name,
+      email: userData.email,
+      age: userData.age,
+      interests: userData.interests,
+      profile_image: userData.profileImage
+    });
+  };
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case "dashboard":
         return (
           <Dashboard 
-            userPoints={userPoints} 
-            userLevel={userLevel} 
-            userName={user?.name || "Estudante"}
-            selectedAreas={user?.interests || [selectedArea || "science"]}
+            userPoints={progress?.points || 0} 
+            userLevel={progress?.level || 1} 
+            userName={profile?.name || "Estudante"}
+            selectedAreas={profile?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
-            modulesCompleted={userStats.modulesCompleted}
-            experimentsCompleted={userStats.experimentsCompleted}
+            modulesCompleted={stats.modulesCompleted}
+            experimentsCompleted={stats.experimentsCompleted}
           />
         );
       case "path":
@@ -182,7 +128,7 @@ const Index = () => {
           <LearningPath 
             onPointsEarned={addPoints} 
             selectedArea={selectedArea || "science"}
-            onLessonComplete={handleTrilhaComplete}
+            onLessonComplete={() => completeLesson(progress?.currentLesson || 1)}
           />
         );
       case "modules":
@@ -190,8 +136,8 @@ const Index = () => {
           <ScienceModules 
             onPointsEarned={addPoints} 
             selectedArea={selectedArea || "science"}
-            userName={user?.name || "Estudante"}
-            onModuleComplete={handleModuleComplete}
+            userName={profile?.name || "Estudante"}
+            onModuleComplete={completeModule}
           />
         );
       case "areas":
@@ -205,37 +151,57 @@ const Index = () => {
         return (
           <VirtualLab 
             onPointsEarned={addPoints}
-            onExperimentComplete={handleExperimentComplete}
+            onExperimentComplete={() => completeExperiment('experiment-1')}
             selectedArea={selectedArea || "science"}
           />
         );
       case "profile":
-        return user ? (
+        return profile ? (
           <UserProfile 
-            user={user} 
-            userPoints={userPoints} 
-            userLevel={userLevel}
+            user={{
+              name: profile.name,
+              email: profile.email,
+              age: profile.age || 0,
+              interests: profile.interests,
+              profileImage: profile.profile_image || undefined
+            }} 
+            userPoints={progress?.points || 0} 
+            userLevel={progress?.level || 1}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
-            stats={userStats}
+            stats={{
+              modulesCompleted: stats.modulesCompleted,
+              experimentsCompleted: stats.experimentsCompleted,
+              lessonsCompleted: stats.lessonsCompleted,
+              daysStreak: 1
+            }}
           />
         ) : null;
       default:
         return (
           <Dashboard 
-            userPoints={userPoints} 
-            userLevel={userLevel} 
-            userName={user?.name || "Estudante"} 
-            selectedAreas={user?.interests || [selectedArea || "science"]}
+            userPoints={progress?.points || 0} 
+            userLevel={progress?.level || 1} 
+            userName={profile?.name || "Estudante"} 
+            selectedAreas={profile?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
-            modulesCompleted={userStats.modulesCompleted}
-            experimentsCompleted={userStats.experimentsCompleted}
+            modulesCompleted={stats.modulesCompleted}
+            experimentsCompleted={stats.experimentsCompleted}
           />
         );
     }
   };
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // Footer pages
   if (footerPage === 'about') {
@@ -258,7 +224,7 @@ const Index = () => {
   if (authView === 'login') {
     return (
       <Login 
-        onLogin={handleLogin}
+        onLogin={() => {}}
         onBack={() => setAuthView('landing')}
         onGoToRegister={() => setAuthView('register')}
       />
@@ -268,7 +234,7 @@ const Index = () => {
   if (authView === 'register') {
     return (
       <Registration 
-        onComplete={handleRegistrationComplete}
+        onComplete={() => setAuthView('interests')}
         onBack={() => setAuthView('landing')}
         onGoToLogin={() => setAuthView('login')}
       />
@@ -278,31 +244,31 @@ const Index = () => {
   if (authView === 'interests' && user) {
     return (
       <STEMInterestSelection 
-        userName={user.name}
+        userName={profile?.name || ''}
         onComplete={handleInterestSelectionComplete}
       />
     );
   }
 
   // Show area selection if user has multiple interests and hasn't selected one
-  if (user && user.interests.length > 1 && !selectedArea) {
+  if (profile && profile.interests.length > 1 && !selectedArea) {
     return (
       <AreaSelection 
-        interests={user.interests}
+        interests={profile.interests}
         onSelectArea={handleSelectArea}
       />
     );
   }
 
   // Set default area if only one interest
-  if (user && user.interests.length === 1 && !selectedArea) {
-    setSelectedArea(user.interests[0]);
+  if (profile && profile.interests.length === 1 && !selectedArea) {
+    setSelectedArea(profile.interests[0]);
   }
 
   // Modal for adding new area
   if (showAddAreaModal) {
     const availableAreas = ['science', 'technology', 'engineering', 'math'].filter(
-      a => !user?.interests.includes(a)
+      a => !profile?.interests.includes(a)
     );
 
     if (availableAreas.length === 0) {
@@ -321,10 +287,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col">
       <Header 
-        userPoints={userPoints} 
-        userLevel={userLevel} 
-        userName={user?.name}
-        userProfileImage={user?.profileImage}
+        userPoints={progress?.points || 0} 
+        userLevel={progress?.level || 1} 
+        userName={profile?.name}
+        userProfileImage={profile?.profile_image || undefined}
       />
       <div className="flex flex-1">
         <Navigation 
@@ -338,6 +304,14 @@ const Index = () => {
       </div>
       <Footer onNavigate={handleFooterNavigate} />
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
