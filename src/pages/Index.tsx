@@ -128,7 +128,8 @@ const AppContent = () => {
           <LearningPath 
             onPointsEarned={addPoints} 
             selectedArea={selectedArea || "science"}
-            onLessonComplete={() => completeLesson(progress?.currentLesson || 1)}
+            onLessonComplete={completeLesson}
+            completedLessons={stats.completedLessonIds}
           />
         );
       case "modules":
@@ -138,6 +139,7 @@ const AppContent = () => {
             selectedArea={selectedArea || "science"}
             userName={profile?.name || "Estudante"}
             onModuleComplete={completeModule}
+            completedModuleIds={stats.completedModuleIds}
           />
         );
       case "areas":
@@ -151,8 +153,9 @@ const AppContent = () => {
         return (
           <VirtualLab 
             onPointsEarned={addPoints}
-            onExperimentComplete={() => completeExperiment('experiment-1')}
+            onExperimentComplete={completeExperiment}
             selectedArea={selectedArea || "science"}
+            completedExperimentIds={stats.completedExperimentIds}
           />
         );
       case "profile":

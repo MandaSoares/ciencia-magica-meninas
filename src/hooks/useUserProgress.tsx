@@ -14,6 +14,8 @@ interface UserStats {
   experimentsCompleted: number;
   lessonsCompleted: number;
   completedModuleIds: Set<string>;
+  completedExperimentIds: Set<string>;
+  completedLessonIds: Set<number>;
 }
 
 export const useUserProgress = (selectedArea: string) => {
@@ -23,7 +25,9 @@ export const useUserProgress = (selectedArea: string) => {
     modulesCompleted: 0,
     experimentsCompleted: 0,
     lessonsCompleted: 0,
-    completedModuleIds: new Set()
+    completedModuleIds: new Set(),
+    completedExperimentIds: new Set(),
+    completedLessonIds: new Set()
   });
   const [loading, setLoading] = useState(true);
 
@@ -78,25 +82,28 @@ export const useUserProgress = (selectedArea: string) => {
   }, [user, selectedArea]);
 
   const fetchStats = useCallback(async () => {
-    if (!user) return;
+    if (!user || !selectedArea) return;
 
-    // Fetch completed modules count
+    // Fetch completed modules for selected area
     const { data: modules, error: modulesError } = await supabase
       .from('completed_modules')
       .select('module_id')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('stem_area', selectedArea);
 
-    // Fetch completed experiments count
+    // Fetch completed experiments for selected area
     const { data: experiments, error: experimentsError } = await supabase
       .from('completed_experiments')
       .select('experiment_id')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('stem_area', selectedArea);
 
-    // Fetch completed lessons count
+    // Fetch completed lessons for selected area
     const { data: lessons, error: lessonsError } = await supabase
       .from('completed_lessons')
       .select('lesson_id')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('stem_area', selectedArea);
 
     if (modulesError) console.error('Error fetching modules:', modulesError);
     if (experimentsError) console.error('Error fetching experiments:', experimentsError);
@@ -106,11 +113,13 @@ export const useUserProgress = (selectedArea: string) => {
       modulesCompleted: modules?.length || 0,
       experimentsCompleted: experiments?.length || 0,
       lessonsCompleted: lessons?.length || 0,
-      completedModuleIds: new Set(modules?.map(m => m.module_id) || [])
+      completedModuleIds: new Set(modules?.map(m => m.module_id) || []),
+      completedExperimentIds: new Set(experiments?.map(e => e.experiment_id) || []),
+      completedLessonIds: new Set(lessons?.map(l => l.lesson_id) || [])
     });
 
     setLoading(false);
-  }, [user]);
+  }, [user, selectedArea]);
 
   useEffect(() => {
     fetchProgress();
@@ -152,6 +161,9 @@ export const useUserProgress = (selectedArea: string) => {
   const completeLesson = async (lessonId: number) => {
     if (!user || !selectedArea) return;
 
+    // Check if already completed
+    if (stats.completedLessonIds.has(lessonId)) return;
+
     const { error } = await supabase
       .from('completed_lessons')
       .insert({
@@ -169,13 +181,19 @@ export const useUserProgress = (selectedArea: string) => {
         .eq('stem_area', selectedArea);
 
       setProgress(prev => prev ? { ...prev, currentLesson: lessonId + 1 } : null);
-      setStats(prev => ({ ...prev, lessonsCompleted: prev.lessonsCompleted + 1 }));
-      await levelUp();
+      setStats(prev => ({
+        ...prev,
+        lessonsCompleted: prev.lessonsCompleted + 1,
+        completedLessonIds: new Set([...prev.completedLessonIds, lessonId])
+      }));
     }
   };
 
   const completeModule = async (moduleId: string) => {
     if (!user || !selectedArea) return;
+
+    // Check if already completed
+    if (stats.completedModuleIds.has(moduleId)) return;
 
     const { error } = await supabase
       .from('completed_modules')
@@ -198,6 +216,9 @@ export const useUserProgress = (selectedArea: string) => {
   const completeExperiment = async (experimentId: string) => {
     if (!user || !selectedArea) return;
 
+    // Check if already completed
+    if (stats.completedExperimentIds.has(experimentId)) return;
+
     const { error } = await supabase
       .from('completed_experiments')
       .insert({
@@ -207,7 +228,11 @@ export const useUserProgress = (selectedArea: string) => {
       });
 
     if (!error) {
-      setStats(prev => ({ ...prev, experimentsCompleted: prev.experimentsCompleted + 1 }));
+      setStats(prev => ({
+        ...prev,
+        experimentsCompleted: prev.experimentsCompleted + 1,
+        completedExperimentIds: new Set([...prev.completedExperimentIds, experimentId])
+      }));
       await levelUp();
     }
   };

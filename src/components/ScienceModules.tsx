@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -36,6 +36,7 @@ interface ScienceModulesProps {
   selectedArea: string;
   userName: string;
   onModuleComplete: (moduleId: string) => void;
+  completedModuleIds?: Set<string>;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -67,7 +68,7 @@ const areaToCategory: Record<string, string> = {
   math: "Matemática",
 };
 
-export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete }: ScienceModulesProps) => {
+export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete, completedModuleIds = new Set() }: ScienceModulesProps) => {
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [activeContentIndex, setActiveContentIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
@@ -80,6 +81,11 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+
+  // Sync completed modules from database
+  useEffect(() => {
+    setCompletedModules(completedModuleIds);
+  }, [completedModuleIds]);
 
   // Filter modules by selected area
   const categoryName = areaToCategory[selectedArea] || "Ciência";
