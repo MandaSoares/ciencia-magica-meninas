@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -28,7 +28,8 @@ import { LessonContent } from "./LessonContent";
 interface LearningPathProps {
   onPointsEarned: (points: number) => void;
   selectedArea: string;
-  onLessonComplete: () => void;
+  onLessonComplete: (lessonId: number) => void;
+  completedLessons?: Set<number>;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -49,13 +50,18 @@ const iconMap: Record<string, LucideIcon> = {
   Crown,
 };
 
-export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }: LearningPathProps) => {
+export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, completedLessons = new Set() }: LearningPathProps) => {
   const [completedLevels, setCompletedLevels] = useState<Set<number>>(new Set());
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
 
   const pathLevels = getPathByArea(selectedArea);
   const areaName = getAreaName(selectedArea);
+
+  // Sync completed lessons from database
+  useEffect(() => {
+    setCompletedLevels(completedLessons);
+  }, [completedLessons]);
 
   const startLevel = (levelId: number) => {
     if (isLevelUnlocked(levelId)) {
@@ -85,7 +91,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete }:
         onPointsEarned(level.points);
         setShowLesson(false);
         setCurrentLevel(null);
-        onLessonComplete();
+        onLessonComplete(currentLevel);
       }
     }
   };

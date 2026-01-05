@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet } from "lucide-react";
@@ -7,8 +6,9 @@ import { ExperimentComments } from "./ExperimentComments";
 
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
-  onExperimentComplete: () => void;
+  onExperimentComplete: (experimentId: string) => void;
   selectedArea?: string;
+  completedExperimentIds?: Set<string>;
 }
 
 interface Experiment {
@@ -304,7 +304,7 @@ const getAreaName = (area: string): string => {
   return names[area] || "Ciências";
 };
 
-export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science" }: VirtualLabProps) => {
+export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science", completedExperimentIds = new Set() }: VirtualLabProps) => {
   const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
   const [experimentStep, setExperimentStep] = useState(0);
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
@@ -314,6 +314,11 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const areaName = getAreaName(selectedArea);
 
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
+
+  // Sync completed experiments from database
+  useEffect(() => {
+    setCompletedExperiments(completedExperimentIds);
+  }, [completedExperimentIds]);
 
   const startExperiment = (experimentId: string) => {
     setActiveExperiment(experimentId);
@@ -337,7 +342,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
       setShowComments(true);
       setCompletedExperiments(prev => new Set([...prev, activeExperiment!]));
       onPointsEarned(100);
-      onExperimentComplete();
+      onExperimentComplete(activeExperiment!);
     }
   };
 
