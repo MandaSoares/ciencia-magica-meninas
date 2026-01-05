@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { getPathByArea } from '@/data/learningPathData';
 
 interface Progress {
   stemArea: string;
@@ -237,10 +238,18 @@ export const useUserProgress = (selectedArea: string) => {
     }
   };
 
+  // Check if path is completed (all lessons done)
+  const isPathCompleted = useMemo(() => {
+    const pathLevels = getPathByArea(selectedArea);
+    const totalLessons = pathLevels.length;
+    return stats.lessonsCompleted >= totalLessons && totalLessons > 0;
+  }, [selectedArea, stats.lessonsCompleted]);
+
   return {
     progress,
     stats,
     loading,
+    isPathCompleted,
     addPoints,
     levelUp,
     completeLesson,

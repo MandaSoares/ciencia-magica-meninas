@@ -1,111 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send } from "lucide-react";
-
-interface Comment {
-  id: string;
-  userName: string;
-  content: string;
-  likes: number;
-  timeAgo: string;
-  replies: Reply[];
-  liked: boolean;
-}
-
-interface Reply {
-  id: string;
-  userName: string;
-  content: string;
-  timeAgo: string;
-}
+import { Heart, MessageCircle, Send, AlertTriangle, Loader2 } from "lucide-react";
+import { useComments } from "@/hooks/useComments";
+import { toast } from "sonner";
 
 interface ForumSectionProps {
   moduleId: string;
 }
 
+// Lista de palavras proibidas (palavrões, ofensas racistas, machistas, sexuais, etc.)
+const BLOCKED_WORDS = [
+  // Palavrões
+  "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
+  "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
+  // Ofensas racistas
+  "negro", "negra", "preto", "preta", "macaco", "macaca", "crioulo", "crioula",
+  // Ofensas machistas
+  "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
+  // Ofensas homofóbicas
+  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola", "gay" + "sujo",
+  // Outras ofensas
+  "retardado", "retardada", "imbecil", "idiota", "burro", "burra", "lixo", "nojento", "nojenta",
+  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária"
+];
+
+const containsBlockedContent = (text: string): boolean => {
+  const normalizedText = text.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+  
+  return BLOCKED_WORDS.some(word => {
+    const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return normalizedText.includes(normalizedWord);
+  });
+};
+
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return "agora";
+  if (diffInSeconds < 3600) return `há ${Math.floor(diffInSeconds / 60)} min`;
+  if (diffInSeconds < 86400) return `há ${Math.floor(diffInSeconds / 3600)} horas`;
+  return `há ${Math.floor(diffInSeconds / 86400)} dias`;
+};
+
 export const ForumSection = ({ moduleId }: ForumSectionProps) => {
+  const { comments, loading, addComment, toggleLike, userName } = useComments(moduleId);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      userName: "Maria S.",
-      content: "Adorei esse desafio! Fiz usando materiais reciclados e ficou incrível.",
-      likes: 12,
-      timeAgo: "há 2 dias",
-      replies: [
-        {
-          id: "1-1",
-          userName: "Ana P.",
-          content: "Que legal! Pode compartilhar fotos?",
-          timeAgo: "há 1 dia",
-        }
-      ],
-      liked: false,
-    },
-    {
-      id: "2",
-      userName: "Julia M.",
-      content: "Tive dificuldade no início mas consegui terminar! A dica do instrutor ajudou muito.",
-      likes: 8,
-      timeAgo: "há 1 dia",
-      replies: [],
-      liked: false,
-    },
-    {
-      id: "3",
-      userName: "Beatriz L.",
-      content: "Alguém mais está fazendo esse módulo? Podemos trocar ideias!",
-      likes: 5,
-      timeAgo: "há 5 horas",
-      replies: [],
-      liked: false,
-    },
-  ]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitComment = () => {
-    if (newComment.trim()) {
-      const comment: Comment = {
-        id: Date.now().toString(),
-        userName: "Você",
-        content: newComment,
-        likes: 0,
-        timeAgo: "agora",
-        replies: [],
-        liked: false,
-      };
-      setComments([comment, ...comments]);
-      setNewComment("");
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return;
+    
+    if (containsBlockedContent(newComment)) {
+      toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
+      return;
     }
+
+    setSubmitting(true);
+    await addComment(newComment);
+    setNewComment("");
+    setSubmitting(false);
+    toast.success("Comentário publicado!");
   };
 
-  const handleLike = (commentId: string) => {
-    setComments(comments.map(c => 
-      c.id === commentId 
-        ? { ...c, likes: c.liked ? c.likes - 1 : c.likes + 1, liked: !c.liked } 
-        : c
-    ));
+  const handleLike = async (commentId: string) => {
+    await toggleLike(commentId);
   };
 
-  const handleSubmitReply = (commentId: string) => {
-    if (replyContent.trim()) {
-      const reply: Reply = {
-        id: `${commentId}-${Date.now()}`,
-        userName: "Você",
-        content: replyContent,
-        timeAgo: "agora",
-      };
-      setComments(comments.map(c =>
-        c.id === commentId
-          ? { ...c, replies: [...c.replies, reply] }
-          : c
-      ));
-      setReplyContent("");
-      setReplyingTo(null);
+  const handleSubmitReply = async (commentId: string) => {
+    if (!replyContent.trim()) return;
+    
+    if (containsBlockedContent(replyContent)) {
+      toast.error("Sua resposta contém palavras inapropriadas. Por favor, revise e tente novamente.");
+      return;
     }
+
+    setSubmitting(true);
+    await addComment(replyContent, commentId);
+    setReplyContent("");
+    setReplyingTo(null);
+    setSubmitting(false);
+    toast.success("Resposta publicada!");
   };
+
+  if (loading) {
+    return (
+      <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
@@ -121,13 +111,17 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
           className="mb-2 resize-none border-gray-200"
           rows={3}
         />
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-400 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Comentários ofensivos serão bloqueados
+          </p>
           <Button
             onClick={handleSubmitComment}
-            disabled={!newComment.trim()}
+            disabled={!newComment.trim() || submitting}
             className="bg-purple-500 hover:bg-purple-600"
           >
-            <Send className="w-4 h-4 mr-2" />
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Publicar
           </Button>
         </div>
@@ -135,81 +129,85 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
 
       {/* Lista de comentários */}
       <div className="space-y-3 max-h-80 overflow-y-auto">
-        {comments.map((comment) => (
-          <div key={comment.id} className="p-3 bg-white rounded-lg border border-gray-100">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                {comment.userName.charAt(0)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-gray-800">{comment.userName}</span>
-                  <span className="text-xs text-gray-400">• {comment.timeAgo}</span>
+        {comments.length === 0 ? (
+          <p className="text-center text-gray-500 py-4">Seja a primeira a comentar!</p>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className="p-3 bg-white rounded-lg border border-gray-100">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                  {(comment.user_name || "U").charAt(0)}
                 </div>
-                <p className="text-gray-700 text-sm mb-2">{comment.content}</p>
-                
-                {/* Ações do comentário */}
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleLike(comment.id)}
-                    className={`flex items-center gap-1 text-sm transition-colors ${
-                      comment.liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${comment.liked ? 'fill-pink-500' : ''}`} />
-                    <span>{comment.likes}</span>
-                  </button>
-                  <button
-                    onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                    className="flex items-center gap-1 text-sm text-gray-400 hover:text-purple-500 transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Responder</span>
-                  </button>
-                </div>
-
-                {/* Respostas */}
-                {comment.replies.length > 0 && (
-                  <div className="mt-3 ml-4 border-l-2 border-purple-100 pl-3 space-y-2">
-                    {comment.replies.map((reply) => (
-                      <div key={reply.id} className="p-2 bg-purple-50 rounded">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
-                            {reply.userName.charAt(0)}
-                          </div>
-                          <span className="font-medium text-sm text-gray-800">{reply.userName}</span>
-                          <span className="text-xs text-gray-400">• {reply.timeAgo}</span>
-                        </div>
-                        <p className="text-gray-700 text-sm ml-8">{reply.content}</p>
-                      </div>
-                    ))}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-gray-800">{comment.user_name || "Usuária"}</span>
+                    <span className="text-xs text-gray-400">• {formatTimeAgo(comment.created_at)}</span>
                   </div>
-                )}
-
-                {/* Campo de resposta */}
-                {replyingTo === comment.id && (
-                  <div className="mt-3 flex gap-2">
-                    <Textarea
-                      placeholder="Escreva sua resposta..."
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      className="flex-1 resize-none text-sm"
-                      rows={2}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => handleSubmitReply(comment.id)}
-                      disabled={!replyContent.trim()}
-                      className="bg-purple-500 hover:bg-purple-600"
+                  <p className="text-gray-700 text-sm mb-2">{comment.content}</p>
+                  
+                  {/* Ações do comentário */}
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleLike(comment.id)}
+                      className={`flex items-center gap-1 text-sm transition-colors ${
+                        comment.user_liked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
+                      }`}
                     >
-                      <Send className="w-3 h-3" />
-                    </Button>
+                      <Heart className={`w-4 h-4 ${comment.user_liked ? 'fill-pink-500' : ''}`} />
+                      <span>{comment.likes || 0}</span>
+                    </button>
+                    <button
+                      onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      className="flex items-center gap-1 text-sm text-gray-400 hover:text-purple-500 transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Responder</span>
+                    </button>
                   </div>
-                )}
+
+                  {/* Respostas */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="mt-3 ml-4 border-l-2 border-purple-100 pl-3 space-y-2">
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="p-2 bg-purple-50 rounded">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
+                              {(reply.user_name || "U").charAt(0)}
+                            </div>
+                            <span className="font-medium text-sm text-gray-800">{reply.user_name || "Usuária"}</span>
+                            <span className="text-xs text-gray-400">• {formatTimeAgo(reply.created_at)}</span>
+                          </div>
+                          <p className="text-gray-700 text-sm ml-8">{reply.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Campo de resposta */}
+                  {replyingTo === comment.id && (
+                    <div className="mt-3 flex gap-2">
+                      <Textarea
+                        placeholder="Escreva sua resposta..."
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        className="flex-1 resize-none text-sm"
+                        rows={2}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => handleSubmitReply(comment.id)}
+                        disabled={!replyContent.trim() || submitting}
+                        className="bg-purple-500 hover:bg-purple-600"
+                      >
+                        {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

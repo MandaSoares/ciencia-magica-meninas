@@ -53,7 +53,6 @@ export const Dashboard = ({
   const stats = [
     { label: "Módulos Completos", value: modulesCompleted.toString(), icon: BookOpen, color: "bg-blue-500" },
     { label: "Experimentos Feitos", value: experimentsCompleted.toString(), icon: Zap, color: "bg-green-500" },
-    { label: "Nível", value: userLevel.toString(), icon: Target, color: "bg-purple-500" },
   ];
 
 
