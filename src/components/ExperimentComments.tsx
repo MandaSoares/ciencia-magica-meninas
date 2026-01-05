@@ -3,67 +3,79 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageCircle, Heart, Send } from "lucide-react";
-
-interface Comment {
-  id: number;
-  userName: string;
-  content: string;
-  likes: number;
-  timeAgo: string;
-  image?: string;
-}
+import { MessageCircle, Heart, Send, AlertTriangle, Loader2 } from "lucide-react";
+import { useComments } from "@/hooks/useComments";
+import { toast } from "sonner";
 
 interface ExperimentCommentsProps {
   experimentId: string;
   experimentTitle: string;
 }
 
+// Lista de palavras proibidas
+const BLOCKED_WORDS = [
+  "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
+  "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
+  "negro", "negra", "preto", "preta", "macaco", "macaca", "crioulo", "crioula",
+  "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
+  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola",
+  "retardado", "retardada", "imbecil", "idiota", "burro", "burra", "lixo", "nojento", "nojenta",
+  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária"
+];
+
+const containsBlockedContent = (text: string): boolean => {
+  const normalizedText = text.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  
+  return BLOCKED_WORDS.some(word => {
+    const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return normalizedText.includes(normalizedWord);
+  });
+};
+
+const formatTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return "Agora";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min atrás`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} horas atrás`;
+  return `${Math.floor(diffInSeconds / 86400)} dias atrás`;
+};
+
 export const ExperimentComments = ({ experimentId, experimentTitle }: ExperimentCommentsProps) => {
+  const { comments, loading, addComment, toggleLike, userName } = useComments(experimentId);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: 1,
-      userName: "Ana Clara",
-      content: "Meu vulcão ficou gigante! Usei corante vermelho e ficou parecendo lava de verdade! 🌋",
-      likes: 15,
-      timeAgo: "2 horas atrás",
-    },
-    {
-      id: 2,
-      userName: "Beatriz",
-      content: "Fiz com minha mãe e foi muito divertido! A reação química é incrível, ficamos impressionadas!",
-      likes: 8,
-      timeAgo: "5 horas atrás",
-    },
-    {
-      id: 3,
-      userName: "Carolina",
-      content: "Descobri que quanto mais vinagre, maior a erupção! Vou fazer de novo com mais corante 🧪",
-      likes: 12,
-      timeAgo: "1 dia atrás",
-    },
-  ]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitComment = () => {
-    if (newComment.trim()) {
-      const comment: Comment = {
-        id: Date.now(),
-        userName: "Você",
-        content: newComment,
-        likes: 0,
-        timeAgo: "Agora",
-      };
-      setComments([comment, ...comments]);
-      setNewComment("");
+  const handleSubmitComment = async () => {
+    if (!newComment.trim()) return;
+    
+    if (containsBlockedContent(newComment)) {
+      toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
+      return;
     }
+
+    setSubmitting(true);
+    await addComment(newComment);
+    setNewComment("");
+    setSubmitting(false);
+    toast.success("Comentário publicado!");
   };
 
-  const handleLike = (commentId: number) => {
-    setComments(comments.map(c => 
-      c.id === commentId ? { ...c, likes: c.likes + 1 } : c
-    ));
+  const handleLike = async (commentId: string) => {
+    await toggleLike(commentId);
   };
+
+  if (loading) {
+    return (
+      <Card className="p-6 mt-6 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 mt-6">
@@ -86,13 +98,17 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
           onChange={(e) => setNewComment(e.target.value)}
           className="min-h-[100px]"
         />
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-400 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Comentários ofensivos serão bloqueados
+          </p>
           <Button
             onClick={handleSubmitComment}
-            disabled={!newComment.trim()}
+            disabled={!newComment.trim() || submitting}
             className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
           >
-            <Send className="w-4 h-4 mr-2" />
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Publicar
           </Button>
         </div>
@@ -104,31 +120,37 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
           {comments.length} comentários
         </h4>
         
-        {comments.map((comment) => (
-          <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-start space-x-3">
-              <Avatar className="w-10 h-10">
-                <AvatarFallback className="bg-gradient-to-r from-purple-400 to-pink-400 text-white">
-                  {comment.userName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-medium text-gray-800">{comment.userName}</span>
-                  <span className="text-xs text-gray-500">{comment.timeAgo}</span>
+        {comments.length === 0 ? (
+          <p className="text-center text-gray-500 py-4">Seja a primeira a comentar!</p>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <Avatar className="w-10 h-10">
+                  <AvatarFallback className="bg-gradient-to-r from-purple-400 to-pink-400 text-white">
+                    {(comment.user_name || "U").charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="font-medium text-gray-800">{comment.user_name || "Usuária"}</span>
+                    <span className="text-xs text-gray-500">{formatTimeAgo(comment.created_at)}</span>
+                  </div>
+                  <p className="text-gray-700 mb-2">{comment.content}</p>
+                  <button
+                    onClick={() => handleLike(comment.id)}
+                    className={`flex items-center space-x-1 transition-colors ${
+                      comment.user_liked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${comment.user_liked ? 'fill-pink-500' : ''}`} />
+                    <span className="text-sm">{comment.likes || 0}</span>
+                  </button>
                 </div>
-                <p className="text-gray-700 mb-2">{comment.content}</p>
-                <button
-                  onClick={() => handleLike(comment.id)}
-                  className="flex items-center space-x-1 text-gray-500 hover:text-pink-500 transition-colors"
-                >
-                  <Heart className="w-4 h-4" />
-                  <span className="text-sm">{comment.likes}</span>
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </Card>
   );

@@ -141,20 +141,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
             
             return (
               <div key={level.id} className="relative">
-                {/* Linha conectora */}
-                {index < pathLevels.length - 1 && (
-                  <svg className="absolute w-full h-24 top-16 left-0 z-0" style={{ overflow: 'visible' }}>
-                    <path
-                      d={isLeft 
-                        ? "M 200 20 Q 350 60 500 20" 
-                        : "M 500 20 Q 350 60 200 20"}
-                      fill="none"
-                      stroke="#E9D5FF"
-                      strokeWidth="4"
-                      strokeDasharray="8,4"
-                    />
-                  </svg>
-                )}
+              {/* Linha conectora removida conforme solicitado */}
                 
                 <div className={`flex items-center gap-6 mb-8 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
                   {/* Card de conteúdo */}
@@ -230,36 +217,6 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
           </div>
         </div>
       </div>
-
-      {/* Lista de Níveis Simplificada */}
-      <Card className="p-4">
-        <h3 className="font-semibold text-gray-800 mb-3">Sobre a Trilha</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">{pathLevels.length}</p>
-            <p className="text-xs text-gray-600">Níveis</p>
-          </div>
-          <div className="p-3 bg-pink-50 rounded-lg">
-            <p className="text-2xl font-bold text-pink-600">{completedLevels.size}</p>
-            <p className="text-xs text-gray-600">Completados</p>
-          </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">
-              {pathLevels.reduce((sum, l) => sum + l.points, 0)}
-            </p>
-            <p className="text-xs text-gray-600">Pontos Totais</p>
-          </div>
-          <div className="p-3 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">
-              {Array.from(completedLevels).reduce((sum, id) => {
-                const level = pathLevels.find(l => l.id === id);
-                return sum + (level?.points || 0);
-              }, 0)}
-            </p>
-            <p className="text-xs text-gray-600">Seus Pontos</p>
-          </div>
-        </div>
-      </Card>
 
       <Card className="p-4 bg-gradient-to-r from-blue-50 to-purple-50">
         <p className="text-sm text-gray-700 text-center">

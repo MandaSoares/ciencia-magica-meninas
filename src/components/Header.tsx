@@ -28,19 +28,12 @@ export const Header = ({ userPoints, userLevel, userName = "Estudante", userProf
           </div>
         </div>
         
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2 bg-purple-100 px-4 py-2 rounded-full">
-            <Crown className="w-5 h-5 text-purple-500" />
-            <span className="font-semibold text-purple-700">Nível {userLevel}</span>
-          </div>
-          
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={userProfileImage} />
-            <AvatarFallback className="bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold">
-              {getUserInitials(userName)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
+        <Avatar className="w-10 h-10">
+          <AvatarImage src={userProfileImage} />
+          <AvatarFallback className="bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold">
+            {getUserInitials(userName)}
+          </AvatarFallback>
+        </Avatar>
       </div>
     </header>
   );

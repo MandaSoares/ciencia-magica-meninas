@@ -37,6 +37,7 @@ interface ScienceModulesProps {
   userName: string;
   onModuleComplete: (moduleId: string) => void;
   completedModuleIds?: Set<string>;
+  isPathCompleted?: boolean;
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -68,7 +69,7 @@ const areaToCategory: Record<string, string> = {
   math: "Matemática",
 };
 
-export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete, completedModuleIds = new Set() }: ScienceModulesProps) => {
+export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete, completedModuleIds = new Set(), isPathCompleted = false }: ScienceModulesProps) => {
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [activeContentIndex, setActiveContentIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
@@ -478,12 +479,61 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
         </p>
       </div>
 
+      {!isPathCompleted && (
+        <Card className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-amber-800">Módulos Bloqueados</h3>
+              <p className="text-amber-700 text-sm">
+                Complete a Trilha de {categoryName} para desbloquear os módulos avançados!
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {modules.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-gray-500">
             Ainda não há módulos disponíveis para {categoryName}. Em breve teremos novos conteúdos!
           </p>
         </Card>
+      ) : !isPathCompleted ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-50 pointer-events-none">
+          {modules.map((module) => {
+            const ModuleIcon = iconMap[module.icon] || BookOpen;
+
+            return (
+              <Card 
+                key={module.id}
+                className="overflow-hidden"
+              >
+                <div className={`${module.color} p-4 text-white`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <ModuleIcon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold">{module.title}</h4>
+                      <p className="text-sm opacity-90">{module.estimatedTime}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm text-gray-600 mb-3">{module.description}</p>
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                    <span>{module.totalLessons} lições + desafio</span>
+                    <span>🔒</span>
+                  </div>
+                  <Progress value={0} className="h-2" />
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {modules.map((module) => {

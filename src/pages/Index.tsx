@@ -30,7 +30,7 @@ const AppContent = () => {
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
 
-  const { progress, stats, addPoints, completeLesson, completeModule, completeExperiment } = 
+  const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } = 
     useUserProgress(selectedArea || 'science');
 
   // Handle auth state changes
@@ -140,6 +140,7 @@ const AppContent = () => {
             userName={profile?.name || "Estudante"}
             onModuleComplete={completeModule}
             completedModuleIds={stats.completedModuleIds}
+            isPathCompleted={isPathCompleted}
           />
         );
       case "areas":
