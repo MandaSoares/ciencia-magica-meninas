@@ -104,8 +104,10 @@ export const CertificateModal = ({
 
             <div className="pt-6 flex justify-center">
               <div className="text-center">
-                <div className="w-32 border-t-2 border-gray-400 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">ScienceGirls</p>
+                <div className="w-48 border-t-2 border-purple-400 mx-auto mb-2"></div>
+                <p className="text-lg font-script italic text-purple-700">Maria Silva Santos</p>
+                <p className="text-xs text-gray-500">Diretora de Educação</p>
+                <p className="text-sm font-semibold text-purple-600 mt-1">ScienceGirls</p>
               </div>
             </div>
           </div>

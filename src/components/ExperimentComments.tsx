@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageCircle, Heart, Send, AlertTriangle, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MessageCircle, Heart, Send, AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { useComments } from "@/hooks/useComments";
 import { toast } from "sonner";
 
@@ -16,11 +16,14 @@ interface ExperimentCommentsProps {
 const BLOCKED_WORDS = [
   "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
   "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
-  "negro", "negra", "preto", "preta", "macaco", "macaca", "crioulo", "crioula",
+  "macaco", "macaca", "crioulo", "crioula",
   "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
   "viado", "veado", "bicha", "sapatao", "sapatão", "boiola",
-  "retardado", "retardada", "imbecil", "idiota", "burro", "burra", "lixo", "nojento", "nojenta",
-  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária"
+  "retardado", "retardada", "imbecil", "lixo", "nojento", "nojenta",
+  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária",
+  // Termos sexuais
+  "sexo", "transar", "foder", "gozar", "punheta", "masturbacao", "masturbação", "porno", "pornografia",
+  "bucetinha", "piriquita", "xoxota", "tesao", "tesão"
 ];
 
 const containsBlockedContent = (text: string): boolean => {
@@ -46,7 +49,7 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export const ExperimentComments = ({ experimentId, experimentTitle }: ExperimentCommentsProps) => {
-  const { comments, loading, addComment, toggleLike, userName } = useComments(experimentId);
+  const { comments, loading, addComment, deleteComment, toggleLike, userName, currentUserId } = useComments(experimentId);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -67,6 +70,15 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
 
   const handleLike = async (commentId: string) => {
     await toggleLike(commentId);
+  };
+
+  const handleDelete = async (commentId: string) => {
+    const success = await deleteComment(commentId);
+    if (success) {
+      toast.success("Comentário excluído!");
+    } else {
+      toast.error("Erro ao excluir comentário.");
+    }
   };
 
   if (loading) {
@@ -127,6 +139,7 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
             <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-start space-x-3">
                 <Avatar className="w-10 h-10">
+                  <AvatarImage src={comment.user_profile_image || undefined} />
                   <AvatarFallback className="bg-gradient-to-r from-purple-400 to-pink-400 text-white">
                     {(comment.user_name || "U").charAt(0)}
                   </AvatarFallback>
@@ -137,15 +150,26 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
                     <span className="text-xs text-gray-500">{formatTimeAgo(comment.created_at)}</span>
                   </div>
                   <p className="text-gray-700 mb-2">{comment.content}</p>
-                  <button
-                    onClick={() => handleLike(comment.id)}
-                    className={`flex items-center space-x-1 transition-colors ${
-                      comment.user_liked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${comment.user_liked ? 'fill-pink-500' : ''}`} />
-                    <span className="text-sm">{comment.likes || 0}</span>
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => handleLike(comment.id)}
+                      className={`flex items-center space-x-1 transition-colors ${
+                        comment.user_liked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-500'
+                      }`}
+                    >
+                      <Heart className={`w-4 h-4 ${comment.user_liked ? 'fill-pink-500' : ''}`} />
+                      <span className="text-sm">{comment.likes || 0}</span>
+                    </button>
+                    {currentUserId === comment.user_id && (
+                      <button
+                        onClick={() => handleDelete(comment.id)}
+                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-sm">Excluir</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

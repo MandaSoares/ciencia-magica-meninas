@@ -179,11 +179,6 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
                       }`}>
                         {level.difficulty}
                       </span>
-                      <span className={`text-xs font-medium ${
-                        completed ? 'text-green-600' : unlocked ? 'text-pink-600' : 'text-gray-400'
-                      }`}>
-                        +{level.points}pts
-                      </span>
                     </div>
                   </Card>
                   
