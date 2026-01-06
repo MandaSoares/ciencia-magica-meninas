@@ -10,9 +10,10 @@ interface LoginProps {
   onLogin: () => void;
   onBack: () => void;
   onGoToRegister: () => void;
+  onForgotPassword: () => void;
 }
 
-export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
+export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: LoginProps) => {
   const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -89,6 +90,13 @@ export const Login = ({ onLogin, onBack, onGoToRegister }: LoginProps) => {
               required
               disabled={loading}
             />
+            <button 
+              type="button"
+              onClick={onForgotPassword}
+              className="text-sm text-primary hover:underline mt-1"
+            >
+              Esqueci minha senha
+            </button>
           </div>
 
           <Button
