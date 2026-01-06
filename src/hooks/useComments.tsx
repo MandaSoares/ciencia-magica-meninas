@@ -11,6 +11,7 @@ interface Comment {
   likes: number;
   created_at: string;
   user_name?: string;
+  user_profile_image?: string | null;
   user_liked?: boolean;
   replies?: Comment[];
 }
@@ -45,7 +46,7 @@ export const useComments = (experimentId: string) => {
         // Fetch profiles for all comments
         const { data: commentProfile } = await supabase
           .from('profiles')
-          .select('name')
+          .select('name, profile_image')
           .eq('id', comment.user_id)
           .maybeSingle();
 
@@ -65,7 +66,7 @@ export const useComments = (experimentId: string) => {
           (replies || []).map(async (reply) => {
             const { data: replyProfile } = await supabase
               .from('profiles')
-              .select('name')
+              .select('name, profile_image')
               .eq('id', reply.user_id)
               .maybeSingle();
 
@@ -83,6 +84,7 @@ export const useComments = (experimentId: string) => {
             return {
               ...reply,
               user_name: replyProfile?.name || 'Usuária',
+              user_profile_image: replyProfile?.profile_image || null,
               user_liked: replyUserLiked
             };
           })
@@ -91,6 +93,7 @@ export const useComments = (experimentId: string) => {
         return {
           ...comment,
           user_name: commentProfile?.name || 'Usuária',
+          user_profile_image: commentProfile?.profile_image || null,
           user_liked: userLiked,
           replies: repliesWithProfiles
         };
@@ -120,6 +123,21 @@ export const useComments = (experimentId: string) => {
     if (!error) {
       fetchComments();
     }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!user) return false;
+
+    const { error } = await supabase
+      .from('experiment_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (!error) {
+      fetchComments();
+      return true;
+    }
+    return false;
   };
 
   const toggleLike = async (commentId: string) => {
@@ -162,7 +180,10 @@ export const useComments = (experimentId: string) => {
     comments,
     loading,
     addComment,
+    deleteComment,
     toggleLike,
-    userName: profile?.name || 'Usuária'
+    userName: profile?.name || 'Usuária',
+    userProfileImage: profile?.profile_image || null,
+    currentUserId: user?.id || null
   };
 };

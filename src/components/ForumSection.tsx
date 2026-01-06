@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Send, AlertTriangle, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Heart, MessageCircle, Send, AlertTriangle, Loader2, Trash2 } from "lucide-react";
 import { useComments } from "@/hooks/useComments";
 import { toast } from "sonner";
 
@@ -15,14 +16,17 @@ const BLOCKED_WORDS = [
   "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
   "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
   // Ofensas racistas
-  "negro", "negra", "preto", "preta", "macaco", "macaca", "crioulo", "crioula",
+  "macaco", "macaca", "crioulo", "crioula",
   // Ofensas machistas
   "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
   // Ofensas homofóbicas
-  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola", "gay" + "sujo",
+  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola",
   // Outras ofensas
-  "retardado", "retardada", "imbecil", "idiota", "burro", "burra", "lixo", "nojento", "nojenta",
-  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária"
+  "retardado", "retardada", "imbecil", "lixo", "nojento", "nojenta",
+  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária",
+  // Termos sexuais
+  "sexo", "transar", "foder", "gozar", "punheta", "masturbacao", "masturbação", "porno", "pornografia",
+  "bucetinha", "piriquita", "xoxota", "tesao", "tesão"
 ];
 
 const containsBlockedContent = (text: string): boolean => {
@@ -48,7 +52,7 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export const ForumSection = ({ moduleId }: ForumSectionProps) => {
-  const { comments, loading, addComment, toggleLike, userName } = useComments(moduleId);
+  const { comments, loading, addComment, deleteComment, toggleLike, userName, currentUserId } = useComments(moduleId);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
@@ -71,6 +75,15 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
 
   const handleLike = async (commentId: string) => {
     await toggleLike(commentId);
+  };
+
+  const handleDelete = async (commentId: string) => {
+    const success = await deleteComment(commentId);
+    if (success) {
+      toast.success("Comentário excluído!");
+    } else {
+      toast.error("Erro ao excluir comentário.");
+    }
   };
 
   const handleSubmitReply = async (commentId: string) => {
@@ -135,9 +148,12 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
           comments.map((comment) => (
             <div key={comment.id} className="p-3 bg-white rounded-lg border border-gray-100">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                  {(comment.user_name || "U").charAt(0)}
-                </div>
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarImage src={comment.user_profile_image || undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-sm font-bold">
+                    {(comment.user_name || "U").charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-gray-800">{comment.user_name || "Usuária"}</span>
@@ -163,6 +179,15 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
                       <MessageCircle className="w-4 h-4" />
                       <span>Responder</span>
                     </button>
+                    {currentUserId === comment.user_id && (
+                      <button
+                        onClick={() => handleDelete(comment.id)}
+                        className="flex items-center gap-1 text-sm text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Excluir</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Respostas */}
@@ -171,13 +196,26 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="p-2 bg-purple-50 rounded">
                           <div className="flex items-center gap-2 mb-1">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
-                              {(reply.user_name || "U").charAt(0)}
-                            </div>
+                            <Avatar className="w-6 h-6">
+                              <AvatarImage src={reply.user_profile_image || undefined} />
+                              <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-400 text-white text-xs font-bold">
+                                {(reply.user_name || "U").charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
                             <span className="font-medium text-sm text-gray-800">{reply.user_name || "Usuária"}</span>
                             <span className="text-xs text-gray-400">• {formatTimeAgo(reply.created_at)}</span>
                           </div>
-                          <p className="text-gray-700 text-sm ml-8">{reply.content}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-gray-700 text-sm ml-8">{reply.content}</p>
+                            {currentUserId === reply.user_id && (
+                              <button
+                                onClick={() => handleDelete(reply.id)}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -545,7 +545,6 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
                   <span className="text-6xl mb-4 block">🎉</span>
                   <h4 className="text-xl font-bold text-green-700 mb-2">Parabéns!</h4>
                   <p className="text-gray-600">Você concluiu o experimento "{currentExperiment.title}"!</p>
-                  <p className="text-purple-600 font-semibold mt-2">+100 pontos ganhos!</p>
                 </div>
 
                 <ExperimentComments experimentId={currentExperiment.id} experimentTitle={currentExperiment.title} />
