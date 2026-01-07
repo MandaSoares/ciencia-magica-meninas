@@ -13,6 +13,7 @@ import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { ForgotPassword } from "@/components/ForgotPassword";
 import { AdminPanel } from "@/components/AdminPanel";
+import { ModeratorPanel } from "@/components/ModeratorPanel";
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
 import { About } from "@/pages/About";
@@ -20,15 +21,15 @@ import { Blog } from "@/pages/Blog";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2, Shield, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgotPassword' | 'admin';
+type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgotPassword' | 'admin' | 'moderator';
 type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
   const { user, profile, loading: authLoading, signOut, updateProfile } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdminCheck();
+  const { isAdmin, isModerator, loading: adminLoading } = useAdminCheck();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
@@ -256,6 +257,12 @@ const AppContent = () => {
     );
   }
 
+  if (authView === 'moderator' && isModerator && !isAdmin) {
+    return (
+      <ModeratorPanel onBack={() => setAuthView('app')} />
+    );
+  }
+
   if (authView === 'register') {
     return (
       <Registration 
@@ -322,7 +329,7 @@ const AppContent = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-red-700">
               <Shield className="w-4 h-4" />
-              <span>Você está logado como administrador</span>
+              <span>Você está logada como administradora</span>
             </div>
             <Button 
               variant="outline" 
@@ -331,6 +338,24 @@ const AppContent = () => {
               className="border-red-300 text-red-700 hover:bg-red-50"
             >
               Painel Admin
+            </Button>
+          </div>
+        </div>
+      )}
+      {isModerator && !isAdmin && (
+        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-200 px-6 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-blue-700">
+              <UserCog className="w-4 h-4" />
+              <span>Você está logada como moderadora</span>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setAuthView('moderator')}
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              Painel Moderação
             </Button>
           </div>
         </div>

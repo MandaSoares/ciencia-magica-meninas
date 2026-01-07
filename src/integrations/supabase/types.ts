@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          category: string
+          color_class: string | null
+          content: string
+          created_at: string
+          emoji: string | null
+          excerpt: string
+          id: string
+          published: boolean | null
+          read_time: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name: string
+          category: string
+          color_class?: string | null
+          content: string
+          created_at?: string
+          emoji?: string | null
+          excerpt: string
+          id?: string
+          published?: boolean | null
+          read_time?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string
+          category?: string
+          color_class?: string | null
+          content?: string
+          created_at?: string
+          emoji?: string | null
+          excerpt?: string
+          id?: string
+          published?: boolean | null
+          read_time?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      career_areas_content: {
+        Row: {
+          career_description: string
+          career_id: string
+          career_name: string
+          created_at: string
+          icon: string | null
+          id: string
+          salary_range: string | null
+          sort_order: number | null
+          stem_area: string
+          updated_at: string
+          women: Json
+        }
+        Insert: {
+          career_description: string
+          career_id: string
+          career_name: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          salary_range?: string | null
+          sort_order?: number | null
+          stem_area: string
+          updated_at?: string
+          women?: Json
+        }
+        Update: {
+          career_description?: string
+          career_id?: string
+          career_name?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          salary_range?: string | null
+          sort_order?: number | null
+          stem_area?: string
+          updated_at?: string
+          women?: Json
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
@@ -155,6 +245,165 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      experiments_content: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string
+          difficulty: string | null
+          experiment_id: string
+          icon: string | null
+          id: string
+          image: string | null
+          materials: string[]
+          sort_order: number | null
+          stem_area: string
+          step_images: string[] | null
+          steps: string[]
+          time: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description: string
+          difficulty?: string | null
+          experiment_id: string
+          icon?: string | null
+          id?: string
+          image?: string | null
+          materials?: string[]
+          sort_order?: number | null
+          stem_area: string
+          step_images?: string[] | null
+          steps?: string[]
+          time?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string
+          difficulty?: string | null
+          experiment_id?: string
+          icon?: string | null
+          id?: string
+          image?: string | null
+          materials?: string[]
+          sort_order?: number | null
+          stem_area?: string
+          step_images?: string[] | null
+          steps?: string[]
+          time?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      learning_path_content: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string
+          difficulty: string | null
+          icon: string | null
+          id: string
+          lessons: Json
+          level_number: number
+          points: number | null
+          sort_order: number | null
+          stem_area: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description: string
+          difficulty?: string | null
+          icon?: string | null
+          id?: string
+          lessons?: Json
+          level_number: number
+          points?: number | null
+          sort_order?: number | null
+          stem_area: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string
+          difficulty?: string | null
+          icon?: string | null
+          id?: string
+          lessons?: Json
+          level_number?: number
+          points?: number | null
+          sort_order?: number | null
+          stem_area?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      modules_content: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          description: string
+          estimated_time: string | null
+          final_project: Json | null
+          icon: string | null
+          id: string
+          lessons: Json
+          module_id: string
+          sort_order: number | null
+          stem_area: string
+          title: string
+          total_lessons: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          color?: string | null
+          created_at?: string
+          description: string
+          estimated_time?: string | null
+          final_project?: Json | null
+          icon?: string | null
+          id?: string
+          lessons?: Json
+          module_id: string
+          sort_order?: number | null
+          stem_area: string
+          title: string
+          total_lessons?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          description?: string
+          estimated_time?: string | null
+          final_project?: Json | null
+          icon?: string | null
+          id?: string
+          lessons?: Json
+          module_id?: string
+          sort_order?: number | null
+          stem_area?: string
+          title?: string
+          total_lessons?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
