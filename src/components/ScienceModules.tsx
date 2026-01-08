@@ -25,11 +25,14 @@ import {
   MessageCircle,
   Lightbulb,
   X,
+  Loader2,
   type LucideIcon
 } from "lucide-react";
 import { CertificateModal } from "./CertificateModal";
 import { ForumSection } from "./ForumSection";
-import { allModules, Module, ModuleLesson } from "@/data/modulesData";
+import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesContent";
+// Fallback to static data if database is empty
+import { allModules } from "@/data/modulesData";
 
 interface ScienceModulesProps {
   onPointsEarned: (points: number) => void;
@@ -69,6 +72,10 @@ const areaToCategory: Record<string, string> = {
   math: "Matemática",
 };
 
+const getCategoryName = (area: string): string => {
+  return areaToCategory[area] || "Ciência";
+};
+
 export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete, completedModuleIds = new Set(), isPathCompleted = false }: ScienceModulesProps) => {
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [activeContentIndex, setActiveContentIndex] = useState(0);
@@ -83,14 +90,16 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
+  // Fetch from database with fallback to static data
+  const { data: dbModules, isLoading } = useModulesContent(selectedArea);
+  const categoryName = getCategoryName(selectedArea);
+  const staticModules = allModules.filter(m => m.category === categoryName);
+  const modules: Module[] = (dbModules && dbModules.length > 0) ? dbModules : staticModules;
+
   // Sync completed modules from database
   useEffect(() => {
     setCompletedModules(completedModuleIds);
   }, [completedModuleIds]);
-
-  // Filter modules by selected area
-  const categoryName = areaToCategory[selectedArea] || "Ciência";
-  const modules = allModules.filter(m => m.category === categoryName);
 
   const startModule = (module: Module) => {
     setActiveModule(module);
@@ -149,7 +158,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
 
   const getModuleProgress = (moduleId: string) => {
     if (completedModules.has(moduleId)) return 100;
-    const module = allModules.find(m => m.id === moduleId);
+    const module = modules.find(m => m.id === moduleId);
     if (!module) return 0;
     const progress = moduleProgress[moduleId] || 0;
     return Math.round((progress / module.lessons.length) * 100);
@@ -470,6 +479,14 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   }
 
   // Vista principal - lista de módulos filtrada por área
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>

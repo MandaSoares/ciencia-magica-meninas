@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet } from "lucide-react";
+import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2 } from "lucide-react";
 import { ExperimentComments } from "./ExperimentComments";
+import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
 
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
@@ -25,6 +26,33 @@ interface Experiment {
   stepImages: string[];
   area: string;
 }
+
+// Icon mapping for dynamic icons from database
+const iconMap: Record<string, any> = {
+  Beaker,
+  Flame,
+  Droplets,
+  Wind,
+  Magnet,
+  Zap,
+  Lightbulb,
+  Sparkles,
+};
+
+const mapDbExperimentToLocal = (exp: DbExperiment, area: string): Experiment => ({
+  id: exp.id,
+  title: exp.title,
+  description: exp.description,
+  difficulty: exp.difficulty,
+  time: exp.time,
+  materials: exp.materials,
+  steps: exp.steps,
+  icon: iconMap[exp.icon] || Beaker,
+  color: exp.color,
+  image: exp.image,
+  stepImages: exp.stepImages,
+  area: area,
+});
 
 // Experimentos por área
 const scienceExperiments: Experiment[] = [
@@ -279,29 +307,40 @@ const mathExperiments: Experiment[] = [
   }
 ];
 
-const getExperimentsByArea = (area: string): Experiment[] => {
-  switch (area) {
-    case "science":
-      return scienceExperiments;
-    case "technology":
-      return technologyExperiments;
-    case "engineering":
-      return engineeringExperiments;
-    case "math":
-      return mathExperiments;
-    default:
-      return scienceExperiments;
-  }
+// Static fallback experiments
+const staticExperiments: Record<string, Experiment[]> = {
+  science: [
+    {
+      id: "volcano",
+      title: "Vulcão de Bicarbonato",
+      description: "Crie uma erupção segura e colorida!",
+      difficulty: "Fácil",
+      time: "15 min",
+      materials: ["Bicarbonato", "Vinagre", "Corante", "Detergente"],
+      steps: [
+        "Monte uma estrutura em forma de vulcão usando argila ou garrafa plástica cortada",
+        "Coloque 3 colheres de bicarbonato de sódio dentro do vulcão",
+        "Adicione algumas gotas de corante alimentício (vermelho ou laranja ficam incríveis!)",
+        "Coloque uma gota de detergente para criar mais espuma",
+        "Despeje lentamente meio copo de vinagre e observe a erupção!"
+      ],
+      icon: Flame,
+      color: "bg-red-500",
+      image: "🌋",
+      stepImages: ["🏔️", "🥄", "🎨", "🧴", "💥"],
+      area: "science"
+    }
+  ],
+  technology: [],
+  engineering: [],
+  math: []
 };
 
-const getAreaName = (area: string): string => {
-  const names: Record<string, string> = {
-    science: "Ciências",
-    technology: "Tecnologia",
-    engineering: "Engenharia",
-    math: "Matemática"
-  };
-  return names[area] || "Ciências";
+const getExperimentsByArea = (area: string, dbExperiments: DbExperiment[]): Experiment[] => {
+  if (dbExperiments && dbExperiments.length > 0) {
+    return dbExperiments.map(exp => mapDbExperimentToLocal(exp, area));
+  }
+  return staticExperiments[area] || staticExperiments.science;
 };
 
 export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science", completedExperimentIds = new Set() }: VirtualLabProps) => {
@@ -309,11 +348,12 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const [experimentStep, setExperimentStep] = useState(0);
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
-
-  const experiments = getExperimentsByArea(selectedArea);
-  const areaName = getAreaName(selectedArea);
-
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
+
+  // Fetch from database with fallback to static data
+  const { data: dbExperiments, isLoading } = useExperimentsContent(selectedArea);
+  const experiments = getExperimentsByArea(selectedArea, dbExperiments || []);
+  const areaName = getAreaName(selectedArea);
 
   // Sync completed experiments from database
   useEffect(() => {
@@ -353,6 +393,14 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   };
 
   const currentExperiment = experiments.find(exp => exp.id === activeExperiment);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

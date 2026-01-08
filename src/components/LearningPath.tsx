@@ -20,10 +20,13 @@ import {
   Shapes,
   Leaf,
   Rocket,
+  Loader2,
   type LucideIcon
 } from "lucide-react";
-import { getPathByArea, getAreaName, PathLevel } from "@/data/learningPathData";
+import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
 import { LessonContent } from "./LessonContent";
+// Fallback to static data if database is empty
+import { getPathByArea } from "@/data/learningPathData";
 
 interface LearningPathProps {
   onPointsEarned: (points: number) => void;
@@ -55,7 +58,10 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
 
-  const pathLevels = getPathByArea(selectedArea);
+  // Fetch from database with fallback to static data
+  const { data: dbPathLevels, isLoading } = useLearningPathContent(selectedArea);
+  const staticPathLevels = getPathByArea(selectedArea);
+  const pathLevels: PathLevel[] = (dbPathLevels && dbPathLevels.length > 0) ? dbPathLevels : staticPathLevels;
   const areaName = getAreaName(selectedArea);
 
   // Sync completed lessons from database
@@ -109,6 +115,14 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
           setCurrentLevel(null);
         }}
       />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
     );
   }
 
