@@ -21,6 +21,7 @@ import { Blog } from "@/pages/Blog";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useStudyHours } from "@/hooks/useStudyHours";
 import { Loader2, Shield, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,6 +39,8 @@ const AppContent = () => {
 
   const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } = 
     useUserProgress(selectedArea || 'science');
+  
+  const { studyHours } = useStudyHours(selectedArea || 'science');
 
   // Handle auth state changes
   useEffect(() => {
@@ -127,6 +130,7 @@ const AppContent = () => {
             onAddArea={handleAddArea}
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
+            studyHours={studyHours}
           />
         );
       case "path":
@@ -199,6 +203,7 @@ const AppContent = () => {
             onAddArea={handleAddArea}
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
+            studyHours={studyHours}
           />
         );
     }

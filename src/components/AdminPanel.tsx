@@ -1,8 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ArrowLeft, MessageSquare, Users, FileText } from "lucide-react";
-import { ContentManagement } from "./admin/ContentManagement";
+import { Shield, ArrowLeft, MessageSquare, Users } from "lucide-react";
 import { CommentsModeration } from "./admin/CommentsModeration";
 import { UserManagement } from "./admin/UserManagement";
 
@@ -28,16 +27,12 @@ export const AdminPanel = ({ onBack }: AdminPanelProps) => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
-              <p className="text-muted-foreground">Gerencie conteúdo, usuários e modere comentários</p>
+              <p className="text-muted-foreground">Modere comentários e gerencie usuários</p>
             </div>
           </div>
 
-          <Tabs defaultValue="content" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="content" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Conteúdo
-              </TabsTrigger>
+          <Tabs defaultValue="comments" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="comments" className="gap-2">
                 <MessageSquare className="w-4 h-4" />
                 Comentários
@@ -47,10 +42,6 @@ export const AdminPanel = ({ onBack }: AdminPanelProps) => {
                 Usuários
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="content">
-              <ContentManagement />
-            </TabsContent>
 
             <TabsContent value="comments">
               <CommentsModeration />
