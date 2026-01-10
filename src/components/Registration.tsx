@@ -26,6 +26,21 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.age || !formData.password) return;
 
+    // Password validation
+    if (formData.password.length < 8) {
+      return; // Input minLength will show browser validation
+    }
+
+    const hasUpperCase = /[A-Z]/.test(formData.password);
+    const hasNumber = /[0-9]/.test(formData.password);
+    if (!hasUpperCase || !hasNumber) {
+      // Show validation message via custom validation
+      const passwordInput = document.getElementById('password') as HTMLInputElement;
+      passwordInput?.setCustomValidity('A senha deve conter pelo menos uma letra maiúscula e um número');
+      passwordInput?.reportValidity();
+      return;
+    }
+
     setLoading(true);
     const { error } = await signUp(
       formData.email,
@@ -106,13 +121,21 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
             <Input
               id="password"
               type="password"
-              placeholder="Crie uma senha"
+              placeholder="Crie uma senha forte"
               value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              onChange={(e) => {
+                const input = e.target as HTMLInputElement;
+                input.setCustomValidity(''); // Clear custom validity on change
+                setFormData(prev => ({ ...prev, password: e.target.value }));
+              }}
               className="w-full"
               required
               disabled={loading}
+              minLength={8}
             />
+            <p className="text-xs text-muted-foreground">
+              Mínimo 8 caracteres, incluindo letra maiúscula e número
+            </p>
           </div>
 
           <div className="space-y-2">
