@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
+/**
+ * SECURITY NOTE: This hook provides client-side role checking for UI/UX purposes ONLY.
+ * 
+ * All admin/moderator operations are protected by Row Level Security (RLS) policies
+ * in the database. These policies use the has_role() function to verify user permissions
+ * server-side before allowing any privileged operations.
+ * 
+ * Protected tables include:
+ * - user_roles: Admin-only management
+ * - blog_posts: Admin/moderator create/update/delete
+ * - learning_path_content, modules_content, experiments_content, career_areas_content: Admin-only
+ * - experiment_comments: Delete by owner or admin
+ * 
+ * Even if a malicious user bypasses client-side checks, RLS will block unauthorized operations.
+ */
 export const useAdminCheck = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);

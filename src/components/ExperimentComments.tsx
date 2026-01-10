@@ -56,16 +56,31 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;
     
+    // Client-side check for immediate UX feedback
+    // NOTE: Server-side validation via database trigger also enforces this
     if (containsBlockedContent(newComment)) {
       toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
       return;
     }
 
     setSubmitting(true);
-    await addComment(newComment);
-    setNewComment("");
-    setSubmitting(false);
-    toast.success("Comentário publicado!");
+    try {
+      await addComment(newComment);
+      setNewComment("");
+      toast.success("Comentário publicado!");
+    } catch (error: any) {
+      // Handle server-side rejection (database trigger validation)
+      if (error?.message?.includes('inappropriate content') || 
+          error?.code === '23514' || // Check constraint violation
+          error?.message?.includes('Comment contains')) {
+        toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
+      } else {
+        toast.error("Erro ao publicar comentário. Tente novamente.");
+        console.error('Comment submission error:', error);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleLike = async (commentId: string) => {

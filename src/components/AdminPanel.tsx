@@ -9,6 +9,19 @@ interface AdminPanelProps {
   onBack: () => void;
 }
 
+/**
+ * SECURITY NOTE: This admin panel visibility is controlled by client-side role checking (useAdminCheck).
+ * 
+ * However, ALL admin operations are protected by Row Level Security (RLS) policies at the database level.
+ * The client-side check is purely for UX - to show/hide the admin UI.
+ * 
+ * Even if a malicious user renders this component directly, they cannot:
+ * - Modify user roles (RLS on user_roles requires admin role)
+ * - Delete comments (RLS requires ownership or admin role)
+ * - Modify content tables (RLS requires admin role)
+ * 
+ * The has_role() database function verifies permissions server-side for every operation.
+ */
 export const AdminPanel = ({ onBack }: AdminPanelProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">

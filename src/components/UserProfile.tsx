@@ -6,7 +6,63 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Edit3, Save, X, LogOut, Camera } from "lucide-react";
+import { toast } from "sonner";
 
+// Maximum file size: 2MB
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+// Maximum image dimension for avatar (will resize to this)
+const MAX_IMAGE_DIMENSION = 200;
+// Allowed image types
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+/**
+ * Resize an image to fit within maxDimension while maintaining aspect ratio
+ * Returns a compressed base64 string
+ */
+const resizeImage = (file: File, maxDimension: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        
+        // Calculate new dimensions maintaining aspect ratio
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress as JPEG with 80% quality for smaller size
+        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(resizedBase64);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+};
 interface UserData {
   name: string;
   email: string;
@@ -44,14 +100,29 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
     setIsEditing(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditForm({ ...editForm, profileImage: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('Imagem muito grande. O tamanho máximo é 2MB.');
+      return;
+    }
+    
+    // Validate file type
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.');
+      return;
+    }
+    
+    try {
+      // Resize image to reduce database storage
+      const resizedImage = await resizeImage(file, MAX_IMAGE_DIMENSION);
+      setEditForm({ ...editForm, profileImage: resizedImage });
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Erro ao processar imagem. Tente novamente.');
     }
   };
 
