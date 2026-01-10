@@ -498,6 +498,14 @@ export type Database = {
     }
     Functions: {
       decrement_likes: { Args: { comment_id: string }; Returns: undefined }
+      get_comment_user_info: {
+        Args: { user_ids: string[] }
+        Returns: {
+          id: string
+          name: string
+          profile_image: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

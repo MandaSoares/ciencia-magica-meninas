@@ -34,71 +34,81 @@ export const useComments = (experimentId: string) => {
       return;
     }
 
-    // Fetch replies for each comment
-    const commentsWithReplies = await Promise.all(
-      (commentsData || []).map(async (comment) => {
-        const { data: replies } = await supabase
+    // Collect all user IDs from comments and replies to fetch profile info securely
+    const allComments = commentsData || [];
+    
+    // Fetch all replies at once
+    const commentIds = allComments.map(c => c.id);
+    const { data: allReplies } = commentIds.length > 0 
+      ? await supabase
           .from('experiment_comments')
           .select('*')
-          .eq('parent_id', comment.id)
-          .order('created_at', { ascending: true });
+          .in('parent_id', commentIds)
+          .order('created_at', { ascending: true })
+      : { data: [] };
 
-        // Fetch profiles for all comments
-        const { data: commentProfile } = await supabase
-          .from('profiles')
-          .select('name, profile_image')
-          .eq('id', comment.user_id)
-          .maybeSingle();
+    // Collect all unique user IDs from comments and replies
+    const userIds = new Set<string>();
+    allComments.forEach(c => userIds.add(c.user_id));
+    (allReplies || []).forEach(r => userIds.add(r.user_id));
+    
+    // Use secure RPC function to get only name and profile_image (no email/age exposure)
+    const userIdsArray = Array.from(userIds);
+    const { data: profilesData } = userIdsArray.length > 0
+      ? await supabase.rpc('get_comment_user_info', { user_ids: userIdsArray })
+      : { data: [] };
+    
+    // Create a map for quick profile lookup
+    const profilesMap = new Map<string, { name: string; profile_image: string | null }>();
+    (profilesData || []).forEach((p: { id: string; name: string; profile_image: string | null }) => {
+      profilesMap.set(p.id, { name: p.name, profile_image: p.profile_image });
+    });
 
-        // Check if user liked this comment
-        let userLiked = false;
-        if (user) {
-          const { data: likeData } = await supabase
-            .from('comment_likes')
-            .select('id')
-            .eq('comment_id', comment.id)
-            .eq('user_id', user.id)
-            .maybeSingle();
-          userLiked = !!likeData;
-        }
+    // Fetch user's likes for all comments and replies
+    const allCommentIds = [...allComments.map(c => c.id), ...(allReplies || []).map(r => r.id)];
+    let userLikesSet = new Set<string>();
+    if (user && allCommentIds.length > 0) {
+      const { data: likesData } = await supabase
+        .from('comment_likes')
+        .select('comment_id')
+        .eq('user_id', user.id)
+        .in('comment_id', allCommentIds);
+      (likesData || []).forEach(l => userLikesSet.add(l.comment_id));
+    }
 
-        const repliesWithProfiles = await Promise.all(
-          (replies || []).map(async (reply) => {
-            const { data: replyProfile } = await supabase
-              .from('profiles')
-              .select('name, profile_image')
-              .eq('id', reply.user_id)
-              .maybeSingle();
+    // Build replies map
+    const repliesMap = new Map<string, typeof allReplies>();
+    (allReplies || []).forEach(reply => {
+      const parentId = reply.parent_id;
+      if (!repliesMap.has(parentId)) {
+        repliesMap.set(parentId, []);
+      }
+      repliesMap.get(parentId)!.push(reply);
+    });
 
-            let replyUserLiked = false;
-            if (user) {
-              const { data: likeData } = await supabase
-                .from('comment_likes')
-                .select('id')
-                .eq('comment_id', reply.id)
-                .eq('user_id', user.id)
-                .maybeSingle();
-              replyUserLiked = !!likeData;
-            }
-
-            return {
-              ...reply,
-              user_name: replyProfile?.name || 'Usuária',
-              user_profile_image: replyProfile?.profile_image || null,
-              user_liked: replyUserLiked
-            };
-          })
-        );
-
+    // Build the final comments with replies
+    const commentsWithReplies = allComments.map(comment => {
+      const profile = profilesMap.get(comment.user_id);
+      const commentReplies = repliesMap.get(comment.id) || [];
+      
+      const repliesWithProfiles = commentReplies.map(reply => {
+        const replyProfile = profilesMap.get(reply.user_id);
         return {
-          ...comment,
-          user_name: commentProfile?.name || 'Usuária',
-          user_profile_image: commentProfile?.profile_image || null,
-          user_liked: userLiked,
-          replies: repliesWithProfiles
+          ...reply,
+          user_name: replyProfile?.name || 'Usuária',
+          user_profile_image: replyProfile?.profile_image || null,
+          user_liked: userLikesSet.has(reply.id)
         };
-      })
-    );
+      });
+
+      return {
+        ...comment,
+        user_name: profile?.name || 'Usuária',
+        user_profile_image: profile?.profile_image || null,
+        user_liked: userLikesSet.has(comment.id),
+        replies: repliesWithProfiles
+      };
+    });
 
     setComments(commentsWithReplies);
     setLoading(false);
