@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2 } from "lucide-react";
+import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2 } from "lucide-react";
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
+import { ContentManager, DeleteContentButton } from "./admin/ContentManager";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
@@ -307,33 +310,12 @@ const mathExperiments: Experiment[] = [
   }
 ];
 
-// Static fallback experiments
+// Static fallback experiments - all areas with complete content
 const staticExperiments: Record<string, Experiment[]> = {
-  science: [
-    {
-      id: "volcano",
-      title: "Vulcão de Bicarbonato",
-      description: "Crie uma erupção segura e colorida!",
-      difficulty: "Fácil",
-      time: "15 min",
-      materials: ["Bicarbonato", "Vinagre", "Corante", "Detergente"],
-      steps: [
-        "Monte uma estrutura em forma de vulcão usando argila ou garrafa plástica cortada",
-        "Coloque 3 colheres de bicarbonato de sódio dentro do vulcão",
-        "Adicione algumas gotas de corante alimentício (vermelho ou laranja ficam incríveis!)",
-        "Coloque uma gota de detergente para criar mais espuma",
-        "Despeje lentamente meio copo de vinagre e observe a erupção!"
-      ],
-      icon: Flame,
-      color: "bg-red-500",
-      image: "🌋",
-      stepImages: ["🏔️", "🥄", "🎨", "🧴", "💥"],
-      area: "science"
-    }
-  ],
-  technology: [],
-  engineering: [],
-  math: []
+  science: scienceExperiments,
+  technology: technologyExperiments,
+  engineering: engineeringExperiments,
+  math: mathExperiments,
 };
 
 const getExperimentsByArea = (area: string, dbExperiments: DbExperiment[]): Experiment[] => {
@@ -349,11 +331,18 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
+  
+  const { isAdmin } = useAdminCheck();
+  const queryClient = useQueryClient();
 
   // Fetch from database with fallback to static data
   const { data: dbExperiments, isLoading } = useExperimentsContent(selectedArea);
   const experiments = getExperimentsByArea(selectedArea, dbExperiments || []);
   const areaName = getAreaName(selectedArea);
+
+  const handleContentChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["experiments-content"] });
+  };
 
   // Sync completed experiments from database
   useEffect(() => {
@@ -404,9 +393,19 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
-        <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
+          <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
+        </div>
+        {isAdmin && (
+          <ContentManager
+            type="experiment"
+            selectedArea={selectedArea}
+            onContentChange={handleContentChange}
+            isAdmin={isAdmin}
+          />
+        )}
       </div>
 
       {!activeExperiment ? (

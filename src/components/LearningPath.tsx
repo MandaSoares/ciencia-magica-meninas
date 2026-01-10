@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
 import { LessonContent } from "./LessonContent";
+import { ContentManager } from "./admin/ContentManager";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
 import { getPathByArea } from "@/data/learningPathData";
 
@@ -58,11 +61,18 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
 
+  const { isAdmin } = useAdminCheck();
+  const queryClient = useQueryClient();
+
   // Fetch from database with fallback to static data
   const { data: dbPathLevels, isLoading } = useLearningPathContent(selectedArea);
   const staticPathLevels = getPathByArea(selectedArea);
   const pathLevels: PathLevel[] = (dbPathLevels && dbPathLevels.length > 0) ? dbPathLevels : staticPathLevels;
   const areaName = getAreaName(selectedArea);
+
+  const handleContentChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["learning-path-content"] });
+  };
 
   // Sync completed lessons from database
   useEffect(() => {
@@ -128,21 +138,31 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha de {areaName}</h2>
-        <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em {areaName.toLowerCase()}!</p>
-        
-        <Card className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-gray-700">Progresso Geral</span>
-            <span className="text-sm font-medium text-purple-600">
-              {completedLevels.size} de {pathLevels.length} níveis
-            </span>
-          </div>
-          <Progress value={getOverallProgress()} className="h-3" />
-          <p className="text-xs text-gray-500 mt-2">Complete a trilha para desbloquear os Módulos avançados!</p>
-        </Card>
+      <div className="flex items-center justify-between">
+        <div className="text-center flex-1">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha de {areaName}</h2>
+          <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em {areaName.toLowerCase()}!</p>
+        </div>
+        {isAdmin && (
+          <ContentManager
+            type="learning_path"
+            selectedArea={selectedArea}
+            onContentChange={handleContentChange}
+            isAdmin={isAdmin}
+          />
+        )}
       </div>
+        
+      <Card className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-semibold text-gray-700">Progresso Geral</span>
+          <span className="text-sm font-medium text-purple-600">
+            {completedLevels.size} de {pathLevels.length} níveis
+          </span>
+        </div>
+        <Progress value={getOverallProgress()} className="h-3" />
+        <p className="text-xs text-gray-500 mt-2">Complete a trilha para desbloquear os Módulos avançados!</p>
+      </Card>
 
       {/* Trilha Visual estilo Duolingo com zigue-zague */}
       <div className="relative bg-gradient-to-b from-purple-50 via-pink-50 to-blue-50 rounded-2xl p-8 border-4 border-purple-200">
