@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCog, ArrowLeft, MessageSquare, FileText } from "lucide-react";
 import { CommentsModeration } from "./admin/CommentsModeration";
-import { ContentManagement } from "./admin/ContentManagement";
+import { BlogManagement } from "./admin/BlogManagement";
 
 interface ModeratorPanelProps {
   onBack: () => void;
@@ -48,7 +48,7 @@ export const ModeratorPanel = ({ onBack }: ModeratorPanelProps) => {
             </TabsContent>
 
             <TabsContent value="blog">
-              <ContentManagement activeTab="blog" />
+              <BlogManagement />
             </TabsContent>
           </Tabs>
         </Card>

@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Target, Zap, Sparkles, Plus, Play } from "lucide-react";
+import { BookOpen, Target, Zap, Sparkles, Plus, Play, Clock } from "lucide-react";
 
 interface ProgressData {
   courseName: string;
@@ -25,6 +25,7 @@ interface DashboardProps {
   onContinueModulo?: () => void;
   modulesCompleted?: number;
   experimentsCompleted?: number;
+  studyHours?: number;
 }
 
 const areaInfo: Record<string, { icon: string; color: string; name: string }> = {
@@ -47,12 +48,22 @@ export const Dashboard = ({
   onContinueTrilha,
   onContinueModulo,
   modulesCompleted = 0,
-  experimentsCompleted = 0
+  experimentsCompleted = 0,
+  studyHours = 0
 }: DashboardProps) => {
+
+  const formatStudyHours = (hours: number) => {
+    if (hours < 1) {
+      const minutes = Math.round(hours * 60);
+      return `${minutes}min`;
+    }
+    return `${hours.toFixed(1)}h`;
+  };
 
   const stats = [
     { label: "Módulos Completos", value: modulesCompleted.toString(), icon: BookOpen, color: "bg-blue-500" },
     { label: "Experimentos Feitos", value: experimentsCompleted.toString(), icon: Zap, color: "bg-green-500" },
+    { label: "Horas Estudadas", value: formatStudyHours(studyHours), icon: Clock, color: "bg-purple-500" },
   ];
 
 
