@@ -50,8 +50,16 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (newPassword.length < 8) {
+      toast.error('A senha deve ter pelo menos 8 caracteres');
+      return;
+    }
+
+    // Password strength validation
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+    if (!hasUpperCase || !hasNumber) {
+      toast.error('A senha deve conter pelo menos uma letra maiúscula e um número');
       return;
     }
 
@@ -137,8 +145,11 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
                 className="w-full py-5"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Mínimo 8 caracteres, incluindo letra maiúscula e número
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -152,7 +163,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
                 className="w-full py-5"
                 required
                 disabled={loading}
-                minLength={6}
+                minLength={8}
               />
             </div>
 
