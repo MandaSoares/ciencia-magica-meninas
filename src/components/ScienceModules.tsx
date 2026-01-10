@@ -31,6 +31,9 @@ import {
 import { CertificateModal } from "./CertificateModal";
 import { ForumSection } from "./ForumSection";
 import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesContent";
+import { ContentManager } from "./admin/ContentManager";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
 import { allModules } from "@/data/modulesData";
 
@@ -90,11 +93,18 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
+  const { isAdmin } = useAdminCheck();
+  const queryClient = useQueryClient();
+
   // Fetch from database with fallback to static data
   const { data: dbModules, isLoading } = useModulesContent(selectedArea);
   const categoryName = getCategoryName(selectedArea);
   const staticModules = allModules.filter(m => m.category === categoryName);
   const modules: Module[] = (dbModules && dbModules.length > 0) ? dbModules : staticModules;
+
+  const handleContentChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["modules-content"] });
+  };
 
   // Sync completed modules from database
   useEffect(() => {
@@ -489,11 +499,21 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de {categoryName}</h2>
-        <p className="text-gray-600">
-          Cursos completos com 3-6 lições, desafio final e certificado de conclusão!
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de {categoryName}</h2>
+          <p className="text-gray-600">
+            Cursos completos com 3-6 lições, desafio final e certificado de conclusão!
+          </p>
+        </div>
+        {isAdmin && (
+          <ContentManager
+            type="module"
+            selectedArea={selectedArea}
+            onContentChange={handleContentChange}
+            isAdmin={isAdmin}
+          />
+        )}
       </div>
 
       {!isPathCompleted && (

@@ -3,6 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2 } from "lucide-react";
 import { useCareerAreasContent, Career, WomanProfile, getAreaLabel } from "@/hooks/useCareerAreasContent";
+import { ContentManager } from "./admin/ContentManager";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AreasDeAtuacaoProps {
   onPointsEarned: (points: number) => void;
@@ -41,9 +44,16 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
   const [selectedCareer, setSelectedCareer] = useState<Career | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<WomanProfile | null>(null);
 
+  const { isAdmin, isModerator } = useAdminCheck();
+  const queryClient = useQueryClient();
+
   // Fetch from database
   const { data: careers, isLoading } = useCareerAreasContent(selectedArea);
   const currentAreaMeta = areaMetadata[selectedArea] || areaMetadata.science;
+
+  const handleContentChange = () => {
+    queryClient.invalidateQueries({ queryKey: ["career-areas-content"] });
+  };
 
   const handleSelectCareer = (career: Career) => {
     setSelectedCareer(career);
@@ -162,12 +172,23 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
   return (
     <div className="space-y-6 animate-fade-in">
       <div className={`${currentAreaMeta.color} text-white p-6 rounded-xl`}>
-        <div className="flex items-center gap-3">
-          <span className="text-4xl">{currentAreaMeta.icon}</span>
-          <div>
-            <h2 className="text-2xl font-bold">Áreas de Atuação em {currentAreaMeta.name}</h2>
-            <p className="opacity-90">{currentAreaMeta.description}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">{currentAreaMeta.icon}</span>
+            <div>
+              <h2 className="text-2xl font-bold">Áreas de Atuação em {currentAreaMeta.name}</h2>
+              <p className="opacity-90">{currentAreaMeta.description}</p>
+            </div>
           </div>
+          {(isAdmin || isModerator) && (
+            <ContentManager
+              type="career"
+              selectedArea={selectedArea}
+              onContentChange={handleContentChange}
+              isAdmin={isAdmin}
+              isModerator={isModerator}
+            />
+          )}
         </div>
       </div>
 
