@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2 } from "lucide-react";
 import { useCareerAreasContent, Career, WomanProfile, getAreaLabel } from "@/hooks/useCareerAreasContent";
-import { ContentManager } from "./admin/ContentManager";
+import { AddContentCard } from "./admin/AddContentCard";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -172,23 +172,12 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
   return (
     <div className="space-y-6 animate-fade-in">
       <div className={`${currentAreaMeta.color} text-white p-6 rounded-xl`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">{currentAreaMeta.icon}</span>
-            <div>
-              <h2 className="text-2xl font-bold">Áreas de Atuação em {currentAreaMeta.name}</h2>
-              <p className="opacity-90">{currentAreaMeta.description}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">{currentAreaMeta.icon}</span>
+          <div>
+            <h2 className="text-2xl font-bold">Áreas de Atuação em {currentAreaMeta.name}</h2>
+            <p className="opacity-90">{currentAreaMeta.description}</p>
           </div>
-          {(isAdmin || isModerator) && (
-            <ContentManager
-              type="career"
-              selectedArea={selectedArea}
-              onContentChange={handleContentChange}
-              isAdmin={isAdmin}
-              isModerator={isModerator}
-            />
-          )}
         </div>
       </div>
 
@@ -220,6 +209,16 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
               <ChevronRight className="w-5 h-5 text-gray-400 mt-2 ml-auto" />
             </Card>
           ))}
+          
+          {/* Card para adicionar nova carreira - admin ou moderador */}
+          <AddContentCard
+            type="career"
+            selectedArea={selectedArea}
+            onContentChange={handleContentChange}
+            isAdmin={isAdmin}
+            isModerator={isModerator}
+            iconClassName={currentAreaMeta.color}
+          />
         </div>
       )}
     </div>

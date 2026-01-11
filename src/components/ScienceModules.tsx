@@ -31,7 +31,7 @@ import {
 import { CertificateModal } from "./CertificateModal";
 import { ForumSection } from "./ForumSection";
 import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesContent";
-import { ContentManager } from "./admin/ContentManager";
+import { AddContentCard } from "./admin/AddContentCard";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
@@ -499,21 +499,11 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de {categoryName}</h2>
-          <p className="text-gray-600">
-            Cursos completos com 3-6 lições, desafio final e certificado de conclusão!
-          </p>
-        </div>
-        {isAdmin && (
-          <ContentManager
-            type="module"
-            selectedArea={selectedArea}
-            onContentChange={handleContentChange}
-            isAdmin={isAdmin}
-          />
-        )}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Módulos de {categoryName}</h2>
+        <p className="text-gray-600">
+          Cursos completos com 3-6 lições, desafio final e certificado de conclusão!
+        </p>
       </div>
 
       {!isPathCompleted && (
@@ -618,6 +608,14 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
               </Card>
             );
           })}
+          
+          {/* Card para adicionar novo módulo - apenas admin */}
+          <AddContentCard
+            type="module"
+            selectedArea={selectedArea}
+            onContentChange={handleContentChange}
+            isAdmin={isAdmin}
+          />
         </div>
       )}
 

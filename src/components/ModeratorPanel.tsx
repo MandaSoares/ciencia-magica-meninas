@@ -1,9 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserCog, ArrowLeft, MessageSquare, FileText } from "lucide-react";
+import { UserCog, ArrowLeft, MessageSquare } from "lucide-react";
 import { CommentsModeration } from "./admin/CommentsModeration";
-import { BlogManagement } from "./admin/BlogManagement";
 
 interface ModeratorPanelProps {
   onBack: () => void;
@@ -27,30 +25,16 @@ export const ModeratorPanel = ({ onBack }: ModeratorPanelProps) => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Painel de Moderação</h1>
-              <p className="text-muted-foreground">Modere comentários e escreva posts no blog</p>
+              <p className="text-muted-foreground">Modere os comentários da plataforma</p>
             </div>
           </div>
 
-          <Tabs defaultValue="comments" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="comments" className="gap-2">
-                <MessageSquare className="w-4 h-4" />
-                Comentários
-              </TabsTrigger>
-              <TabsTrigger value="blog" className="gap-2">
-                <FileText className="w-4 h-4" />
-                Blog
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Comentários</h2>
+          </div>
 
-            <TabsContent value="comments">
-              <CommentsModeration />
-            </TabsContent>
-
-            <TabsContent value="blog">
-              <BlogManagement />
-            </TabsContent>
-          </Tabs>
+          <CommentsModeration />
         </Card>
       </div>
     </div>
