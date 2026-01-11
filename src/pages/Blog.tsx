@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, User, CheckCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, CheckCircle, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { AddBlogCard } from "@/components/admin/AddBlogCard";
 
 const NewsletterSection = () => {
   const [email, setEmail] = useState("");
@@ -67,7 +70,7 @@ interface BlogProps {
 }
 
 interface BlogPost {
-  id: number;
+  id: string;
   title: string;
   excerpt: string;
   content: string;
@@ -79,9 +82,22 @@ interface BlogPost {
   color: string;
 }
 
-const blogPosts: BlogPost[] = [
+interface DbBlogPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  author_name: string;
+  created_at: string;
+  read_time: string | null;
+  emoji: string | null;
+  color_class: string | null;
+}
+
+const staticBlogPosts: BlogPost[] = [
   {
-    id: 1,
+    id: "1",
     title: "Por que meninas devem aprender programação desde cedo?",
     excerpt: "Descubra como a programação desenvolve habilidades essenciais como lógica, criatividade e resolução de problemas.",
     content: `A programação é uma das habilidades mais importantes do século XXI, e quanto mais cedo começamos a aprender, melhor!
@@ -114,7 +130,7 @@ Lembre-se: não existe idade certa para começar, e você pode ser a próxima gr
     color: "bg-blue-500"
   },
   {
-    id: 2,
+    id: "2",
     title: "5 Mulheres cientistas que mudaram o mundo",
     excerpt: "Conheça histórias inspiradoras de Marie Curie, Ada Lovelace, Katherine Johnson e outras pioneiras da ciência.",
     content: `A história da ciência foi construída por muitas mulheres brilhantes que enfrentaram desafios e preconceitos para fazer descobertas que mudaram o mundo.
@@ -145,7 +161,7 @@ Essas mulheres nos ensinam que a curiosidade, a persistência e a paixão pela d
     color: "bg-green-500"
   },
   {
-    id: 3,
+    id: "3",
     title: "Engenharia para crianças: projetos divertidos para fazer em casa",
     excerpt: "Atividades práticas e seguras que ensinam conceitos de engenharia usando materiais simples.",
     content: `A engenharia está em toda parte, e você pode começar a explorar conceitos incríveis com materiais simples que provavelmente já tem em casa!
@@ -185,7 +201,7 @@ A engenharia é sobre criar soluções para problemas reais. Cada projeto que vo
     color: "bg-orange-500"
   },
   {
-    id: 4,
+    id: "4",
     title: "Matemática divertida: jogos que ensinam sem você perceber",
     excerpt: "Aprenda como tornar a matemática mais acessível e divertida através de jogos e desafios.",
     content: `Quem disse que matemática precisa ser chata? Existem muitas formas divertidas de aprender e praticar matemática no dia a dia!
@@ -225,7 +241,7 @@ A matemática é como um quebra-cabeça gigante esperando para ser descoberto. Q
     color: "bg-purple-500"
   },
   {
-    id: 5,
+    id: "5",
     title: "Como despertar a curiosidade científica nas crianças",
     excerpt: "Dicas práticas para pais e educadores incentivarem o interesse pela ciência desde a infância.",
     content: `A curiosidade é a semente da ciência. Toda grande descoberta começou com uma pergunta simples: "Por quê?"
@@ -264,7 +280,7 @@ Nunca diga "isso é muito difícil para você". Crianças são capazes de compre
     color: "bg-pink-500"
   },
   {
-    id: 6,
+    id: "6",
     title: "Inteligência Artificial explicada para crianças",
     excerpt: "Uma introdução simples e divertida ao mundo da IA, com exemplos do cotidiano.",
     content: `Você já conversou com a Alexa ou pediu para a Siri tocar uma música? Isso é Inteligência Artificial em ação!
@@ -313,6 +329,8 @@ Lembre-se: a IA é uma ferramenta criada por pessoas. O mais importante é usar 
 
 export const Blog = ({ onBack }: BlogProps) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const { isAdmin, isModerator } = useAdminCheck();
+  const blogPosts = staticBlogPosts;
 
   if (selectedPost) {
     return (
@@ -460,6 +478,11 @@ export const Blog = ({ onBack }: BlogProps) => {
               </div>
             </Card>
           ))}
+          
+          {/* Card para adicionar novo post - admin ou moderador */}
+          {(isAdmin || isModerator) && (
+            <AddBlogCard onPostAdded={() => {}} />
+          )}
         </div>
 
         <NewsletterSection />

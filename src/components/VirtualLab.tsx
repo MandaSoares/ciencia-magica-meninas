@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2 } from "lucide-react";
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
-import { ContentManager, DeleteContentButton } from "./admin/ContentManager";
+import { AddContentCard } from "./admin/AddContentCard";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -393,19 +393,9 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
-          <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
-        </div>
-        {isAdmin && (
-          <ContentManager
-            type="experiment"
-            selectedArea={selectedArea}
-            onContentChange={handleContentChange}
-            isAdmin={isAdmin}
-          />
-        )}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
+        <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
       </div>
 
       {!activeExperiment ? (
@@ -465,6 +455,14 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
                 </Card>
               );
             })}
+            
+            {/* Card para adicionar novo experimento - apenas admin */}
+            <AddContentCard
+              type="experiment"
+              selectedArea={selectedArea}
+              onContentChange={handleContentChange}
+              isAdmin={isAdmin}
+            />
           </div>
 
           <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">

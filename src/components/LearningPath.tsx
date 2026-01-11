@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
 import { LessonContent } from "./LessonContent";
-import { ContentManager } from "./admin/ContentManager";
+import { AddContentCard } from "./admin/AddContentCard";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
@@ -138,19 +138,9 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div className="text-center flex-1">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha de {areaName}</h2>
-          <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em {areaName.toLowerCase()}!</p>
-        </div>
-        {isAdmin && (
-          <ContentManager
-            type="learning_path"
-            selectedArea={selectedArea}
-            onContentChange={handleContentChange}
-            isAdmin={isAdmin}
-          />
-        )}
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Trilha de {areaName}</h2>
+        <p className="text-gray-600 mb-4">Conteúdo introdutório para despertar seu interesse em {areaName.toLowerCase()}!</p>
       </div>
         
       <Card className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 mb-6">
@@ -236,6 +226,19 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
               </div>
             );
           })}
+          
+          {/* Card para adicionar novo nível - apenas admin */}
+          {isAdmin && (
+            <div className="flex justify-center mb-8">
+              <AddContentCard
+                type="learning_path"
+                selectedArea={selectedArea}
+                onContentChange={handleContentChange}
+                isAdmin={isAdmin}
+                cardClassName="max-w-md"
+              />
+            </div>
+          )}
           
           {/* Topo da trilha - Mestra */}
           <div className="flex justify-center mt-4">
