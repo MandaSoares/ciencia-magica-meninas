@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
 import { LessonContent } from "./LessonContent";
-import { AddContentCard } from "./admin/AddContentCard";
+import { AddLearningPathInline } from "./admin/AddLearningPathInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
@@ -229,15 +229,11 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
           
           {/* Card para adicionar novo nível - apenas admin */}
           {isAdmin && (
-            <div className="flex justify-center mb-8">
-              <AddContentCard
-                type="learning_path"
-                selectedArea={selectedArea}
-                onContentChange={handleContentChange}
-                isAdmin={isAdmin}
-                cardClassName="max-w-md"
-              />
-            </div>
+            <AddLearningPathInline
+              selectedArea={selectedArea}
+              onContentChange={handleContentChange}
+              isAdmin={isAdmin}
+            />
           )}
           
           {/* Topo da trilha - Mestra */}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -17,6 +17,21 @@ interface AddBlogCardProps {
 
 const CATEGORIES = ["Tecnologia", "Ciência", "Engenharia", "Matemática", "Educação"];
 
+const COLOR_OPTIONS = [
+  { value: "purple", label: "Roxo", hex: "#8B5CF6" },
+  { value: "pink", label: "Rosa", hex: "#EC4899" },
+  { value: "blue", label: "Azul", hex: "#3B82F6" },
+  { value: "green", label: "Verde", hex: "#22C55E" },
+  { value: "orange", label: "Laranja", hex: "#F97316" },
+  { value: "red", label: "Vermelho", hex: "#EF4444" },
+  { value: "cyan", label: "Ciano", hex: "#06B6D4" },
+  { value: "amber", label: "Âmbar", hex: "#F59E0B" },
+  { value: "indigo", label: "Índigo", hex: "#6366F1" },
+  { value: "teal", label: "Teal", hex: "#14B8A6" },
+  { value: "rose", label: "Rose", hex: "#F43F5E" },
+  { value: "violet", label: "Violeta", hex: "#8B5CF6" },
+];
+
 export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
   const { profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +43,8 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
     category: "Tecnologia",
     read_time: "5 min",
     emoji: "📝",
-    color_class: "bg-purple-500"
+    color: "purple",
+    author_name: ""
   });
 
   const handleSubmit = async () => {
@@ -41,9 +57,20 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
       return;
     }
 
+    if (!formData.author_name.trim()) {
+      toast({
+        title: "Erro",
+        description: "Preencha o nome do autor",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
+      const colorClass = `bg-${formData.color}-500`;
+      
       const { error } = await supabase
         .from('blog_posts')
         .insert({
@@ -51,10 +78,10 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
           excerpt: formData.excerpt,
           content: formData.content,
           category: formData.category,
-          author_name: profile?.name || "Admin",
+          author_name: formData.author_name,
           read_time: formData.read_time,
           emoji: formData.emoji,
-          color_class: formData.color_class,
+          color_class: colorClass,
           published: true
         });
 
@@ -73,7 +100,8 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
         category: "Tecnologia",
         read_time: "5 min",
         emoji: "📝",
-        color_class: "bg-purple-500"
+        color: "purple",
+        author_name: ""
       });
       onPostAdded();
     } catch (error: any) {
@@ -108,6 +136,14 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            <div>
+              <Label>Nome do Autor *</Label>
+              <Input
+                value={formData.author_name}
+                onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
+                placeholder="Digite o nome do autor"
+              />
+            </div>
             <div>
               <Label>Título *</Label>
               <Input
@@ -170,12 +206,28 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
                 />
               </div>
               <div>
-                <Label>Cor (classe Tailwind)</Label>
-                <Input
-                  value={formData.color_class}
-                  onChange={(e) => setFormData({ ...formData, color_class: e.target.value })}
-                  placeholder="bg-purple-500"
-                />
+                <Label>Cor do Post</Label>
+                <Select
+                  value={formData.color}
+                  onValueChange={(value) => setFormData({ ...formData, color: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLOR_OPTIONS.map((color) => (
+                      <SelectItem key={color.value} value={color.value}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: color.hex }}
+                          />
+                          {color.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -186,7 +238,7 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isLoading || !formData.title.trim()}
+              disabled={isLoading || !formData.title.trim() || !formData.author_name.trim()}
               className="bg-gradient-to-r from-purple-500 to-pink-500"
             >
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
