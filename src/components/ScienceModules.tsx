@@ -31,7 +31,7 @@ import {
 import { CertificateModal } from "./CertificateModal";
 import { ForumSection } from "./ForumSection";
 import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesContent";
-import { AddContentCard } from "./admin/AddContentCard";
+import { AddModuleInline } from "./admin/AddModuleInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 // Fallback to static data if database is empty
@@ -610,8 +610,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           })}
           
           {/* Card para adicionar novo módulo - apenas admin */}
-          <AddContentCard
-            type="module"
+          <AddModuleInline
             selectedArea={selectedArea}
             onContentChange={handleContentChange}
             isAdmin={isAdmin}

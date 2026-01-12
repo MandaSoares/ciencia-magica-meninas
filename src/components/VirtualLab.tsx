@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2 } from "lucide-react";
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
-import { AddContentCard } from "./admin/AddContentCard";
+import { AddExperimentInline } from "./admin/AddExperimentInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -457,8 +457,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
             })}
             
             {/* Card para adicionar novo experimento - apenas admin */}
-            <AddContentCard
-              type="experiment"
+            <AddExperimentInline
               selectedArea={selectedArea}
               onContentChange={handleContentChange}
               isAdmin={isAdmin}
