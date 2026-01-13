@@ -19,6 +19,7 @@ interface LessonStep {
   type: 'video' | 'reading' | 'practice' | 'quiz' | 'inspiration';
   title: string;
   content: string;
+  duration?: string;
   videoUrl?: string;
   correctAnswer?: string;
 }
@@ -38,6 +39,10 @@ const lessonTypes = [
   { value: 'inspiration', label: 'Inspiração', icon: Award, color: 'bg-yellow-500' },
 ];
 
+const DURATION_OPTIONS = [
+  "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora"
+];
+
 export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }: AddLearningPathInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [step, setStep] = useState<'info' | 'lessons'>('info');
@@ -47,7 +52,6 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("Iniciante");
-  const [points, setPoints] = useState("30");
   
   // Lessons
   const [lessons, setLessons] = useState<LessonStep[]>([]);
@@ -55,6 +59,7 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
   const [lessonType, setLessonType] = useState<LessonStep['type']>('video');
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonContent, setLessonContent] = useState("");
+  const [lessonDuration, setLessonDuration] = useState("10 min");
   const [lessonVideoUrl, setLessonVideoUrl] = useState("");
   const [lessonCorrectAnswer, setLessonCorrectAnswer] = useState("");
 
@@ -66,32 +71,103 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
     setTitle("");
     setDescription("");
     setDifficulty("Iniciante");
-    setPoints("30");
     setLessons([]);
     setCurrentLessonIndex(-1);
     setStep('info');
     setIsEditing(false);
+    resetLessonForm();
+  };
+
+  const resetLessonForm = () => {
+    setLessonTitle("");
+    setLessonContent("");
+    setLessonDuration("10 min");
+    setLessonVideoUrl("");
+    setLessonCorrectAnswer("");
+  };
+
+  // Parse quiz options from content
+  const parseQuizOptions = (content: string): string[] => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const optionPattern = /^([A-D])\)/;
+    const options: string[] = [];
+    
+    for (const line of lines) {
+      const match = line.match(optionPattern);
+      if (match) {
+        options.push(match[1]);
+      }
+    }
+    
+    return options;
+  };
+
+  const validateLesson = (): boolean => {
+    // Validate title
+    if (!lessonTitle.trim()) {
+      toast({ title: "Digite o título da lição", variant: "destructive" });
+      return false;
+    }
+
+    // Validate content
+    if (!lessonContent.trim()) {
+      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
+      return false;
+    }
+
+    // Validate duration
+    if (!lessonDuration) {
+      toast({ title: "Selecione a duração", variant: "destructive" });
+      return false;
+    }
+
+    // Validate video URL for video type
+    if (lessonType === 'video' && !lessonVideoUrl.trim()) {
+      toast({ title: "Digite a URL do vídeo", variant: "destructive" });
+      return false;
+    }
+
+    // Validate quiz answer
+    if (lessonType === 'quiz') {
+      if (!lessonCorrectAnswer.trim()) {
+        toast({ title: "Digite a resposta correta", variant: "destructive" });
+        return false;
+      }
+
+      // Check if answer is in options
+      const options = parseQuizOptions(lessonContent);
+      if (options.length === 0) {
+        toast({ title: "Adicione as opções do quiz (A), B), C), D))", variant: "destructive" });
+        return false;
+      }
+
+      if (!options.includes(lessonCorrectAnswer.toUpperCase())) {
+        toast({ 
+          title: "Resposta inválida", 
+          description: `A resposta correta "${lessonCorrectAnswer}" não está entre as opções disponíveis: ${options.join(', ')}`,
+          variant: "destructive" 
+        });
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const addLesson = () => {
-    if (!lessonTitle.trim()) {
-      toast({ title: "Digite o título da lição", variant: "destructive" });
-      return;
-    }
+    if (!validateLesson()) return;
     
     const newLesson: LessonStep = {
       type: lessonType,
       title: lessonTitle,
       content: lessonContent,
+      duration: lessonDuration,
       videoUrl: lessonType === 'video' ? lessonVideoUrl : undefined,
-      correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer : undefined,
+      correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer.toUpperCase() : undefined,
     };
     
     setLessons([...lessons, newLesson]);
-    setLessonTitle("");
-    setLessonContent("");
-    setLessonVideoUrl("");
-    setLessonCorrectAnswer("");
+    resetLessonForm();
     setCurrentLessonIndex(-1);
   };
 
@@ -102,6 +178,11 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
       toast({ title: "Preencha título e descrição", variant: "destructive" });
+      return;
+    }
+
+    if (!difficulty) {
+      toast({ title: "Selecione a dificuldade", variant: "destructive" });
       return;
     }
     
@@ -129,7 +210,7 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
         description,
         icon: 'Star',
         difficulty,
-        points: parseInt(points) || 30,
+        points: 30,
         color: 'bg-purple-500',
         lessons: lessons as unknown as import('@/integrations/supabase/types').Json,
         sort_order: nextOrder,
@@ -189,22 +270,16 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
               <Label>Descrição *</Label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do nível" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Dificuldade</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Iniciante">Iniciante</SelectItem>
-                    <SelectItem value="Intermediário">Intermediário</SelectItem>
-                    <SelectItem value="Avançado">Avançado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Pontos</Label>
-                <Input type="number" value={points} onChange={(e) => setPoints(e.target.value)} />
-              </div>
+            <div>
+              <Label>Dificuldade *</Label>
+              <Select value={difficulty} onValueChange={setDifficulty}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Iniciante">Iniciante</SelectItem>
+                  <SelectItem value="Intermediário">Intermediário</SelectItem>
+                  <SelectItem value="Avançado">Avançado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -231,7 +306,7 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-800">{lesson.title}</p>
-                          <p className="text-xs text-gray-500">{typeInfo?.label}</p>
+                          <p className="text-xs text-gray-500">{typeInfo?.label} • {lesson.duration}</p>
                         </div>
                         <Button variant="ghost" size="sm" onClick={() => removeLesson(index)}>
                           <X className="w-4 h-4 text-red-500" />
@@ -268,20 +343,33 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
               </div>
 
               <div className="space-y-3">
-                <div>
-                  <Label>Título da Lição *</Label>
-                  <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="Título" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Título da Lição *</Label>
+                    <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="Título" />
+                  </div>
+                  <div>
+                    <Label>Duração *</Label>
+                    <Select value={lessonDuration} onValueChange={setLessonDuration}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {DURATION_OPTIONS.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 {lessonType === 'video' && (
                   <div>
-                    <Label>URL do Vídeo (YouTube embed)</Label>
+                    <Label>URL do Vídeo (YouTube embed) *</Label>
                     <Input value={lessonVideoUrl} onChange={(e) => setLessonVideoUrl(e.target.value)} placeholder="https://www.youtube.com/embed/..." />
                   </div>
                 )}
                 
                 <div>
-                  <Label>Conteúdo</Label>
+                  <Label>Conteúdo *</Label>
                   <Textarea 
                     value={lessonContent} 
                     onChange={(e) => setLessonContent(e.target.value)} 
@@ -292,7 +380,7 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
                 
                 {lessonType === 'quiz' && (
                   <div>
-                    <Label>Resposta Correta (A, B, C ou D)</Label>
+                    <Label>Resposta Correta (A, B, C ou D) *</Label>
                     <Input value={lessonCorrectAnswer} onChange={(e) => setLessonCorrectAnswer(e.target.value.toUpperCase())} placeholder="A" maxLength={1} />
                   </div>
                 )}

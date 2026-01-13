@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, ChevronLeft, ChevronRight, Loader2, Video, FileText, Beaker, HelpCircle, Award, X, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,14 @@ const lessonTypes = [
   { value: 'project', label: 'Projeto', icon: Award, color: 'bg-yellow-500' },
 ];
 
+const DURATION_OPTIONS = [
+  "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora", "1h30", "2 horas"
+];
+
+const ESTIMATED_TIME_OPTIONS = [
+  "1 hora", "2 horas", "3 horas", "4 horas", "5 horas", "6 horas", "8 horas", "10 horas"
+];
+
 export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddModuleInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [step, setStep] = useState<'info' | 'lessons' | 'project'>('info');
@@ -82,13 +91,87 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
     setProjectSteps("");
     setStep('info');
     setIsEditing(false);
+    resetLessonForm();
+  };
+
+  const resetLessonForm = () => {
+    setLessonTitle("");
+    setLessonContent("");
+    setLessonDuration("10 min");
+    setLessonVideoUrl("");
+    setLessonCorrectAnswer("");
+  };
+
+  // Parse quiz options from content
+  const parseQuizOptions = (content: string): string[] => {
+    const lines = content.split('\n').filter(line => line.trim());
+    const optionPattern = /^([A-D])\)/;
+    const options: string[] = [];
+    
+    for (const line of lines) {
+      const match = line.match(optionPattern);
+      if (match) {
+        options.push(match[1]);
+      }
+    }
+    
+    return options;
+  };
+
+  const validateLesson = (): boolean => {
+    // Validate title
+    if (!lessonTitle.trim()) {
+      toast({ title: "Digite o título da lição", variant: "destructive" });
+      return false;
+    }
+
+    // Validate content
+    if (!lessonContent.trim()) {
+      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
+      return false;
+    }
+
+    // Validate duration
+    if (!lessonDuration) {
+      toast({ title: "Selecione a duração", variant: "destructive" });
+      return false;
+    }
+
+    // Validate video URL for video type
+    if (lessonType === 'video' && !lessonVideoUrl.trim()) {
+      toast({ title: "Digite a URL do vídeo", variant: "destructive" });
+      return false;
+    }
+
+    // Validate quiz answer
+    if (lessonType === 'quiz') {
+      if (!lessonCorrectAnswer.trim()) {
+        toast({ title: "Digite a resposta correta", variant: "destructive" });
+        return false;
+      }
+
+      // Check if answer is in options
+      const options = parseQuizOptions(lessonContent);
+      if (options.length === 0) {
+        toast({ title: "Adicione as opções do quiz (A), B), C), D))", variant: "destructive" });
+        return false;
+      }
+
+      if (!options.includes(lessonCorrectAnswer.toUpperCase())) {
+        toast({ 
+          title: "Resposta inválida", 
+          description: `A resposta correta "${lessonCorrectAnswer}" não está entre as opções disponíveis: ${options.join(', ')}`,
+          variant: "destructive" 
+        });
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const addLesson = () => {
-    if (!lessonTitle.trim()) {
-      toast({ title: "Digite o título da lição", variant: "destructive" });
-      return;
-    }
+    if (!validateLesson()) return;
     
     const newLesson: ModuleLesson = {
       type: lessonType,
@@ -96,15 +179,11 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
       content: lessonContent,
       duration: lessonDuration,
       videoUrl: lessonType === 'video' ? lessonVideoUrl : undefined,
-      correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer : undefined,
+      correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer.toUpperCase() : undefined,
     };
     
     setLessons([...lessons, newLesson]);
-    setLessonTitle("");
-    setLessonContent("");
-    setLessonDuration("10 min");
-    setLessonVideoUrl("");
-    setLessonCorrectAnswer("");
+    resetLessonForm();
   };
 
   const removeLesson = (index: number) => {
@@ -127,13 +206,19 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
       return;
     }
 
+    const steps = projectSteps.split('\n').filter(s => s.trim());
+    if (steps.length === 0) {
+      toast({ title: "Adicione pelo menos uma dica/passo no desafio final", variant: "destructive" });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
       const finalProject: FinalProject = {
         title: projectTitle,
         description: projectDescription,
-        steps: projectSteps.split('\n').filter(s => s.trim()),
+        steps: steps,
       };
 
       const insertData = {
@@ -222,8 +307,15 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do módulo" />
           </div>
           <div>
-            <Label>Tempo Estimado</Label>
-            <Input value={estimatedTime} onChange={(e) => setEstimatedTime(e.target.value)} placeholder="3 horas" />
+            <Label>Tempo Estimado *</Label>
+            <Select value={estimatedTime} onValueChange={setEstimatedTime}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ESTIMATED_TIME_OPTIONS.map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -293,20 +385,27 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                   <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="Título" />
                 </div>
                 <div>
-                  <Label>Duração</Label>
-                  <Input value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="10 min" />
+                  <Label>Duração *</Label>
+                  <Select value={lessonDuration} onValueChange={setLessonDuration}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {DURATION_OPTIONS.map((d) => (
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
               {lessonType === 'video' && (
                 <div>
-                  <Label>URL do Vídeo (YouTube embed)</Label>
+                  <Label>URL do Vídeo (YouTube embed) *</Label>
                   <Input value={lessonVideoUrl} onChange={(e) => setLessonVideoUrl(e.target.value)} placeholder="https://www.youtube.com/embed/..." />
                 </div>
               )}
               
               <div>
-                <Label>Conteúdo</Label>
+                <Label>Conteúdo *</Label>
                 <Textarea 
                   value={lessonContent} 
                   onChange={(e) => setLessonContent(e.target.value)} 
@@ -317,7 +416,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
               
               {lessonType === 'quiz' && (
                 <div>
-                  <Label>Resposta Correta (A, B, C ou D)</Label>
+                  <Label>Resposta Correta (A, B, C ou D) *</Label>
                   <Input value={lessonCorrectAnswer} onChange={(e) => setLessonCorrectAnswer(e.target.value.toUpperCase())} placeholder="A" maxLength={1} />
                 </div>
               )}
@@ -360,7 +459,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                 <Textarea value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} placeholder="Descrição do desafio" rows={3} />
               </div>
               <div>
-                <Label>Dicas/Passos (um por linha)</Label>
+                <Label>Dicas/Passos (um por linha) *</Label>
                 <Textarea 
                   value={projectSteps} 
                   onChange={(e) => setProjectSteps(e.target.value)} 
@@ -378,7 +477,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isLoading || !projectTitle.trim() || !projectDescription.trim()}
+              disabled={isLoading || !projectTitle.trim() || !projectDescription.trim() || !projectSteps.trim()}
               className="bg-gradient-to-r from-purple-500 to-pink-500"
             >
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

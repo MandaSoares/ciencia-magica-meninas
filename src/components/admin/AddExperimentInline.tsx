@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ChevronLeft, ChevronRight, Loader2, Beaker, X, Save, Trash2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -15,12 +15,26 @@ interface AddExperimentInlineProps {
   isAdmin: boolean;
 }
 
+interface ExperimentStep {
+  text: string;
+  emoji: string;
+}
+
 const areaMap: Record<string, string> = {
   science: "Ciência",
   technology: "Tecnologia",
   engineering: "Engenharia",
   math: "Matemática",
 };
+
+const TIME_OPTIONS = [
+  "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora", "1h30", "2 horas"
+];
+
+const EMOJI_OPTIONS = [
+  "📝", "🔬", "🧪", "⚗️", "🔭", "🌡️", "💡", "⚡", "🔋", "🧲",
+  "🔥", "💧", "🌪️", "🌈", "✨", "🎨", "📊", "🔢", "🎯", "🚀"
+];
 
 export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: AddExperimentInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -36,9 +50,10 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState("");
   
-  // Steps
-  const [steps, setSteps] = useState<string[]>([]);
+  // Steps with individual emojis
+  const [steps, setSteps] = useState<ExperimentStep[]>([]);
   const [stepInput, setStepInput] = useState("");
+  const [stepEmoji, setStepEmoji] = useState("📝");
 
   const stemArea = areaMap[selectedArea] || "Ciência";
   
@@ -57,6 +72,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
     setMaterialInput("");
     setSteps([]);
     setStepInput("");
+    setStepEmoji("📝");
     setCurrentStepIndex(0);
     setIsEditing(false);
   };
@@ -74,8 +90,9 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
 
   const addStep = () => {
     if (stepInput.trim()) {
-      setSteps([...steps, stepInput.trim()]);
+      setSteps([...steps, { text: stepInput.trim(), emoji: stepEmoji }]);
       setStepInput("");
+      setStepEmoji("📝");
     }
   };
 
@@ -83,14 +100,45 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
     setSteps(steps.filter((_, i) => i !== index));
   };
 
+  const validateInfo = (): boolean => {
+    if (!title.trim()) {
+      toast({ title: "Digite o título do experimento", variant: "destructive" });
+      return false;
+    }
+    if (!description.trim()) {
+      toast({ title: "Digite a descrição", variant: "destructive" });
+      return false;
+    }
+    if (!difficulty) {
+      toast({ title: "Selecione a dificuldade", variant: "destructive" });
+      return false;
+    }
+    if (!time) {
+      toast({ title: "Selecione o tempo", variant: "destructive" });
+      return false;
+    }
+    if (!emoji.trim()) {
+      toast({ title: "Digite o emoji do experimento", variant: "destructive" });
+      return false;
+    }
+    return true;
+  };
+
+  const handleNextFromInfo = () => {
+    if (validateInfo()) {
+      setCurrentStepIndex(1);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim()) {
-      toast({ title: "Preencha título e descrição", variant: "destructive" });
+    if (!validateInfo()) {
+      setCurrentStepIndex(0);
       return;
     }
     
     if (materials.length === 0) {
       toast({ title: "Adicione pelo menos um material", variant: "destructive" });
+      setCurrentStepIndex(1);
       return;
     }
 
@@ -110,11 +158,11 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
         difficulty,
         time,
         materials,
-        steps,
+        steps: steps.map(s => s.text),
         icon: 'Beaker',
         color: 'bg-purple-500',
         image: emoji,
-        step_images: steps.map(() => '📝'),
+        step_images: steps.map(s => s.emoji),
       });
       
       if (error) throw error;
@@ -181,7 +229,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição curta e empolgante" />
             </div>
             <div>
-              <Label>Dificuldade</Label>
+              <Label>Dificuldade *</Label>
               <Select value={difficulty} onValueChange={setDifficulty}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -192,17 +240,24 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
               </Select>
             </div>
             <div>
-              <Label>Tempo</Label>
-              <Input value={time} onChange={(e) => setTime(e.target.value)} placeholder="15 min" />
+              <Label>Tempo *</Label>
+              <Select value={time} onValueChange={setTime}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TIME_OPTIONS.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <Label>Emoji do Experimento</Label>
+              <Label>Emoji do Experimento *</Label>
               <Input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🧪" />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-            <Button onClick={() => setCurrentStepIndex(1)} disabled={!title.trim() || !description.trim()}>
+            <Button onClick={handleNextFromInfo}>
               Próximo: Materiais
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
@@ -265,7 +320,8 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
                   <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
                     {index + 1}
                   </div>
-                  <p className="flex-1 text-gray-700">{step}</p>
+                  <span className="text-xl flex-shrink-0">{step.emoji}</span>
+                  <p className="flex-1 text-gray-700">{step.text}</p>
                   <Button variant="ghost" size="sm" onClick={() => removeStep(index)}>
                     <Trash2 className="w-4 h-4 text-red-500" />
                   </Button>
@@ -274,14 +330,31 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Adicionar Passo {steps.length + 1}</Label>
-            <Textarea 
-              value={stepInput} 
-              onChange={(e) => setStepInput(e.target.value)} 
-              placeholder="Descreva o que fazer neste passo..."
-              rows={2}
-            />
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="w-24">
+                <Label>Emoji</Label>
+                <Select value={stepEmoji} onValueChange={setStepEmoji}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EMOJI_OPTIONS.map((e) => (
+                      <SelectItem key={e} value={e}>{e}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label>Adicionar Passo {steps.length + 1}</Label>
+                <Textarea 
+                  value={stepInput} 
+                  onChange={(e) => setStepInput(e.target.value)} 
+                  placeholder="Descreva o que fazer neste passo..."
+                  rows={2}
+                />
+              </div>
+            </div>
             <Button onClick={addStep} variant="secondary" className="w-full">
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Passo

@@ -32,6 +32,10 @@ const COLOR_OPTIONS = [
   { value: "violet", label: "Violeta", hex: "#8B5CF6" },
 ];
 
+const READ_TIME_OPTIONS = [
+  "2 min", "3 min", "5 min", "7 min", "10 min", "15 min", "20 min", "30 min"
+];
+
 export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
   const { profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -189,11 +193,19 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
               </div>
               <div>
                 <Label>Tempo de Leitura</Label>
-                <Input
+                <Select
                   value={formData.read_time}
-                  onChange={(e) => setFormData({ ...formData, read_time: e.target.value })}
-                  placeholder="Ex: 5 min"
-                />
+                  onValueChange={(value) => setFormData({ ...formData, read_time: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {READ_TIME_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
