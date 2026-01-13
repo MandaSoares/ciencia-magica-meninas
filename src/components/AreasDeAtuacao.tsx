@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2, Trash2, Edit2 } from "lucide-react";
 import { useCareerAreasContent, Career, WomanProfile, getAreaLabel } from "@/hooks/useCareerAreasContent";
-import { AddContentCard } from "./admin/AddContentCard";
+import { AddCareerInline } from "./admin/AddCareerInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
-
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 interface AreasDeAtuacaoProps {
   onPointsEarned: (points: number) => void;
   selectedArea?: string;
@@ -43,6 +54,7 @@ const areaMetadata: Record<string, { name: string; icon: string; color: string; 
 export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: AreasDeAtuacaoProps) => {
   const [selectedCareer, setSelectedCareer] = useState<Career | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<WomanProfile | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { isAdmin, isModerator } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -53,6 +65,20 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
 
   const handleContentChange = () => {
     queryClient.invalidateQueries({ queryKey: ["career-areas-content"] });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const { error } = await supabase.from('career_areas_content').delete().eq('id', deleteId);
+      if (error) throw error;
+      toast({ title: "Carreira deletada com sucesso!" });
+      handleContentChange();
+    } catch (error: any) {
+      toast({ title: "Erro ao deletar", description: error.message, variant: "destructive" });
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   const handleSelectCareer = (career: Career) => {
@@ -193,9 +219,24 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
           {careers.map((career, index) => (
             <Card 
               key={index}
-              className="p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+              className="p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105 relative group"
               onClick={() => handleSelectCareer(career)}
             >
+              {(isAdmin || isModerator) && career.id && (
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteId(career.id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
               <div className="flex items-center gap-3 mb-3">
                 <div className={`w-10 h-10 ${currentAreaMeta.color} rounded-lg flex items-center justify-center`}>
                   <Briefcase className="w-5 h-5 text-white" />
@@ -211,8 +252,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
           ))}
           
           {/* Card para adicionar nova carreira - admin ou moderador */}
-          <AddContentCard
-            type="career"
+          <AddCareerInline
             selectedArea={selectedArea}
             onContentChange={handleContentChange}
             isAdmin={isAdmin}
@@ -221,6 +261,23 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
           />
         </div>
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta carreira? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
