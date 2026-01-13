@@ -2,11 +2,21 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, User, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, User, CheckCircle, Loader2, Trash2, Edit2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { AddBlogCard } from "@/components/admin/AddBlogCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const NewsletterSection = () => {
   const [email, setEmail] = useState("");
@@ -80,24 +90,12 @@ interface BlogPost {
   readTime: string;
   image: string;
   color: string;
-}
-
-interface DbBlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  author_name: string;
-  created_at: string;
-  read_time: string | null;
-  emoji: string | null;
-  color_class: string | null;
+  isFromDb?: boolean;
 }
 
 const staticBlogPosts: BlogPost[] = [
   {
-    id: "1",
+    id: "static-1",
     title: "Por que meninas devem aprender programação desde cedo?",
     excerpt: "Descubra como a programação desenvolve habilidades essenciais como lógica, criatividade e resolução de problemas.",
     content: `A programação é uma das habilidades mais importantes do século XXI, e quanto mais cedo começamos a aprender, melhor!
@@ -112,16 +110,7 @@ const staticBlogPosts: BlogPost[] = [
 
 **Mulheres na Programação**
 
-Sabia que a primeira programadora da história foi uma mulher? Ada Lovelace escreveu o primeiro algoritmo de computador em 1843! Outras mulheres incríveis como Grace Hopper (criadora do COBOL) e Margaret Hamilton (engenheira do software que levou o homem à lua) mudaram o mundo com código.
-
-**Como começar?**
-
-- Use plataformas visuais como Scratch para aprender os conceitos básicos
-- Experimente fazer pequenos projetos divertidos
-- Participe de comunidades de programação para meninas
-- Não tenha medo de errar - programar é sobre tentativa e erro!
-
-Lembre-se: não existe idade certa para começar, e você pode ser a próxima grande programadora que vai mudar o mundo!`,
+Sabia que a primeira programadora da história foi uma mulher? Ada Lovelace escreveu o primeiro algoritmo de computador em 1843! Outras mulheres incríveis como Grace Hopper (criadora do COBOL) e Margaret Hamilton (engenheira do software que levou o homem à lua) mudaram o mundo com código.`,
     category: "Tecnologia",
     author: "Ana Clara",
     date: "10 Dez 2024",
@@ -130,29 +119,19 @@ Lembre-se: não existe idade certa para começar, e você pode ser a próxima gr
     color: "bg-blue-500"
   },
   {
-    id: "2",
+    id: "static-2",
     title: "5 Mulheres cientistas que mudaram o mundo",
     excerpt: "Conheça histórias inspiradoras de Marie Curie, Ada Lovelace, Katherine Johnson e outras pioneiras da ciência.",
     content: `A história da ciência foi construída por muitas mulheres brilhantes que enfrentaram desafios e preconceitos para fazer descobertas que mudaram o mundo.
 
 **1. Marie Curie (1867-1934)**
-A única pessoa a ganhar dois Prêmios Nobel em áreas científicas diferentes (Física e Química). Descobriu a radioatividade e os elementos polônio e rádio. Sua pesquisa ajudou a desenvolver tratamentos contra o câncer.
+A única pessoa a ganhar dois Prêmios Nobel em áreas científicas diferentes (Física e Química). Descobriu a radioatividade e os elementos polônio e rádio.
 
 **2. Ada Lovelace (1815-1852)**
-Considerada a primeira programadora da história! Escreveu o primeiro algoritmo de computador, imaginando possibilidades para as máquinas que só se realizariam um século depois.
+Considerada a primeira programadora da história! Escreveu o primeiro algoritmo de computador.
 
 **3. Katherine Johnson (1918-2020)**
-Matemática afro-americana cujos cálculos foram essenciais para as missões espaciais da NASA. Seu trabalho ajudou a levar o primeiro americano ao espaço e, mais tarde, à Lua.
-
-**4. Rosalind Franklin (1920-1958)**
-Biofísica que produziu a famosa "Foto 51", imagem crucial para descobrir a estrutura do DNA. Sem seu trabalho, essa descoberta não teria sido possível.
-
-**5. Tu Youyou (1930-)**
-Farmacêutica chinesa que descobriu a artemisinina, tratamento que salvou milhões de vidas de malária. Ganhou o Prêmio Nobel de Medicina em 2015.
-
-**O que podemos aprender com elas?**
-
-Essas mulheres nos ensinam que a curiosidade, a persistência e a paixão pela descoberta podem superar qualquer obstáculo. Você também pode ser uma cientista que muda o mundo!`,
+Matemática afro-americana cujos cálculos foram essenciais para as missões espaciais da NASA.`,
     category: "Ciência",
     author: "Beatriz Santos",
     date: "08 Dez 2024",
@@ -160,177 +139,79 @@ Essas mulheres nos ensinam que a curiosidade, a persistência e a paixão pela d
     image: "🔬",
     color: "bg-green-500"
   },
-  {
-    id: "3",
-    title: "Engenharia para crianças: projetos divertidos para fazer em casa",
-    excerpt: "Atividades práticas e seguras que ensinam conceitos de engenharia usando materiais simples.",
-    content: `A engenharia está em toda parte, e você pode começar a explorar conceitos incríveis com materiais simples que provavelmente já tem em casa!
-
-**Projeto 1: Ponte de Palitos de Sorvete**
-- Materiais: palitos de sorvete, cola branca
-- Objetivo: construir uma ponte que suporte o maior peso possível
-- Conceito: estruturas e distribuição de forças
-
-**Projeto 2: Catapulta com Pregadores**
-- Materiais: pregadores de roupa, palitos de picolé, elásticos, tampinha de garrafa
-- Objetivo: lançar pequenos objetos
-- Conceito: energia potencial e cinética
-
-**Projeto 3: Carro Movido a Elástico**
-- Materiais: caixa de fósforos vazia, tampinhas, palitos e elásticos
-- Objetivo: criar um carrinho que anda sozinho
-- Conceito: energia elástica e movimento
-
-**Projeto 4: Torre de Espaguete**
-- Materiais: espaguete cru e marshmallows
-- Objetivo: construir a torre mais alta que fique de pé
-- Conceito: equilíbrio e geometria estrutural
-
-**Dicas importantes:**
-- Sempre peça ajuda de um adulto quando usar tesoura ou cola quente
-- Faça testes e não desista na primeira tentativa
-- Anote o que funcionou e o que não funcionou
-- Divirta-se experimentando!
-
-A engenharia é sobre criar soluções para problemas reais. Cada projeto que você faz te ensina algo novo!`,
-    category: "Engenharia",
-    author: "Carolina Lima",
-    date: "05 Dez 2024",
-    readTime: "6 min",
-    image: "🔧",
-    color: "bg-orange-500"
-  },
-  {
-    id: "4",
-    title: "Matemática divertida: jogos que ensinam sem você perceber",
-    excerpt: "Aprenda como tornar a matemática mais acessível e divertida através de jogos e desafios.",
-    content: `Quem disse que matemática precisa ser chata? Existem muitas formas divertidas de aprender e praticar matemática no dia a dia!
-
-**Jogos de Tabuleiro**
-
-1. **Banco Imobiliário**: Ensina sobre dinheiro, juros e negociação
-2. **Rummikub**: Desenvolve raciocínio lógico com sequências numéricas
-3. **Sudoku**: Exercita lógica e reconhecimento de padrões
-
-**Jogos do Dia a Dia**
-
-- **Desafio do Supermercado**: Calcule mentalmente quanto vai gastar antes de passar no caixa
-- **Corrida dos Números**: No carro, some as placas que você vê
-- **Chef Matemático**: Ajude na cozinha medindo ingredientes e calculando porções
-
-**Matemática na Natureza**
-
-Sabia que a matemática está na natureza? O padrão espiral das conchas, a simetria das flores e até as ondas do mar seguem padrões matemáticos!
-
-**Desafios para você:**
-
-1. Descubra a sequência de Fibonacci nos girassóis
-2. Encontre formas geométricas em prédios e construções
-3. Calcule quantos passos você dá para chegar à escola
-
-**Dica de ouro:**
-
-Não tenha medo de errar! Na matemática, os erros nos ajudam a entender melhor os conceitos. Cada problema resolvido é uma vitória!
-
-A matemática é como um quebra-cabeça gigante esperando para ser descoberto. Quanto mais você pratica, mais fácil e divertido fica!`,
-    category: "Matemática",
-    author: "Diana Oliveira",
-    date: "02 Dez 2024",
-    readTime: "4 min",
-    image: "🧮",
-    color: "bg-purple-500"
-  },
-  {
-    id: "5",
-    title: "Como despertar a curiosidade científica nas crianças",
-    excerpt: "Dicas práticas para pais e educadores incentivarem o interesse pela ciência desde a infância.",
-    content: `A curiosidade é a semente da ciência. Toda grande descoberta começou com uma pergunta simples: "Por quê?"
-
-**Incentivando Perguntas**
-
-Quando uma criança pergunta "Por que o céu é azul?" ou "Para onde vai a água quando seca?", ela está fazendo ciência! Incentive essas perguntas:
-
-- Responda com outras perguntas: "O que você acha?"
-- Pesquisem juntos a resposta
-- Faça experiências para descobrir
-
-**Transforme o Cotidiano em Laboratório**
-
-- **Cozinha**: Observe fermento em ação, misture cores com alimentos
-- **Jardim**: Plante sementes e acompanhe o crescimento
-- **Banho**: Explore flutuação com diferentes objetos
-- **Céu noturno**: Observe estrelas e fases da lua
-
-**Livros e Vídeos Inspiradores**
-
-Biografi as de cientistas, documentários da natureza e livros de experimentos são ótimos companheiros. Mostre que cientistas são pessoas normais que seguiram sua curiosidade.
-
-**Visite Museus e Feiras de Ciência**
-
-Experiências práticas em museus de ciência são memoráveis. Muitos oferecem atividades interativas que fascinam crianças de todas as idades.
-
-**O Mais Importante**
-
-Nunca diga "isso é muito difícil para você". Crianças são capazes de compreender conceitos complexos quando apresentados de forma adequada. Acredite no potencial delas!`,
-    category: "Educação",
-    author: "Elena Martins",
-    date: "28 Nov 2024",
-    readTime: "8 min",
-    image: "🌟",
-    color: "bg-pink-500"
-  },
-  {
-    id: "6",
-    title: "Inteligência Artificial explicada para crianças",
-    excerpt: "Uma introdução simples e divertida ao mundo da IA, com exemplos do cotidiano.",
-    content: `Você já conversou com a Alexa ou pediu para a Siri tocar uma música? Isso é Inteligência Artificial em ação!
-
-**O que é Inteligência Artificial?**
-
-IA são computadores que aprendem a fazer tarefas que normalmente precisariam de inteligência humana, como:
-- Reconhecer rostos em fotos
-- Entender o que você fala
-- Traduzir idiomas
-- Jogar xadrez
-
-**Como os Computadores Aprendem?**
-
-Imagine ensinar um robô a reconhecer gatos. Você mostraria milhares de fotos de gatos dizendo "isso é um gato". Depois de ver muitas fotos, o robô começa a perceber padrões: orelhas pontudas, bigodes, olhos brilhantes...
-
-É assim que a IA aprende: vendo muitos exemplos!
-
-**IA no Seu Dia a Dia**
-
-- **YouTube**: Sugere vídeos que você pode gostar
-- **Jogos**: Personagens que jogam contra você
-- **Filtros de Fotos**: Transformam seu rosto em animais
-- **Corretor Ortográfico**: Sugere correções enquanto você digita
-
-**O Futuro da IA**
-
-No futuro, a IA pode ajudar médicos a diagnosticar doenças, carros a dirigirem sozinhos e robôs a ajudarem em casa. Quem sabe você não cria a próxima grande IA?
-
-**Como Aprender Mais?**
-
-Existem ferramentas divertidas para crianças aprenderem sobre IA:
-- Teachable Machine do Google
-- Scratch com extensões de IA
-- Quick Draw do Google
-
-Lembre-se: a IA é uma ferramenta criada por pessoas. O mais importante é usar essa tecnologia para fazer o bem!`,
-    category: "Tecnologia",
-    author: "Fernanda Costa",
-    date: "25 Nov 2024",
-    readTime: "6 min",
-    image: "🤖",
-    color: "bg-cyan-500"
-  }
 ];
 
 export const Blog = ({ onBack }: BlogProps) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(staticBlogPosts);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
   const { isAdmin, isModerator } = useAdminCheck();
-  const blogPosts = staticBlogPosts;
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('published', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const dbPosts: BlogPost[] = (data || []).map((post) => ({
+        id: post.id,
+        title: post.title,
+        excerpt: post.excerpt,
+        content: post.content,
+        category: post.category,
+        author: post.author_name,
+        date: new Date(post.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+        readTime: post.read_time || '5 min',
+        image: post.emoji || '📝',
+        color: post.color_class || 'bg-purple-500',
+        isFromDb: true,
+      }));
+
+      setBlogPosts([...dbPosts, ...staticBlogPosts]);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setBlogPosts(staticBlogPosts);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleDeletePost = async () => {
+    if (!deletePostId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', deletePostId);
+
+      if (error) throw error;
+
+      toast({ title: "Post deletado com sucesso!" });
+      fetchPosts();
+    } catch (error: any) {
+      toast({ title: "Erro ao deletar", description: error.message, variant: "destructive" });
+    } finally {
+      setDeletePostId(null);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      </div>
+    );
+  }
 
   if (selectedPost) {
     return (
@@ -389,16 +270,6 @@ export const Blog = ({ onBack }: BlogProps) => {
                       </h3>
                     );
                   }
-                  if (paragraph.startsWith('-') || paragraph.startsWith('1.')) {
-                    const items = paragraph.split('\n');
-                    return (
-                      <ul key={index} className="list-disc list-inside space-y-1 my-3 text-gray-600">
-                        {items.map((item, i) => (
-                          <li key={i}>{item.replace(/^[-\d.]\s*/, '').replace(/\*\*/g, '')}</li>
-                        ))}
-                      </ul>
-                    );
-                  }
                   return (
                     <p key={index} className="text-gray-600 my-3 leading-relaxed">
                       {paragraph}
@@ -438,7 +309,7 @@ export const Blog = ({ onBack }: BlogProps) => {
           {blogPosts.map((post) => (
             <Card 
               key={post.id} 
-              className="overflow-hidden hover:shadow-xl transition-all cursor-pointer group"
+              className="overflow-hidden hover:shadow-xl transition-all cursor-pointer group relative"
               onClick={() => setSelectedPost(post)}
             >
               <div className={`${post.color} p-8 text-center text-5xl group-hover:scale-105 transition-transform`}>
@@ -476,17 +347,51 @@ export const Blog = ({ onBack }: BlogProps) => {
                   </div>
                 </div>
               </div>
+              
+              {/* Admin/Moderator controls */}
+              {(isAdmin || isModerator) && post.isFromDb && (
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeletePostId(post.id);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </Card>
           ))}
           
           {/* Card para adicionar novo post - admin ou moderador */}
           {(isAdmin || isModerator) && (
-            <AddBlogCard onPostAdded={() => {}} />
+            <AddBlogCard onPostAdded={fetchPosts} />
           )}
         </div>
 
         <NewsletterSection />
       </div>
+
+      <AlertDialog open={!!deletePostId} onOpenChange={() => setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este post? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePost} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
