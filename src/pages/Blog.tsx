@@ -165,7 +165,7 @@ export const Blog = ({ onBack }: BlogProps) => {
         content: post.content,
         category: post.category,
         author: post.author_name,
-        date: new Date(post.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+        date: new Date(post.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
         readTime: post.read_time || '5 min',
         image: post.emoji || '📝',
         color: post.color_class || 'bg-purple-500',

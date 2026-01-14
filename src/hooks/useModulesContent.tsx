@@ -18,6 +18,7 @@ export interface FinalProject {
 
 export interface Module {
   id: string;
+  dbId?: string;
   title: string;
   description: string;
   category: string;
@@ -56,6 +57,7 @@ export const useModulesContent = (selectedArea: string) => {
 
       return (data || []).map((item) => ({
         id: item.module_id,
+        dbId: item.id,
         title: item.title,
         description: item.description,
         category: item.category,

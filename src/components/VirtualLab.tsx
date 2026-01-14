@@ -1,12 +1,24 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2 } from "lucide-react";
+import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2, Edit2 } from "lucide-react";
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
 import { AddExperimentInline } from "./admin/AddExperimentInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface VirtualLabProps {
   onPointsEarned: (points: number) => void;
@@ -331,6 +343,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
+  const [deleteExperimentId, setDeleteExperimentId] = useState<string | null>(null);
   
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -342,6 +355,26 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
 
   const handleContentChange = () => {
     queryClient.invalidateQueries({ queryKey: ["experiments-content"] });
+  };
+
+  const handleDeleteExperiment = async () => {
+    if (!deleteExperimentId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('experiments_content')
+        .delete()
+        .eq('id', deleteExperimentId);
+
+      if (error) throw error;
+
+      toast({ title: "Experimento deletado com sucesso!" });
+      handleContentChange();
+    } catch (error: any) {
+      toast({ title: "Erro ao deletar", description: error.message, variant: "destructive" });
+    } finally {
+      setDeleteExperimentId(null);
+    }
   };
 
   // Sync completed experiments from database
@@ -404,8 +437,9 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
             {experiments.map((experiment) => {
               const Icon = experiment.icon;
               const isCompleted = completedExperiments.has(experiment.id);
+              const isFromDb = dbExperiments?.some(e => e.id === experiment.id);
               return (
-                <Card key={experiment.id} className="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <Card key={experiment.id} className="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 relative group">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`w-12 h-12 ${experiment.color} rounded-lg flex items-center justify-center`}>
                       <Icon className="w-6 h-6 text-white" />
@@ -452,6 +486,34 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
                     <Sparkles className="w-4 h-4 mr-2" />
                     {isCompleted ? "Refazer Experimento" : "Começar Experimento"}
                   </Button>
+                  
+                  {/* Admin controls */}
+                  {isAdmin && isFromDb && (
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toast({ title: "Edição", description: "Funcionalidade de edição em desenvolvimento" });
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteExperimentId(experiment.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               );
             })}

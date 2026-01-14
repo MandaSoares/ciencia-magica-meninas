@@ -11,6 +11,7 @@ export interface LessonStep {
 
 export interface PathLevel {
   id: number;
+  dbId?: string;
   title: string;
   description: string;
   icon: string;
@@ -51,6 +52,7 @@ export const useLearningPathContent = (selectedArea: string) => {
 
       return (data || []).map((item) => ({
         id: item.level_number,
+        dbId: item.id,
         title: item.title,
         description: item.description,
         icon: item.icon || "Star",

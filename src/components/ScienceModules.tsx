@@ -26,6 +26,8 @@ import {
   Lightbulb,
   X,
   Loader2,
+  Trash2,
+  Edit2,
   type LucideIcon
 } from "lucide-react";
 import { CertificateModal } from "./CertificateModal";
@@ -34,6 +36,18 @@ import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesConte
 import { AddModuleInline } from "./admin/AddModuleInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 // Fallback to static data if database is empty
 import { allModules } from "@/data/modulesData";
 
@@ -92,6 +106,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
 
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -104,6 +119,26 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
 
   const handleContentChange = () => {
     queryClient.invalidateQueries({ queryKey: ["modules-content"] });
+  };
+
+  const handleDeleteModule = async () => {
+    if (!deleteModuleId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('modules_content')
+        .delete()
+        .eq('id', deleteModuleId);
+
+      if (error) throw error;
+
+      toast({ title: "Módulo deletado com sucesso!" });
+      handleContentChange();
+    } catch (error: any) {
+      toast({ title: "Erro ao deletar", description: error.message, variant: "destructive" });
+    } finally {
+      setDeleteModuleId(null);
+    }
   };
 
   // Sync completed modules from database
@@ -571,7 +606,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             return (
               <Card 
                 key={module.id}
-                className="overflow-hidden hover:shadow-lg transition-all cursor-pointer"
+                className="overflow-hidden hover:shadow-lg transition-all cursor-pointer relative group"
                 onClick={() => startModule(module)}
               >
                 <div className={`${module.color} p-4 text-white`}>
@@ -605,6 +640,34 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
                     </div>
                   )}
                 </div>
+                
+                {/* Admin controls */}
+                {isAdmin && module.dbId && (
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0 bg-white/80"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast({ title: "Edição", description: "Funcionalidade de edição em desenvolvimento" });
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteModuleId(module.dbId!);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </Card>
             );
           })}
@@ -625,6 +688,23 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
         moduleName={completedModuleName}
         completionDate={new Date().toLocaleDateString('pt-BR')}
       />
+
+      <AlertDialog open={!!deleteModuleId} onOpenChange={() => setDeleteModuleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteModule} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
