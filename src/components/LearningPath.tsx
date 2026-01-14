@@ -21,6 +21,8 @@ import {
   Leaf,
   Rocket,
   Loader2,
+  Trash2,
+  Edit2,
   type LucideIcon
 } from "lucide-react";
 import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
@@ -28,6 +30,18 @@ import { LessonContent } from "./LessonContent";
 import { AddLearningPathInline } from "./admin/AddLearningPathInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 // Fallback to static data if database is empty
 import { getPathByArea } from "@/data/learningPathData";
 
@@ -60,6 +74,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
   const [completedLevels, setCompletedLevels] = useState<Set<number>>(new Set());
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
+  const [deleteLevelId, setDeleteLevelId] = useState<string | null>(null);
 
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -72,6 +87,26 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
 
   const handleContentChange = () => {
     queryClient.invalidateQueries({ queryKey: ["learning-path-content"] });
+  };
+
+  const handleDeleteLevel = async () => {
+    if (!deleteLevelId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('learning_path_content')
+        .delete()
+        .eq('id', deleteLevelId);
+
+      if (error) throw error;
+
+      toast({ title: "Nível deletado com sucesso!" });
+      handleContentChange();
+    } catch (error: any) {
+      toast({ title: "Erro ao deletar", description: error.message, variant: "destructive" });
+    } finally {
+      setDeleteLevelId(null);
+    }
   };
 
   // Sync completed lessons from database
@@ -170,7 +205,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
                 <div className={`flex items-center gap-6 mb-8 ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
                   {/* Card de conteúdo */}
                   <Card 
-                    className={`flex-1 p-4 cursor-pointer transition-all hover:shadow-lg ${
+                    className={`flex-1 p-4 cursor-pointer transition-all hover:shadow-lg relative group ${
                       completed ? 'bg-green-50 border-green-200' : 
                       unlocked ? 'bg-white border-purple-200 hover:border-purple-400' : 
                       'bg-gray-50 border-gray-200'
@@ -204,6 +239,35 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
                         {level.difficulty}
                       </span>
                     </div>
+                    
+                    {/* Admin controls */}
+                    {isAdmin && level.dbId && (
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Edit functionality - could open edit modal
+                            toast({ title: "Edição", description: "Funcionalidade de edição em desenvolvimento" });
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteLevelId(level.dbId!);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </Card>
                   
                   {/* Círculo numerado */}
@@ -252,6 +316,23 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
           que são cursos mais completos com projetos finais e certificados.
         </p>
       </Card>
+
+      <AlertDialog open={!!deleteLevelId} onOpenChange={() => setDeleteLevelId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este nível? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLevel} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
