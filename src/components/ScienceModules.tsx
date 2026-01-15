@@ -34,6 +34,7 @@ import { CertificateModal } from "./CertificateModal";
 import { ForumSection } from "./ForumSection";
 import { useModulesContent, Module, ModuleLesson } from "@/hooks/useModulesContent";
 import { AddModuleInline } from "./admin/AddModuleInline";
+import { EditModuleInline } from "./admin/EditModuleInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,6 +108,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
   const [answerSubmitted, setAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
 
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -705,6 +707,14 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editingModule && (
+        <EditModuleInline
+          module={editingModule}
+          onClose={() => setEditingModule(null)}
+          onContentChange={handleContentChange}
+        />
+      )}
     </div>
   );
 };
