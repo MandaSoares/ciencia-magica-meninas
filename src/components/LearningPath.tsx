@@ -28,6 +28,7 @@ import {
 import { useLearningPathContent, getAreaName, PathLevel } from "@/hooks/useLearningPathContent";
 import { LessonContent } from "./LessonContent";
 import { AddLearningPathInline } from "./admin/AddLearningPathInline";
+import { EditLearningPathInline } from "./admin/EditLearningPathInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,6 +76,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
   const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [showLesson, setShowLesson] = useState(false);
   const [deleteLevelId, setDeleteLevelId] = useState<string | null>(null);
+  const [editingLevel, setEditingLevel] = useState<PathLevel | null>(null);
 
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -249,8 +251,7 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Edit functionality - could open edit modal
-                            toast({ title: "Edição", description: "Funcionalidade de edição em desenvolvimento" });
+                            setEditingLevel(level);
                           }}
                         >
                           <Edit2 className="w-4 h-4" />
@@ -333,6 +334,14 @@ export const LearningPath = ({ onPointsEarned, selectedArea, onLessonComplete, c
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editingLevel && (
+        <EditLearningPathInline
+          level={editingLevel}
+          onClose={() => setEditingLevel(null)}
+          onContentChange={handleContentChange}
+        />
+      )}
     </div>
   );
 };

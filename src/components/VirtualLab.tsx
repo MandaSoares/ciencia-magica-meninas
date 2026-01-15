@@ -5,6 +5,7 @@ import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
 import { AddExperimentInline } from "./admin/AddExperimentInline";
+import { EditExperimentInline } from "./admin/EditExperimentInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -344,6 +345,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const [showComments, setShowComments] = useState(false);
   const [showSafetyWarning, setShowSafetyWarning] = useState(true);
   const [deleteExperimentId, setDeleteExperimentId] = useState<string | null>(null);
+  const [editingExperiment, setEditingExperiment] = useState<Experiment | null>(null);
   
   const { isAdmin } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -493,10 +495,10 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 w-8 p-0"
+                        className="h-8 w-8 p-0 bg-white"
                         onClick={(e) => {
                           e.stopPropagation();
-                          toast({ title: "Edição", description: "Funcionalidade de edição em desenvolvimento" });
+                          setEditingExperiment(experiment);
                         }}
                       >
                         <Edit2 className="w-4 h-4" />
@@ -684,6 +686,14 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {editingExperiment && (
+        <EditExperimentInline
+          experiment={editingExperiment as unknown as import("@/hooks/useExperimentsContent").Experiment}
+          onClose={() => setEditingExperiment(null)}
+          onContentChange={handleContentChange}
+        />
+      )}
     </div>
   );
 };
