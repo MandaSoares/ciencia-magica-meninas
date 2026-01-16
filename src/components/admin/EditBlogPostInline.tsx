@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import { ImageUpload } from "./ImageUpload";
 interface BlogPostData {
   id: string;
   title: string;
@@ -19,6 +19,7 @@ interface BlogPostData {
   readTime: string;
   image: string;
   color: string;
+  coverImage?: string;
 }
 
 interface EditBlogPostInlineProps {
@@ -59,6 +60,7 @@ export const EditBlogPostInline = ({ post, onSave, onCancel }: EditBlogPostInlin
     read_time: post.readTime,
     emoji: post.image,
     color_class: post.color,
+    cover_image: post.coverImage || "",
   });
 
   const handleSave = async () => {
@@ -94,6 +96,7 @@ export const EditBlogPostInline = ({ post, onSave, onCancel }: EditBlogPostInlin
           read_time: formData.read_time,
           emoji: formData.emoji,
           color_class: formData.color_class,
+          cover_image: formData.cover_image || null,
         })
         .eq('id', post.id);
 
@@ -230,6 +233,13 @@ export const EditBlogPostInline = ({ post, onSave, onCancel }: EditBlogPostInlin
             </Select>
           </div>
         </div>
+
+        <ImageUpload
+          value={formData.cover_image}
+          onChange={(url) => setFormData({ ...formData, cover_image: url })}
+          label="Imagem de Capa (opcional)"
+          folder="blog"
+        />
 
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>
