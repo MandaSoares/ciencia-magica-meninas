@@ -7,6 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { AddBlogCard } from "@/components/admin/AddBlogCard";
+import { EditBlogPostInline } from "@/components/admin/EditBlogPostInline";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -143,6 +144,7 @@ Matemática afro-americana cujos cálculos foram essenciais para as missões esp
 
 export const Blog = ({ onBack }: BlogProps) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(staticBlogPosts);
   const [isLoading, setIsLoading] = useState(true);
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
@@ -305,6 +307,19 @@ export const Blog = ({ onBack }: BlogProps) => {
           </p>
         </div>
 
+        {editingPost ? (
+          <div className="mb-8">
+            <EditBlogPostInline
+              post={editingPost}
+              onSave={() => {
+                setEditingPost(null);
+                fetchPosts();
+              }}
+              onCancel={() => setEditingPost(null)}
+            />
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {blogPosts.map((post) => (
             <Card 
@@ -351,6 +366,17 @@ export const Blog = ({ onBack }: BlogProps) => {
               {/* Admin/Moderator controls */}
               {(isAdmin || isModerator) && post.isFromDb && (
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingPost(post);
+                    }}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"
