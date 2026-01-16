@@ -10,6 +10,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { ImageUpload } from "./ImageUpload";
 
 interface AddBlogCardProps {
   onPostAdded: () => void;
@@ -48,7 +49,8 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
     read_time: "5 min",
     emoji: "📝",
     color: "purple",
-    author_name: ""
+    author_name: "",
+    cover_image: ""
   });
 
   const handleSubmit = async () => {
@@ -86,6 +88,7 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
           read_time: formData.read_time,
           emoji: formData.emoji,
           color_class: colorClass,
+          cover_image: formData.cover_image || null,
           published: true
         });
 
@@ -105,7 +108,8 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
         read_time: "5 min",
         emoji: "📝",
         color: "purple",
-        author_name: ""
+        author_name: "",
+        cover_image: ""
       });
       onPostAdded();
     } catch (error: any) {
@@ -238,10 +242,17 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
                         </div>
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <ImageUpload
+            value={formData.cover_image}
+            onChange={(url) => setFormData({ ...formData, cover_image: url })}
+            label="Imagem de Capa (opcional)"
+            folder="blog"
+          />
           </div>
 
           <DialogFooter>
