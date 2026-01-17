@@ -252,6 +252,7 @@ export type Database = {
       experiments_content: {
         Row: {
           color: string | null
+          cover_image: string | null
           created_at: string
           description: string
           difficulty: string | null
@@ -270,6 +271,7 @@ export type Database = {
         }
         Insert: {
           color?: string | null
+          cover_image?: string | null
           created_at?: string
           description: string
           difficulty?: string | null
@@ -288,6 +290,7 @@ export type Database = {
         }
         Update: {
           color?: string | null
+          cover_image?: string | null
           created_at?: string
           description?: string
           difficulty?: string | null
