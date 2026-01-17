@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ImageUpload } from "./ImageUpload";
 
 interface AddExperimentInlineProps {
   selectedArea: string;
@@ -47,6 +48,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
   const [difficulty, setDifficulty] = useState("Fácil");
   const [time, setTime] = useState("15 min");
   const [emoji, setEmoji] = useState("🧪");
+  const [coverImage, setCoverImage] = useState("");
   const [materials, setMaterials] = useState<string[]>([]);
   const [materialInput, setMaterialInput] = useState("");
   
@@ -68,6 +70,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
     setDifficulty("Fácil");
     setTime("15 min");
     setEmoji("🧪");
+    setCoverImage("");
     setMaterials([]);
     setMaterialInput("");
     setSteps([]);
@@ -163,6 +166,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
         color: 'bg-purple-500',
         image: emoji,
         step_images: steps.map(s => s.emoji),
+        cover_image: coverImage || null,
       });
       
       if (error) throw error;
@@ -255,6 +259,13 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
               <Input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🧪" />
             </div>
           </div>
+          
+          <ImageUpload
+            value={coverImage}
+            onChange={setCoverImage}
+            label="Imagem de Capa (opcional)"
+            folder="experiments"
+          />
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={resetForm}>Cancelar</Button>
             <Button onClick={handleNextFromInfo}>

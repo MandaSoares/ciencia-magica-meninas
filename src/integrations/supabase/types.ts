@@ -21,6 +21,7 @@ export type Database = {
           category: string
           color_class: string | null
           content: string
+          cover_image: string | null
           created_at: string
           emoji: string | null
           excerpt: string
@@ -36,6 +37,7 @@ export type Database = {
           category: string
           color_class?: string | null
           content: string
+          cover_image?: string | null
           created_at?: string
           emoji?: string | null
           excerpt: string
@@ -51,6 +53,7 @@ export type Database = {
           category?: string
           color_class?: string | null
           content?: string
+          cover_image?: string | null
           created_at?: string
           emoji?: string | null
           excerpt?: string
