@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Loader2, Video, BookOpen, PenTool, CheckCircle, Award, X, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Video, BookOpen, PenTool, CheckCircle, Award, X, Save, Plus, Edit2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { PathLevel, LessonStep } from "@/hooks/useLearningPathContent";
+import { RichTextEditor } from "./RichTextEditor";
+import { QuizOptionsEditor, parseQuizContent, optionsToContent } from "./QuizOptionsEditor";
 
 interface EditLearningPathInlineProps {
   level: PathLevel;
@@ -39,12 +40,20 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
   
   // Lessons
   const [lessons, setLessons] = useState<LessonStep[]>(level.lessons || []);
+  const [editingLessonIndex, setEditingLessonIndex] = useState<number | null>(null);
   const [lessonType, setLessonType] = useState<LessonStep['type']>('video');
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonContent, setLessonContent] = useState("");
   const [lessonDuration, setLessonDuration] = useState("10 min");
   const [lessonVideoUrl, setLessonVideoUrl] = useState("");
   const [lessonCorrectAnswer, setLessonCorrectAnswer] = useState("");
+  
+  // Quiz specific state
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [quizOptions, setQuizOptions] = useState<{letter: string; text: string}[]>([
+    { letter: "A", text: "" },
+    { letter: "B", text: "" }
+  ]);
 
   const resetLessonForm = () => {
     setLessonTitle("");
@@ -52,30 +61,31 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
     setLessonDuration("10 min");
     setLessonVideoUrl("");
     setLessonCorrectAnswer("");
+    setQuizQuestion("");
+    setQuizOptions([{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    setEditingLessonIndex(null);
   };
 
-  const parseQuizOptions = (content: string): string[] => {
-    const lines = content.split('\n').filter(line => line.trim());
-    const optionPattern = /^([A-D])\)/;
-    const options: string[] = [];
+  const loadLessonForEdit = (lesson: LessonStep, index: number) => {
+    setEditingLessonIndex(index);
+    setLessonType(lesson.type);
+    setLessonTitle(lesson.title);
+    setLessonDuration(lesson.duration || "10 min");
+    setLessonVideoUrl(lesson.videoUrl || "");
+    setLessonCorrectAnswer(lesson.correctAnswer || "");
     
-    for (const line of lines) {
-      const match = line.match(optionPattern);
-      if (match) {
-        options.push(match[1]);
-      }
+    if (lesson.type === 'quiz') {
+      const parsed = parseQuizContent(lesson.content);
+      setQuizQuestion(parsed.question);
+      setQuizOptions(parsed.options.length > 0 ? parsed.options : [{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    } else {
+      setLessonContent(lesson.content);
     }
-    
-    return options;
   };
 
   const validateLesson = (): boolean => {
     if (!lessonTitle.trim()) {
       toast({ title: "Digite o título da lição", variant: "destructive" });
-      return false;
-    }
-    if (!lessonContent.trim()) {
-      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
       return false;
     }
     if (!lessonDuration) {
@@ -86,45 +96,62 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
       toast({ title: "Digite a URL do vídeo", variant: "destructive" });
       return false;
     }
+    
     if (lessonType === 'quiz') {
-      if (!lessonCorrectAnswer.trim()) {
-        toast({ title: "Digite a resposta correta", variant: "destructive" });
+      if (!quizQuestion.trim()) {
+        toast({ title: "Digite a pergunta do quiz", variant: "destructive" });
         return false;
       }
-      const options = parseQuizOptions(lessonContent);
-      if (options.length === 0) {
-        toast({ title: "Adicione as opções do quiz (A), B), C), D))", variant: "destructive" });
+      if (quizOptions.some(opt => !opt.text.trim())) {
+        toast({ title: "Preencha todas as opções do quiz", variant: "destructive" });
         return false;
       }
-      if (!options.includes(lessonCorrectAnswer.toUpperCase())) {
-        toast({ 
-          title: "Resposta inválida", 
-          description: `A resposta correta "${lessonCorrectAnswer}" não está entre as opções disponíveis: ${options.join(', ')}`,
-          variant: "destructive" 
-        });
+      if (!lessonCorrectAnswer) {
+        toast({ title: "Selecione a resposta correta", variant: "destructive" });
+        return false;
+      }
+    } else {
+      if (!lessonContent.trim()) {
+        toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
         return false;
       }
     }
+    
     return true;
   };
 
-  const addLesson = () => {
+  const saveLesson = () => {
     if (!validateLesson()) return;
+    
+    const content = lessonType === 'quiz' 
+      ? optionsToContent(quizQuestion, quizOptions)
+      : lessonContent;
     
     const newLesson: LessonStep = {
       type: lessonType,
       title: lessonTitle,
-      content: lessonContent,
+      content,
+      duration: lessonDuration,
       videoUrl: lessonType === 'video' ? lessonVideoUrl : undefined,
       correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer.toUpperCase() : undefined,
     };
     
-    setLessons([...lessons, newLesson]);
+    if (editingLessonIndex !== null) {
+      const newLessons = [...lessons];
+      newLessons[editingLessonIndex] = newLesson;
+      setLessons(newLessons);
+    } else {
+      setLessons([...lessons, newLesson]);
+    }
+    
     resetLessonForm();
   };
 
   const removeLesson = (index: number) => {
     setLessons(lessons.filter((_, i) => i !== index));
+    if (editingLessonIndex === index) {
+      resetLessonForm();
+    }
   };
 
   const handleSubmit = async () => {
@@ -187,7 +214,13 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
             </div>
             <div>
               <Label>Descrição *</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+              <RichTextEditor
+                value={description}
+                onChange={setDescription}
+                label=""
+                placeholder="Descrição do nível"
+                rows={3}
+              />
             </div>
             <div>
               <Label>Dificuldade *</Label>
@@ -217,15 +250,19 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
                   {lessons.map((lesson, index) => {
                     const typeInfo = lessonTypes.find(t => t.value === lesson.type);
                     const Icon = typeInfo?.icon || BookOpen;
+                    const isEditing = editingLessonIndex === index;
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${isEditing ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-gray-50'}`}>
                         <div className={`w-8 h-8 ${typeInfo?.color} rounded flex items-center justify-center`}>
                           <Icon className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-gray-800">{lesson.title}</p>
-                          <p className="text-xs text-gray-500">{typeInfo?.label}</p>
+                          <p className="text-xs text-gray-500">{typeInfo?.label} • {lesson.duration || "10 min"}</p>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => loadLessonForEdit(lesson, index)}>
+                          <Edit2 className="w-4 h-4 text-blue-500" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => removeLesson(index)}>
                           <X className="w-4 h-4 text-red-500" />
                         </Button>
@@ -237,7 +274,9 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
             )}
 
             <Card className="p-4 bg-purple-50 border-purple-200">
-              <h4 className="font-semibold text-gray-800 mb-4">Adicionar Nova Lição</h4>
+              <h4 className="font-semibold text-gray-800 mb-4">
+                {editingLessonIndex !== null ? `Editando Lição ${editingLessonIndex + 1}` : 'Adicionar Nova Lição'}
+              </h4>
               
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {lessonTypes.map((type) => {
@@ -285,26 +324,45 @@ export const EditLearningPathInline = ({ level, onClose, onContentChange }: Edit
                   </div>
                 )}
                 
-                <div>
-                  <Label>Conteúdo *</Label>
-                  <Textarea 
-                    value={lessonContent} 
-                    onChange={(e) => setLessonContent(e.target.value)} 
-                    placeholder={lessonType === 'quiz' ? "Pergunta?\nA) Opção 1\nB) Opção 2\nC) Opção 3\nD) Opção 4" : "Conteúdo da lição"}
+                {lessonType === 'quiz' ? (
+                  <QuizOptionsEditor
+                    question={quizQuestion}
+                    onQuestionChange={setQuizQuestion}
+                    options={quizOptions}
+                    onOptionsChange={setQuizOptions}
+                    correctAnswer={lessonCorrectAnswer}
+                    onCorrectAnswerChange={setLessonCorrectAnswer}
+                  />
+                ) : (
+                  <RichTextEditor
+                    value={lessonContent}
+                    onChange={setLessonContent}
+                    label="Conteúdo *"
+                    placeholder="Conteúdo da lição"
                     rows={4}
                   />
-                </div>
-                
-                {lessonType === 'quiz' && (
-                  <div>
-                    <Label>Resposta Correta (A, B, C ou D) *</Label>
-                    <Input value={lessonCorrectAnswer} onChange={(e) => setLessonCorrectAnswer(e.target.value.toUpperCase())} placeholder="A" maxLength={1} />
-                  </div>
                 )}
 
-                <Button onClick={addLesson} className="w-full" variant="secondary">
-                  Adicionar Lição
-                </Button>
+                <div className="flex gap-2">
+                  {editingLessonIndex !== null && (
+                    <Button onClick={resetLessonForm} variant="outline" className="flex-1">
+                      Cancelar Edição
+                    </Button>
+                  )}
+                  <Button onClick={saveLesson} variant="secondary" className="flex-1">
+                    {editingLessonIndex !== null ? (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Lição
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar Lição
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </Card>
 
