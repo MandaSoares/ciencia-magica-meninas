@@ -9,6 +9,7 @@ import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2, User } from 
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Career, WomanProfile } from "@/hooks/useCareerAreasContent";
+import { ImageUpload } from "./ImageUpload";
 
 interface EditCareerInlineProps {
   career: Career;
@@ -199,10 +200,13 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
                   <Label>História *</Label>
                   <Textarea value={womanStory} onChange={(e) => setWomanStory(e.target.value)} placeholder="Conte a história inspiradora..." rows={3} />
                 </div>
-                <div>
-                  <Label>URL da Imagem (opcional)</Label>
-                  <Input value={womanImage} onChange={(e) => setWomanImage(e.target.value)} placeholder="https://..." />
-                </div>
+                
+                <ImageUpload
+                  value={womanImage}
+                  onChange={setWomanImage}
+                  label="Foto da Mulher Inspiradora"
+                  folder="women-profiles"
+                />
 
                 <Button onClick={addWoman} className="w-full" variant="secondary">
                   <Plus className="w-4 h-4 mr-2" />

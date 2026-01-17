@@ -13,6 +13,7 @@ export interface Experiment {
   color: string;
   image: string;
   stepImages: string[];
+  coverImage?: string;
 }
 
 // Map area keys to database stem_area values
@@ -62,6 +63,7 @@ export const useExperimentsContent = (selectedArea: string) => {
         color: item.color || "bg-purple-500",
         image: item.image || "🧪",
         stepImages: item.step_images || [],
+        coverImage: item.cover_image || undefined,
       }));
     },
   });
