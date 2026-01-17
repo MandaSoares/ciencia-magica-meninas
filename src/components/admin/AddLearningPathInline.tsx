@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ChevronLeft, ChevronRight, Loader2, Video, BookOpen, PenTool, CheckCircle, Award, X, Save } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Loader2, Video, BookOpen, PenTool, CheckCircle, Award, X, Save, Edit2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { RichTextEditor } from "./RichTextEditor";
+import { QuizOptionsEditor, optionsToContent } from "./QuizOptionsEditor";
 
 interface AddLearningPathInlineProps {
   selectedArea: string;
@@ -55,13 +56,20 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
   
   // Lessons
   const [lessons, setLessons] = useState<LessonStep[]>([]);
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(-1);
+  const [editingLessonIndex, setEditingLessonIndex] = useState<number | null>(null);
   const [lessonType, setLessonType] = useState<LessonStep['type']>('video');
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonContent, setLessonContent] = useState("");
   const [lessonDuration, setLessonDuration] = useState("10 min");
   const [lessonVideoUrl, setLessonVideoUrl] = useState("");
   const [lessonCorrectAnswer, setLessonCorrectAnswer] = useState("");
+  
+  // Quiz specific state
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [quizOptions, setQuizOptions] = useState<{letter: string; text: string}[]>([
+    { letter: "A", text: "" },
+    { letter: "B", text: "" }
+  ]);
 
   const stemArea = areaMap[selectedArea] || "Ciência";
 
@@ -72,7 +80,6 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
     setDescription("");
     setDifficulty("Iniciante");
     setLessons([]);
-    setCurrentLessonIndex(-1);
     setStep('info');
     setIsEditing(false);
     resetLessonForm();
@@ -84,95 +91,110 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
     setLessonDuration("10 min");
     setLessonVideoUrl("");
     setLessonCorrectAnswer("");
+    setQuizQuestion("");
+    setQuizOptions([{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    setEditingLessonIndex(null);
   };
 
-  // Parse quiz options from content
-  const parseQuizOptions = (content: string): string[] => {
-    const lines = content.split('\n').filter(line => line.trim());
-    const optionPattern = /^([A-D])\)/;
-    const options: string[] = [];
+  const loadLessonForEdit = (lesson: LessonStep, index: number) => {
+    setEditingLessonIndex(index);
+    setLessonType(lesson.type);
+    setLessonTitle(lesson.title);
+    setLessonDuration(lesson.duration || "10 min");
+    setLessonVideoUrl(lesson.videoUrl || "");
+    setLessonCorrectAnswer(lesson.correctAnswer || "");
     
-    for (const line of lines) {
-      const match = line.match(optionPattern);
-      if (match) {
-        options.push(match[1]);
+    if (lesson.type === 'quiz') {
+      // Parse existing content
+      const lines = lesson.content.split('\n').filter(line => line.trim());
+      let question = "";
+      const options: {letter: string; text: string}[] = [];
+      
+      for (const line of lines) {
+        const optionMatch = line.match(/^([A-F])\)\s*(.*)$/);
+        if (optionMatch) {
+          options.push({ letter: optionMatch[1], text: optionMatch[2] });
+        } else if (!question) {
+          question = line;
+        }
       }
+      
+      setQuizQuestion(question);
+      setQuizOptions(options.length > 0 ? options : [{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    } else {
+      setLessonContent(lesson.content);
     }
-    
-    return options;
   };
 
   const validateLesson = (): boolean => {
-    // Validate title
     if (!lessonTitle.trim()) {
       toast({ title: "Digite o título da lição", variant: "destructive" });
       return false;
     }
-
-    // Validate content
-    if (!lessonContent.trim()) {
-      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
-      return false;
-    }
-
-    // Validate duration
     if (!lessonDuration) {
       toast({ title: "Selecione a duração", variant: "destructive" });
       return false;
     }
-
-    // Validate video URL for video type
     if (lessonType === 'video' && !lessonVideoUrl.trim()) {
       toast({ title: "Digite a URL do vídeo", variant: "destructive" });
       return false;
     }
-
-    // Validate quiz answer
+    
     if (lessonType === 'quiz') {
-      if (!lessonCorrectAnswer.trim()) {
-        toast({ title: "Digite a resposta correta", variant: "destructive" });
+      if (!quizQuestion.trim()) {
+        toast({ title: "Digite a pergunta do quiz", variant: "destructive" });
         return false;
       }
-
-      // Check if answer is in options
-      const options = parseQuizOptions(lessonContent);
-      if (options.length === 0) {
-        toast({ title: "Adicione as opções do quiz (A), B), C), D))", variant: "destructive" });
+      if (quizOptions.some(opt => !opt.text.trim())) {
+        toast({ title: "Preencha todas as opções do quiz", variant: "destructive" });
         return false;
       }
-
-      if (!options.includes(lessonCorrectAnswer.toUpperCase())) {
-        toast({ 
-          title: "Resposta inválida", 
-          description: `A resposta correta "${lessonCorrectAnswer}" não está entre as opções disponíveis: ${options.join(', ')}`,
-          variant: "destructive" 
-        });
+      if (!lessonCorrectAnswer) {
+        toast({ title: "Selecione a resposta correta", variant: "destructive" });
+        return false;
+      }
+    } else {
+      if (!lessonContent.trim()) {
+        toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
         return false;
       }
     }
-
+    
     return true;
   };
 
-  const addLesson = () => {
+  const saveLesson = () => {
     if (!validateLesson()) return;
+    
+    const content = lessonType === 'quiz' 
+      ? optionsToContent(quizQuestion, quizOptions)
+      : lessonContent;
     
     const newLesson: LessonStep = {
       type: lessonType,
       title: lessonTitle,
-      content: lessonContent,
+      content,
       duration: lessonDuration,
       videoUrl: lessonType === 'video' ? lessonVideoUrl : undefined,
       correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer.toUpperCase() : undefined,
     };
     
-    setLessons([...lessons, newLesson]);
+    if (editingLessonIndex !== null) {
+      const newLessons = [...lessons];
+      newLessons[editingLessonIndex] = newLesson;
+      setLessons(newLessons);
+    } else {
+      setLessons([...lessons, newLesson]);
+    }
+    
     resetLessonForm();
-    setCurrentLessonIndex(-1);
   };
 
   const removeLesson = (index: number) => {
     setLessons(lessons.filter((_, i) => i !== index));
+    if (editingLessonIndex === index) {
+      resetLessonForm();
+    }
   };
 
   const handleSubmit = async () => {
@@ -268,7 +290,13 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
             </div>
             <div>
               <Label>Descrição *</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do nível" />
+              <RichTextEditor
+                value={description}
+                onChange={setDescription}
+                label=""
+                placeholder="Descrição do nível"
+                rows={3}
+              />
             </div>
             <div>
               <Label>Dificuldade *</Label>
@@ -299,8 +327,9 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
                   {lessons.map((lesson, index) => {
                     const typeInfo = lessonTypes.find(t => t.value === lesson.type);
                     const Icon = typeInfo?.icon || BookOpen;
+                    const isEditingThis = editingLessonIndex === index;
                     return (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${isEditingThis ? 'bg-purple-100 ring-2 ring-purple-500' : 'bg-gray-50'}`}>
                         <div className={`w-8 h-8 ${typeInfo?.color} rounded flex items-center justify-center`}>
                           <Icon className="w-4 h-4 text-white" />
                         </div>
@@ -308,6 +337,9 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
                           <p className="font-medium text-gray-800">{lesson.title}</p>
                           <p className="text-xs text-gray-500">{typeInfo?.label} • {lesson.duration}</p>
                         </div>
+                        <Button variant="ghost" size="sm" onClick={() => loadLessonForEdit(lesson, index)}>
+                          <Edit2 className="w-4 h-4 text-blue-500" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => removeLesson(index)}>
                           <X className="w-4 h-4 text-red-500" />
                         </Button>
@@ -320,7 +352,9 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
 
             {/* Formulário para nova lição */}
             <Card className="p-4 bg-purple-50 border-purple-200">
-              <h4 className="font-semibold text-gray-800 mb-4">Adicionar Nova Lição</h4>
+              <h4 className="font-semibold text-gray-800 mb-4">
+                {editingLessonIndex !== null ? `Editando Lição ${editingLessonIndex + 1}` : 'Adicionar Nova Lição'}
+              </h4>
               
               <div className="grid grid-cols-5 gap-2 mb-4">
                 {lessonTypes.map((type) => {
@@ -368,27 +402,45 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
                   </div>
                 )}
                 
-                <div>
-                  <Label>Conteúdo *</Label>
-                  <Textarea 
-                    value={lessonContent} 
-                    onChange={(e) => setLessonContent(e.target.value)} 
-                    placeholder={lessonType === 'quiz' ? "Pergunta?\nA) Opção 1\nB) Opção 2\nC) Opção 3\nD) Opção 4" : "Conteúdo da lição"}
+                {lessonType === 'quiz' ? (
+                  <QuizOptionsEditor
+                    question={quizQuestion}
+                    onQuestionChange={setQuizQuestion}
+                    options={quizOptions}
+                    onOptionsChange={setQuizOptions}
+                    correctAnswer={lessonCorrectAnswer}
+                    onCorrectAnswerChange={setLessonCorrectAnswer}
+                  />
+                ) : (
+                  <RichTextEditor
+                    value={lessonContent}
+                    onChange={setLessonContent}
+                    label="Conteúdo *"
+                    placeholder="Conteúdo da lição"
                     rows={4}
                   />
-                </div>
-                
-                {lessonType === 'quiz' && (
-                  <div>
-                    <Label>Resposta Correta (A, B, C ou D) *</Label>
-                    <Input value={lessonCorrectAnswer} onChange={(e) => setLessonCorrectAnswer(e.target.value.toUpperCase())} placeholder="A" maxLength={1} />
-                  </div>
                 )}
 
-                <Button onClick={addLesson} className="w-full" variant="secondary">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Lição
-                </Button>
+                <div className="flex gap-2">
+                  {editingLessonIndex !== null && (
+                    <Button onClick={resetLessonForm} variant="outline" className="flex-1">
+                      Cancelar Edição
+                    </Button>
+                  )}
+                  <Button onClick={saveLesson} variant="secondary" className="flex-1">
+                    {editingLessonIndex !== null ? (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Lição
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar Lição
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </Card>
 

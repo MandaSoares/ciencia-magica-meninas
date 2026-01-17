@@ -5,6 +5,7 @@ export interface LessonStep {
   type: 'video' | 'reading' | 'practice' | 'quiz' | 'inspiration';
   title: string;
   content: string;
+  duration?: string;
   videoUrl?: string;
   correctAnswer?: string;
 }
