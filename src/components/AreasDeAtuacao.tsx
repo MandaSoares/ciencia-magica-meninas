@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2, Trash2, Edit2 } from "lucide-react";
 import { useCareerAreasContent, Career, WomanProfile, getAreaLabel } from "@/hooks/useCareerAreasContent";
 import { AddCareerInline } from "./admin/AddCareerInline";
+import { EditCareerInline } from "./admin/EditCareerInline";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 interface AreasDeAtuacaoProps {
   onPointsEarned: (points: number) => void;
   selectedArea?: string;
@@ -55,6 +57,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
   const [selectedCareer, setSelectedCareer] = useState<Career | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<WomanProfile | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingCareer, setEditingCareer] = useState<Career | null>(null);
 
   const { isAdmin, isModerator } = useAdminCheck();
   const queryClient = useQueryClient();
@@ -226,15 +229,28 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="outline"
                     className="h-8 w-8 p-0"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDeleteId(career.id);
+                      setEditingCareer(career);
                     }}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Edit2 className="w-4 h-4" />
                   </Button>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteId(career.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               )}
               <div className="flex items-center gap-3 mb-3">
@@ -260,6 +276,15 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
             iconClassName={currentAreaMeta.color}
           />
         </div>
+      )}
+
+      {/* Modal de edição de carreira */}
+      {editingCareer && (
+        <EditCareerInline
+          career={editingCareer}
+          onClose={() => setEditingCareer(null)}
+          onContentChange={handleContentChange}
+        />
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
