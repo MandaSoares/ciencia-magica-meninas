@@ -3,14 +3,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ImageUpload } from "./ImageUpload";
+import { RichTextEditor } from "./RichTextEditor";
 
 interface AddBlogCardProps {
   onPostAdded: () => void;
@@ -49,8 +48,7 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
     read_time: "5 min",
     emoji: "📝",
     color: "purple",
-    author_name: "",
-    cover_image: ""
+    author_name: ""
   });
 
   const handleSubmit = async () => {
@@ -88,7 +86,6 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
           read_time: formData.read_time,
           emoji: formData.emoji,
           color_class: colorClass,
-          cover_image: formData.cover_image || null,
           published: true
         });
 
@@ -108,8 +105,7 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
         read_time: "5 min",
         emoji: "📝",
         color: "purple",
-        author_name: "",
-        cover_image: ""
+        author_name: ""
       });
       onPostAdded();
     } catch (error: any) {
@@ -162,22 +158,23 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
             </div>
             <div>
               <Label>Resumo</Label>
-              <Textarea
+              <Input
                 value={formData.excerpt}
                 onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                 placeholder="Breve resumo do post"
-                rows={2}
               />
             </div>
-            <div>
-              <Label>Conteúdo *</Label>
-              <Textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="Conteúdo completo do post"
-                rows={10}
-              />
-            </div>
+            
+            <RichTextEditor
+              value={formData.content}
+              onChange={(value) => setFormData({ ...formData, content: value })}
+              label="Conteúdo *"
+              placeholder="Escreva o conteúdo do post..."
+              rows={10}
+              showImageUpload
+              imageFolder="blog"
+            />
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Categoria</Label>
@@ -242,17 +239,10 @@ export const AddBlogCard = ({ onPostAdded }: AddBlogCardProps) => {
                         </div>
                       </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-
-          <ImageUpload
-            value={formData.cover_image}
-            onChange={(url) => setFormData({ ...formData, cover_image: url })}
-            label="Imagem de Capa (opcional)"
-            folder="blog"
-          />
           </div>
 
           <DialogFooter>

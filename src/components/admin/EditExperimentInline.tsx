@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2, Edit } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Experiment } from "@/hooks/useExperimentsContent";
 import { ImageUpload } from "./ImageUpload";
+import { EmojiPicker } from "./EmojiPicker";
 
 interface EditExperimentInlineProps {
   experiment: Experiment;
@@ -26,11 +27,6 @@ const TIME_OPTIONS = [
   "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora", "1h30", "2 horas"
 ];
 
-const EMOJI_OPTIONS = [
-  "📝", "🔬", "🧪", "⚗️", "🔭", "🌡️", "💡", "⚡", "🔋", "🧲",
-  "🔥", "💧", "🌪️", "🌈", "✨", "🎨", "📊", "🔢", "🎯", "🚀"
-];
-
 export const EditExperimentInline = ({ experiment, onClose, onContentChange }: EditExperimentInlineProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +41,7 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
   const [materials, setMaterials] = useState<string[]>(experiment.materials);
   const [materialInput, setMaterialInput] = useState("");
   
-  // Steps with individual emojis
+  // Steps with individual emojis/images
   const [steps, setSteps] = useState<ExperimentStep[]>(
     experiment.steps.map((step, i) => ({
       text: step,
@@ -54,6 +50,7 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
   );
   const [stepInput, setStepInput] = useState("");
   const [stepEmoji, setStepEmoji] = useState("📝");
+  const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
   
   const stepLabels = ['Informações', 'Materiais', 'Passos'];
 
@@ -68,16 +65,36 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
     setMaterials(materials.filter((_, i) => i !== index));
   };
 
-  const addStep = () => {
+  const addOrUpdateStep = () => {
     if (stepInput.trim()) {
-      setSteps([...steps, { text: stepInput.trim(), emoji: stepEmoji }]);
+      if (editingStepIndex !== null) {
+        const updated = [...steps];
+        updated[editingStepIndex] = { text: stepInput.trim(), emoji: stepEmoji };
+        setSteps(updated);
+        toast({ title: "Passo atualizado!" });
+        setEditingStepIndex(null);
+      } else {
+        setSteps([...steps, { text: stepInput.trim(), emoji: stepEmoji }]);
+      }
       setStepInput("");
       setStepEmoji("📝");
     }
   };
 
+  const editStep = (index: number) => {
+    const step = steps[index];
+    setStepInput(step.text);
+    setStepEmoji(step.emoji);
+    setEditingStepIndex(index);
+  };
+
   const removeStep = (index: number) => {
     setSteps(steps.filter((_, i) => i !== index));
+    if (editingStepIndex === index) {
+      setEditingStepIndex(null);
+      setStepInput("");
+      setStepEmoji("📝");
+    }
   };
 
   const validateInfo = (): boolean => {
@@ -98,7 +115,7 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
       return false;
     }
     if (!emoji.trim()) {
-      toast({ title: "Digite o emoji do experimento", variant: "destructive" });
+      toast({ title: "Selecione o emoji do experimento", variant: "destructive" });
       return false;
     }
     return true;
@@ -217,8 +234,11 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
                 </Select>
               </div>
               <div>
-                <Label>Emoji do Experimento *</Label>
-                <Input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="🧪" />
+                <EmojiPicker
+                  value={emoji}
+                  onChange={setEmoji}
+                  label="Emoji do Experimento *"
+                />
               </div>
             </div>
             
@@ -288,38 +308,44 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
             
             {steps.length > 0 && (
               <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-                {steps.map((step, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
-                      {index + 1}
+                {steps.map((step, index) => {
+                  const isUrl = step.emoji?.startsWith("http");
+                  return (
+                    <div key={index} className={`flex items-start gap-3 p-3 rounded-lg ${editingStepIndex === index ? 'bg-purple-100 border-2 border-purple-300' : 'bg-gray-50'}`}>
+                      <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      {isUrl ? (
+                        <img src={step.emoji} alt="step" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                      ) : (
+                        <span className="text-xl flex-shrink-0">{step.emoji}</span>
+                      )}
+                      <p className="flex-1 text-gray-700">{step.text}</p>
+                      <Button variant="ghost" size="sm" onClick={() => editStep(index)}>
+                        <Edit className="w-4 h-4 text-blue-500" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeStep(index)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
-                    <span className="text-xl flex-shrink-0">{step.emoji}</span>
-                    <p className="flex-1 text-gray-700">{step.text}</p>
-                    <Button variant="ghost" size="sm" onClick={() => removeStep(index)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <div className="w-24">
-                  <Label>Emoji</Label>
-                  <Select value={stepEmoji} onValueChange={setStepEmoji}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EMOJI_OPTIONS.map((e) => (
-                        <SelectItem key={e} value={e}>{e}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="flex gap-2 items-end">
+                <div className="w-32">
+                  <EmojiPicker
+                    value={stepEmoji}
+                    onChange={setStepEmoji}
+                    label="Emoji/Imagem"
+                    showImageOption
+                    imageFolder="step-images"
+                  />
                 </div>
                 <div className="flex-1">
-                  <Label>Adicionar Passo {steps.length + 1}</Label>
+                  <Label>{editingStepIndex !== null ? `Editar Passo ${editingStepIndex + 1}` : `Adicionar Passo ${steps.length + 1}`}</Label>
                   <Textarea 
                     value={stepInput} 
                     onChange={(e) => setStepInput(e.target.value)} 
@@ -328,10 +354,15 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
                   />
                 </div>
               </div>
-              <Button onClick={addStep} variant="secondary" className="w-full">
+              <Button onClick={addOrUpdateStep} variant="secondary" className="w-full">
                 <Plus className="w-4 h-4 mr-2" />
-                Adicionar Passo
+                {editingStepIndex !== null ? "Atualizar Passo" : "Adicionar Passo"}
               </Button>
+              {editingStepIndex !== null && (
+                <Button onClick={() => { setEditingStepIndex(null); setStepInput(""); setStepEmoji("📝"); }} variant="outline" className="w-full">
+                  Cancelar Edição
+                </Button>
+              )}
             </div>
 
             <div className="flex justify-between pt-4">

@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ChevronLeft, ChevronRight, Loader2, Video, FileText, Beaker, HelpCircle, Award, X, Save } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Loader2, Video, FileText, Beaker, HelpCircle, Award, X, Save, Edit, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { RichTextEditor } from "./RichTextEditor";
+import { QuizOptionsEditor, optionsToContent, parseQuizContent } from "./QuizOptionsEditor";
 
 interface AddModuleInlineProps {
   selectedArea: string;
@@ -72,6 +73,16 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
   const [lessonVideoUrl, setLessonVideoUrl] = useState("");
   const [lessonCorrectAnswer, setLessonCorrectAnswer] = useState("");
   
+  // Quiz editor state
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [quizOptions, setQuizOptions] = useState<{letter: string; text: string}[]>([
+    { letter: "A", text: "" },
+    { letter: "B", text: "" }
+  ]);
+  
+  // Editing existing lesson
+  const [editingLessonIndex, setEditingLessonIndex] = useState<number | null>(null);
+  
   // Final Project
   const [projectTitle, setProjectTitle] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
@@ -100,94 +111,95 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
     setLessonDuration("10 min");
     setLessonVideoUrl("");
     setLessonCorrectAnswer("");
-  };
-
-  // Parse quiz options from content
-  const parseQuizOptions = (content: string): string[] => {
-    const lines = content.split('\n').filter(line => line.trim());
-    const optionPattern = /^([A-D])\)/;
-    const options: string[] = [];
-    
-    for (const line of lines) {
-      const match = line.match(optionPattern);
-      if (match) {
-        options.push(match[1]);
-      }
-    }
-    
-    return options;
+    setQuizQuestion("");
+    setQuizOptions([{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    setEditingLessonIndex(null);
   };
 
   const validateLesson = (): boolean => {
-    // Validate title
     if (!lessonTitle.trim()) {
       toast({ title: "Digite o título da lição", variant: "destructive" });
       return false;
     }
-
-    // Validate content
-    if (!lessonContent.trim()) {
-      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
-      return false;
-    }
-
-    // Validate duration
     if (!lessonDuration) {
       toast({ title: "Selecione a duração", variant: "destructive" });
       return false;
     }
-
-    // Validate video URL for video type
     if (lessonType === 'video' && !lessonVideoUrl.trim()) {
       toast({ title: "Digite a URL do vídeo", variant: "destructive" });
       return false;
     }
-
-    // Validate quiz answer
     if (lessonType === 'quiz') {
-      if (!lessonCorrectAnswer.trim()) {
-        toast({ title: "Digite a resposta correta", variant: "destructive" });
+      if (!quizQuestion.trim()) {
+        toast({ title: "Digite a pergunta do quiz", variant: "destructive" });
         return false;
       }
-
-      // Check if answer is in options
-      const options = parseQuizOptions(lessonContent);
-      if (options.length === 0) {
-        toast({ title: "Adicione as opções do quiz (A), B), C), D))", variant: "destructive" });
+      const validOptions = quizOptions.filter(o => o.text.trim());
+      if (validOptions.length < 2) {
+        toast({ title: "Adicione pelo menos 2 opções", variant: "destructive" });
         return false;
       }
-
-      if (!options.includes(lessonCorrectAnswer.toUpperCase())) {
-        toast({ 
-          title: "Resposta inválida", 
-          description: `A resposta correta "${lessonCorrectAnswer}" não está entre as opções disponíveis: ${options.join(', ')}`,
-          variant: "destructive" 
-        });
+      if (!lessonCorrectAnswer) {
+        toast({ title: "Selecione a resposta correta", variant: "destructive" });
         return false;
       }
+    } else if (!lessonContent.trim()) {
+      toast({ title: "Digite o conteúdo da lição", variant: "destructive" });
+      return false;
     }
-
     return true;
   };
 
-  const addLesson = () => {
+  const addOrUpdateLesson = () => {
     if (!validateLesson()) return;
+    
+    const content = lessonType === 'quiz' 
+      ? optionsToContent(quizQuestion, quizOptions.filter(o => o.text.trim()))
+      : lessonContent;
     
     const newLesson: ModuleLesson = {
       type: lessonType,
       title: lessonTitle,
-      content: lessonContent,
+      content: content,
       duration: lessonDuration,
       videoUrl: lessonType === 'video' ? lessonVideoUrl : undefined,
       correctAnswer: lessonType === 'quiz' ? lessonCorrectAnswer.toUpperCase() : undefined,
     };
     
-    setLessons([...lessons, newLesson]);
+    if (editingLessonIndex !== null) {
+      const updated = [...lessons];
+      updated[editingLessonIndex] = newLesson;
+      setLessons(updated);
+      toast({ title: "Lição atualizada!" });
+    } else {
+      setLessons([...lessons, newLesson]);
+    }
     resetLessonForm();
+  };
+
+  const editLesson = (index: number) => {
+    const lesson = lessons[index];
+    setLessonType(lesson.type);
+    setLessonTitle(lesson.title);
+    setLessonDuration(lesson.duration);
+    setLessonVideoUrl(lesson.videoUrl || "");
+    setLessonCorrectAnswer(lesson.correctAnswer || "");
+    setEditingLessonIndex(index);
+    
+    if (lesson.type === 'quiz') {
+      const parsed = parseQuizContent(lesson.content);
+      setQuizQuestion(parsed.question);
+      setQuizOptions(parsed.options.length >= 2 ? parsed.options : [{ letter: "A", text: "" }, { letter: "B", text: "" }]);
+    } else {
+      setLessonContent(lesson.content);
+    }
   };
 
   const removeLesson = (index: number) => {
     setLessons(lessons.filter((_, i) => i !== index));
+    if (editingLessonIndex === index) {
+      resetLessonForm();
+    }
   };
 
   const handleSubmit = async () => {
@@ -302,10 +314,13 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
             <Label>Título do Módulo *</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Programação Básica" />
           </div>
-          <div>
-            <Label>Descrição *</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição do módulo" />
-          </div>
+          <RichTextEditor
+            value={description}
+            onChange={setDescription}
+            label="Descrição *"
+            placeholder="Descrição do módulo"
+            rows={3}
+          />
           <div>
             <Label>Tempo Estimado *</Label>
             <Select value={estimatedTime} onValueChange={setEstimatedTime}>
@@ -337,7 +352,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                   const typeInfo = lessonTypes.find(t => t.value === lesson.type);
                   const Icon = typeInfo?.icon || FileText;
                   return (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${editingLessonIndex === index ? 'bg-purple-100 border-2 border-purple-300' : 'bg-gray-50'}`}>
                       <div className={`w-8 h-8 ${typeInfo?.color} rounded flex items-center justify-center`}>
                         <Icon className="w-4 h-4 text-white" />
                       </div>
@@ -345,8 +360,11 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                         <p className="font-medium text-gray-800">{lesson.title}</p>
                         <p className="text-xs text-gray-500">{typeInfo?.label} • {lesson.duration}</p>
                       </div>
+                      <Button variant="ghost" size="sm" onClick={() => editLesson(index)}>
+                        <Edit className="w-4 h-4 text-blue-500" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => removeLesson(index)}>
-                        <X className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
                   );
@@ -356,7 +374,9 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
           )}
 
           <Card className="p-4 bg-purple-50 border-purple-200">
-            <h4 className="font-semibold text-gray-800 mb-4">Adicionar Lição</h4>
+            <h4 className="font-semibold text-gray-800 mb-4">
+              {editingLessonIndex !== null ? "Editar Lição" : "Adicionar Lição"}
+            </h4>
             
             <div className="grid grid-cols-5 gap-2 mb-4">
               {lessonTypes.map((type) => {
@@ -404,27 +424,35 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                 </div>
               )}
               
-              <div>
-                <Label>Conteúdo *</Label>
-                <Textarea 
-                  value={lessonContent} 
-                  onChange={(e) => setLessonContent(e.target.value)} 
-                  placeholder={lessonType === 'quiz' ? "Pergunta?\nA) Opção 1\nB) Opção 2\nC) Opção 3\nD) Opção 4" : "Conteúdo da lição"}
-                  rows={4}
+              {lessonType === 'quiz' ? (
+                <QuizOptionsEditor
+                  question={quizQuestion}
+                  onQuestionChange={setQuizQuestion}
+                  options={quizOptions}
+                  onOptionsChange={setQuizOptions}
+                  correctAnswer={lessonCorrectAnswer}
+                  onCorrectAnswerChange={setLessonCorrectAnswer}
                 />
-              </div>
-              
-              {lessonType === 'quiz' && (
-                <div>
-                  <Label>Resposta Correta (A, B, C ou D) *</Label>
-                  <Input value={lessonCorrectAnswer} onChange={(e) => setLessonCorrectAnswer(e.target.value.toUpperCase())} placeholder="A" maxLength={1} />
-                </div>
+              ) : (
+                <RichTextEditor
+                  value={lessonContent}
+                  onChange={setLessonContent}
+                  label="Conteúdo *"
+                  placeholder="Conteúdo da lição"
+                  rows={4}
+                  showImageUpload={lessonType === 'reading' || lessonType === 'practice' || lessonType === 'project'}
+                />
               )}
 
-              <Button onClick={addLesson} className="w-full" variant="secondary">
+              <Button onClick={addOrUpdateLesson} className="w-full" variant="secondary">
                 <Plus className="w-4 h-4 mr-2" />
-                Adicionar Lição
+                {editingLessonIndex !== null ? "Atualizar Lição" : "Adicionar Lição"}
               </Button>
+              {editingLessonIndex !== null && (
+                <Button onClick={resetLessonForm} className="w-full" variant="outline">
+                  Cancelar Edição
+                </Button>
+              )}
             </div>
           </Card>
 
@@ -454,19 +482,21 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
                 <Label>Título do Desafio *</Label>
                 <Input value={projectTitle} onChange={(e) => setProjectTitle(e.target.value)} placeholder="Ex: Crie seu primeiro programa" />
               </div>
-              <div>
-                <Label>Descrição *</Label>
-                <Textarea value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} placeholder="Descrição do desafio" rows={3} />
-              </div>
-              <div>
-                <Label>Dicas/Passos (um por linha) *</Label>
-                <Textarea 
-                  value={projectSteps} 
-                  onChange={(e) => setProjectSteps(e.target.value)} 
-                  placeholder="Passo 1: Defina o problema&#10;Passo 2: Planeje a solução&#10;Passo 3: Implemente"
-                  rows={4}
-                />
-              </div>
+              <RichTextEditor
+                value={projectDescription}
+                onChange={setProjectDescription}
+                label="Descrição *"
+                placeholder="Descrição do desafio"
+                rows={3}
+                showImageUpload
+              />
+              <RichTextEditor
+                value={projectSteps}
+                onChange={setProjectSteps}
+                label="Dicas/Passos (um por linha) *"
+                placeholder="Passo 1: Defina o problema&#10;Passo 2: Planeje a solução"
+                rows={4}
+              />
             </div>
           </Card>
 
@@ -477,7 +507,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={isLoading || !projectTitle.trim() || !projectDescription.trim() || !projectSteps.trim()}
+              disabled={isLoading}
               className="bg-gradient-to-r from-purple-500 to-pink-500"
             >
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
