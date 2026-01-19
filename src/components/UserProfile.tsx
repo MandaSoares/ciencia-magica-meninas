@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Save, X, LogOut, Camera } from "lucide-react";
+import { Edit3, Save, X, LogOut, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 // Maximum file size: 2MB
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -17,9 +19,9 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 
 /**
  * Resize an image to fit within maxDimension while maintaining aspect ratio
- * Returns a compressed base64 string
+ * Returns a Blob for storage upload
  */
-const resizeImage = (file: File, maxDimension: number): Promise<string> => {
+const resizeImageToBlob = (file: File, maxDimension: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -52,9 +54,18 @@ const resizeImage = (file: File, maxDimension: number): Promise<string> => {
         
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Compress as JPEG with 80% quality for smaller size
-        const resizedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(resizedBase64);
+        // Convert to blob for storage upload
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          },
+          'image/jpeg',
+          0.8
+        );
       };
       img.onerror = () => reject(new Error('Failed to load image'));
       img.src = e.target?.result as string;
@@ -63,6 +74,7 @@ const resizeImage = (file: File, maxDimension: number): Promise<string> => {
     reader.readAsDataURL(file);
   });
 };
+
 interface UserData {
   name: string;
   email: string;
@@ -88,7 +100,9 @@ interface UserProfileProps {
 export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogout, stats }: UserProfileProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(user);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user: authUser } = useAuth();
 
   const handleSave = () => {
     onUpdateUser(editForm);
@@ -102,7 +116,7 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !authUser) return;
     
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
@@ -116,13 +130,45 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
       return;
     }
     
+    setIsUploadingImage(true);
+    
     try {
-      // Resize image to reduce database storage
-      const resizedImage = await resizeImage(file, MAX_IMAGE_DIMENSION);
-      setEditForm({ ...editForm, profileImage: resizedImage });
+      // Resize image to reduce storage size
+      const resizedBlob = await resizeImageToBlob(file, MAX_IMAGE_DIMENSION);
+      
+      // Create unique filename with user folder
+      const fileName = `${authUser.id}/${Date.now()}.jpg`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('profile-images')
+        .upload(fileName, resizedBlob, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(data.path);
+      
+      const publicUrl = urlData.publicUrl;
+      
+      // Update local state with new URL
+      setEditForm({ ...editForm, profileImage: publicUrl });
+      
+      toast.success('Imagem atualizada!');
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error('Error uploading image:', error);
       toast.error('Erro ao processar imagem. Tente novamente.');
+    } finally {
+      setIsUploadingImage(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -154,11 +200,11 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
             </Button>
           ) : (
             <div className="flex space-x-2">
-              <Button onClick={handleSave} size="sm">
+              <Button onClick={handleSave} size="sm" disabled={isUploadingImage}>
                 <Save className="w-4 h-4 mr-2" />
                 Salvar
               </Button>
-              <Button onClick={handleCancel} variant="outline" size="sm">
+              <Button onClick={handleCancel} variant="outline" size="sm" disabled={isUploadingImage}>
                 <X className="w-4 h-4 mr-2" />
                 Cancelar
               </Button>
@@ -182,12 +228,18 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
                   onChange={handleImageUpload}
                   accept="image/*"
                   className="hidden"
+                  disabled={isUploadingImage}
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white hover:bg-purple-600"
+                  disabled={isUploadingImage}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white hover:bg-purple-600 disabled:opacity-50"
                 >
-                  <Camera className="w-4 h-4" />
+                  {isUploadingImage ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
                 </button>
               </>
             )}
