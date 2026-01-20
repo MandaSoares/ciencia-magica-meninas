@@ -225,7 +225,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
               className="p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105 relative group"
               onClick={() => handleSelectCareer(career)}
             >
-              {(isAdmin || isModerator) && career.id && (
+              {(isAdmin || isModerator) && career.dbId && (
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <Button
                     size="sm"
@@ -245,7 +245,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDeleteId(career.id);
+                        setDeleteId(career.dbId);
                       }}
                     >
                       <Trash2 className="w-4 h-4" />

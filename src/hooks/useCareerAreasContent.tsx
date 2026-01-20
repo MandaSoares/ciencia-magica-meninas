@@ -10,6 +10,7 @@ export interface WomanProfile {
 
 export interface Career {
   id: string;
+  dbId: string; // UUID from database
   name: string;
   description: string;
   salaryRange?: string;
@@ -54,6 +55,7 @@ export const useCareerAreasContent = (selectedArea: string) => {
 
       return (data || []).map((item) => ({
         id: item.career_id,
+        dbId: item.id, // Store the UUID for database operations
         name: item.career_name,
         description: item.career_description,
         salaryRange: item.salary_range || undefined,

@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Bold, Italic, Underline, List, Link } from "lucide-react";
-import { ImageUpload } from "./ImageUpload";
+import { Bold, Italic, Underline, List, Link, Image as ImageIcon, Youtube, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RichTextEditorProps {
   value: string;
@@ -27,8 +28,10 @@ export const RichTextEditor = ({
   imageFolder = "content"
 }: RichTextEditorProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const wrapSelection = (before: string, after: string) => {
+  const wrapSelection = useCallback((before: string, after: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -39,14 +42,14 @@ export const RichTextEditor = ({
     const newText = value.substring(0, start) + before + selectedText + after + value.substring(end);
     onChange(newText);
     
-    // Reset cursor position
-    setTimeout(() => {
+    // Reset cursor position after React re-renders
+    requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(start + before.length, end + before.length);
-    }, 0);
-  };
+    });
+  }, [value, onChange]);
 
-  const insertAtCursor = (text: string) => {
+  const insertAtCursor = useCallback((text: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -54,17 +57,40 @@ export const RichTextEditor = ({
     const newText = value.substring(0, start) + text + value.substring(start);
     onChange(newText);
     
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       textarea.focus();
-      textarea.setSelectionRange(start + text.length, start + text.length);
-    }, 0);
+      const newCursorPos = start + text.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    });
+  }, [value, onChange]);
+
+  const handleBold = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    wrapSelection("**", "**");
   };
 
-  const handleBold = () => wrapSelection("**", "**");
-  const handleItalic = () => wrapSelection("*", "*");
-  const handleUnderline = () => wrapSelection("<u>", "</u>");
-  const handleList = () => insertAtCursor("\n• ");
-  const handleLink = () => {
+  const handleItalic = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    wrapSelection("*", "*");
+  };
+
+  const handleUnderline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    wrapSelection("<u>", "</u>");
+  };
+
+  const handleList = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    insertAtCursor("\n• ");
+  };
+
+  const handleLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const url = prompt("Digite a URL:");
     if (url) {
       const textarea = textareaRef.current;
@@ -79,8 +105,110 @@ export const RichTextEditor = ({
     }
   };
 
-  const handleImageInsert = (imageUrl: string) => {
-    insertAtCursor(`\n![imagem](${imageUrl})\n`);
+  const handleYoutubeEmbed = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = prompt("Cole a URL do vídeo do YouTube:");
+    if (url) {
+      // Extract video ID from various YouTube URL formats
+      let videoId = '';
+      try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname.includes('youtube.com')) {
+          videoId = urlObj.searchParams.get('v') || '';
+        } else if (urlObj.hostname === 'youtu.be') {
+          videoId = urlObj.pathname.slice(1);
+        }
+      } catch {
+        // Try to extract from embed URL
+        const embedMatch = url.match(/embed\/([a-zA-Z0-9_-]+)/);
+        if (embedMatch) videoId = embedMatch[1];
+      }
+
+      if (videoId) {
+        const embedCode = `\n[YOUTUBE:${videoId}]\n`;
+        insertAtCursor(embedCode);
+      } else {
+        toast({ title: "URL inválida", description: "Não foi possível extrair o ID do vídeo", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Tipo de arquivo inválido",
+        description: "Por favor, selecione uma imagem (JPG, PNG, GIF, WEBP)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo é 2MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${imageFolder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('content-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('content-images')
+        .getPublicUrl(data.path);
+
+      const publicUrl = urlData.publicUrl;
+      
+      // Insert image tag in content
+      insertAtCursor(`\n[IMG:${publicUrl}]\n`);
+
+      toast({
+        title: "Imagem enviada!",
+        description: "A imagem foi inserida no texto."
+      });
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Erro ao enviar",
+        description: error.message || "Não foi possível enviar a imagem.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fileInputRef.current?.click();
   };
 
   return (
@@ -92,7 +220,7 @@ export const RichTextEditor = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleBold}
+          onMouseDown={handleBold}
           className="h-8 w-8 p-0"
           title="Negrito"
         >
@@ -102,7 +230,7 @@ export const RichTextEditor = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleItalic}
+          onMouseDown={handleItalic}
           className="h-8 w-8 p-0"
           title="Itálico"
         >
@@ -112,7 +240,7 @@ export const RichTextEditor = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleUnderline}
+          onMouseDown={handleUnderline}
           className="h-8 w-8 p-0"
           title="Sublinhado"
         >
@@ -122,7 +250,7 @@ export const RichTextEditor = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleList}
+          onMouseDown={handleList}
           className="h-8 w-8 p-0"
           title="Lista"
         >
@@ -132,12 +260,37 @@ export const RichTextEditor = ({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleLink}
+          onMouseDown={handleLink}
           className="h-8 w-8 p-0"
           title="Link"
         >
           <Link className="w-4 h-4" />
         </Button>
+        {showImageUpload && (
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onMouseDown={handleImageClick}
+              disabled={isUploading}
+              className="h-8 w-8 p-0"
+              title="Inserir Imagem"
+            >
+              {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onMouseDown={handleYoutubeEmbed}
+              className="h-8 w-8 p-0"
+              title="Inserir Vídeo YouTube"
+            >
+              <Youtube className="w-4 h-4" />
+            </Button>
+          </>
+        )}
       </div>
 
       <Textarea
@@ -149,19 +302,17 @@ export const RichTextEditor = ({
         className="rounded-t-none border-t-0"
       />
 
-      {showImageUpload && (
-        <div className="pt-2">
-          <ImageUpload
-            value=""
-            onChange={handleImageInsert}
-            label="Inserir Imagem no Texto"
-            folder={imageFolder}
-          />
-        </div>
-      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
       <p className="text-xs text-gray-500">
         Dica: Use **texto** para negrito, *texto* para itálico
+        {showImageUpload && ". Clique nos ícones para inserir imagens e vídeos."}
       </p>
     </div>
   );

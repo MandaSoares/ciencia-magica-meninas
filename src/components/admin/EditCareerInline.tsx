@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2, User } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2, User, Edit2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Career, WomanProfile } from "@/hooks/useCareerAreasContent";
@@ -45,15 +45,25 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
   const [womanAchievement, setWomanAchievement] = useState("");
   const [womanStory, setWomanStory] = useState("");
   const [womanImage, setWomanImage] = useState("");
+  const [editingWomanIndex, setEditingWomanIndex] = useState<number | null>(null);
 
   const resetWomanForm = () => {
     setWomanName("");
     setWomanAchievement("");
     setWomanStory("");
     setWomanImage("");
+    setEditingWomanIndex(null);
   };
 
-  const addWoman = () => {
+  const loadWomanForEdit = (woman: WomanProfile, index: number) => {
+    setWomanName(woman.name);
+    setWomanAchievement(woman.achievement);
+    setWomanStory(woman.story);
+    setWomanImage(woman.image || "");
+    setEditingWomanIndex(index);
+  };
+
+  const addOrUpdateWoman = () => {
     if (!womanName.trim() || !womanAchievement.trim() || !womanStory.trim()) {
       toast({ title: "Preencha nome, conquista e história da mulher inspiradora", variant: "destructive" });
       return;
@@ -66,12 +76,22 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
       image: womanImage || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300",
     };
     
-    setWomen([...women, newWoman]);
+    if (editingWomanIndex !== null) {
+      const updated = [...women];
+      updated[editingWomanIndex] = newWoman;
+      setWomen(updated);
+      toast({ title: "Mulher inspiradora atualizada!" });
+    } else {
+      setWomen([...women, newWoman]);
+    }
     resetWomanForm();
   };
 
   const removeWoman = (index: number) => {
     setWomen(women.filter((_, i) => i !== index));
+    if (editingWomanIndex === index) {
+      resetWomanForm();
+    }
   };
 
   const handleSubmit = async () => {
@@ -92,7 +112,7 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
           salary_range: salaryRange,
           women: women as unknown as import('@/integrations/supabase/types').Json,
         })
-        .eq('career_id', career.id);
+        .eq('id', career.dbId);
       
       if (error) throw error;
 
@@ -167,14 +187,21 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
                 <Label>Mulheres ({women.length})</Label>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {women.map((woman, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
+                    <div key={index} className={`flex items-center gap-3 p-3 rounded-lg ${editingWomanIndex === index ? 'bg-purple-100 border-2 border-purple-300' : 'bg-gray-50'}`}>
+                      {woman.image && woman.image.startsWith('http') ? (
+                        <img src={woman.image} alt={woman.name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <p className="font-medium text-gray-800">{woman.name}</p>
                         <p className="text-xs text-gray-500 line-clamp-1">{woman.achievement}</p>
                       </div>
+                      <Button variant="ghost" size="sm" onClick={() => loadWomanForEdit(woman, index)}>
+                        <Edit2 className="w-4 h-4 text-blue-500" />
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => removeWoman(index)}>
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
@@ -185,7 +212,9 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
             )}
 
             <Card className="p-4 bg-purple-50 border-purple-200">
-              <h4 className="font-semibold text-gray-800 mb-4">Adicionar Mulher Inspiradora</h4>
+              <h4 className="font-semibold text-gray-800 mb-4">
+                {editingWomanIndex !== null ? 'Editar Mulher Inspiradora' : 'Adicionar Mulher Inspiradora'}
+              </h4>
               
               <div className="space-y-3">
                 <div>
@@ -208,10 +237,15 @@ export const EditCareerInline = ({ career, onClose, onContentChange }: EditCaree
                   folder="women-profiles"
                 />
 
-                <Button onClick={addWoman} className="w-full" variant="secondary">
+                <Button onClick={addOrUpdateWoman} className="w-full" variant="secondary">
                   <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Mulher
+                  {editingWomanIndex !== null ? 'Atualizar Mulher' : 'Adicionar Mulher'}
                 </Button>
+                {editingWomanIndex !== null && (
+                  <Button onClick={resetWomanForm} className="w-full" variant="outline">
+                    Cancelar Edição
+                  </Button>
+                )}
               </div>
             </Card>
 

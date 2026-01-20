@@ -9,7 +9,6 @@ import { Plus, ChevronLeft, ChevronRight, Loader2, X, Save, Trash2, Edit } from 
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Experiment } from "@/hooks/useExperimentsContent";
-import { ImageUpload } from "./ImageUpload";
 import { EmojiPicker } from "./EmojiPicker";
 
 interface EditExperimentInlineProps {
@@ -37,7 +36,6 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
   const [difficulty, setDifficulty] = useState(experiment.difficulty);
   const [time, setTime] = useState(experiment.time);
   const [emoji, setEmoji] = useState(experiment.image);
-  const [coverImage, setCoverImage] = useState(experiment.coverImage || "");
   const [materials, setMaterials] = useState<string[]>(experiment.materials);
   const [materialInput, setMaterialInput] = useState("");
   
@@ -158,9 +156,8 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
           steps: steps.map(s => s.text),
           image: emoji,
           step_images: steps.map(s => s.emoji),
-          cover_image: coverImage || null,
         })
-        .eq('id', experiment.id);
+        .eq('id', experiment.dbId);
       
       if (error) throw error;
 
@@ -233,7 +230,7 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="col-span-2">
                 <EmojiPicker
                   value={emoji}
                   onChange={setEmoji}
@@ -242,12 +239,6 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
               </div>
             </div>
             
-            <ImageUpload
-              value={coverImage}
-              onChange={setCoverImage}
-              label="Imagem de Capa (opcional)"
-              folder="experiments"
-            />
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button onClick={handleNextFromInfo}>
@@ -334,17 +325,17 @@ export const EditExperimentInline = ({ experiment, onClose, onContentChange }: E
             )}
 
             <div className="space-y-3">
-              <div className="flex gap-2 items-end">
-                <div className="w-32">
+              <div className="flex gap-3 items-start">
+                <div className="w-28 flex-shrink-0">
                   <EmojiPicker
                     value={stepEmoji}
                     onChange={setStepEmoji}
-                    label="Emoji/Imagem"
+                    label="Emoji"
                     showImageOption
                     imageFolder="step-images"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <Label>{editingStepIndex !== null ? `Editar Passo ${editingStepIndex + 1}` : `Adicionar Passo ${steps.length + 1}`}</Label>
                   <Textarea 
                     value={stepInput} 
