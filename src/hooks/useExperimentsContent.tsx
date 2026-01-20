@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface Experiment {
   id: string;
+  dbId: string; // UUID from database
   title: string;
   description: string;
   difficulty: string;
@@ -53,6 +54,7 @@ export const useExperimentsContent = (selectedArea: string) => {
 
       return (data || []).map((item) => ({
         id: item.experiment_id,
+        dbId: item.id, // Store the UUID for database operations
         title: item.title,
         description: item.description,
         difficulty: item.difficulty || "Fácil",

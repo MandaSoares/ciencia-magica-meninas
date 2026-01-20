@@ -56,17 +56,17 @@ export const EmojiPicker = ({
 
   return (
     <div className="space-y-2">
-      {label && <Label>{label}</Label>}
+      {label && <Label className="block">{label}</Label>}
       
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-start gap-2">
+          <Button variant="outline" className="w-full justify-start gap-2 min-w-0 overflow-hidden">
             {isUrl ? (
-              <img src={value} alt="step" className="w-6 h-6 rounded object-cover" />
+              <img src={value} alt="step" className="w-6 h-6 rounded object-cover flex-shrink-0" />
             ) : (
-              <span className="text-xl">{value || "📝"}</span>
+              <span className="text-xl flex-shrink-0">{value || "📝"}</span>
             )}
-            <span className="text-gray-500">Clique para escolher</span>
+            <span className="text-gray-500 truncate text-sm">Clique para escolher</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-3" align="start">

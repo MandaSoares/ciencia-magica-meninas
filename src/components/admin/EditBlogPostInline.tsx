@@ -9,6 +9,7 @@ import { X, Save, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageUpload } from "./ImageUpload";
+import { RichTextEditor } from "./RichTextEditor";
 interface BlogPostData {
   id: string;
   title: string;
@@ -154,15 +155,15 @@ export const EditBlogPostInline = ({ post, onSave, onCancel }: EditBlogPostInlin
           />
         </div>
 
-        <div>
-          <Label>Conteúdo *</Label>
-          <Textarea
-            value={formData.content}
-            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            placeholder="Conteúdo completo do post"
-            rows={8}
-          />
-        </div>
+        <RichTextEditor
+          value={formData.content}
+          onChange={(value) => setFormData({ ...formData, content: value })}
+          label="Conteúdo *"
+          placeholder="Conteúdo completo do post"
+          rows={8}
+          showImageUpload
+          imageFolder="blog"
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <div>

@@ -1,8 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { X, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -103,11 +102,6 @@ export const ImageUpload = ({
     onChange('');
   };
 
-  const handleUrlChange = (url: string) => {
-    setPreview(url);
-    onChange(url);
-  };
-
   return (
     <div className={`space-y-2 ${className}`}>
       <Label>{label}</Label>
@@ -163,20 +157,6 @@ export const ImageUpload = ({
         onChange={handleFileSelect}
         className="hidden"
       />
-
-      {/* Manual URL input */}
-      <div className="flex gap-2 items-end">
-        <div className="flex-1">
-          <Label className="text-xs text-gray-500">Ou cole a URL da imagem</Label>
-          <Input
-            type="url"
-            value={preview}
-            onChange={(e) => handleUrlChange(e.target.value)}
-            placeholder="https://..."
-            className="text-sm"
-          />
-        </div>
-      </div>
     </div>
   );
 };
