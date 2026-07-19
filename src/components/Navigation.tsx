@@ -1,4 +1,4 @@
-import { Home, BookOpen, Briefcase, Lightbulb, Star, Map, User, Beaker } from "lucide-react";
+import { Home, BookOpen, Briefcase, Star, Map, User, Beaker, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -18,7 +18,8 @@ const iconMap: Record<string, React.ElementType> = {
   modules: BookOpen,
   areas: Briefcase,
   lab: Beaker,
-  achievements: Star,
+  achievements: Trophy,
+  areas: Briefcase,
   profile: User,
 };
 

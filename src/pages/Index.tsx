@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
+import { MobileNav } from "@/components/MobileNav";
 import { Dashboard } from "@/components/Dashboard";
 import { LearningPath } from "@/components/LearningPath";
 import { ScienceModules } from "@/components/ScienceModules";
 import { AreasDeAtuacao } from "@/components/AreasDeAtuacao";
 import { VirtualLab } from "@/components/VirtualLab";
+import { Achievements } from "@/components/Achievements";
 import { Registration } from "@/components/Registration";
 import { STEMInterestSelection } from "@/components/STEMInterestSelection";
 import { UserProfile } from "@/components/UserProfile";
@@ -37,12 +39,11 @@ const AppContent = () => {
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
 
-  const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } = 
+  const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } =
     useUserProgress(selectedArea || 'science');
-  
+
   const { studyHours } = useStudyHours(selectedArea || 'science');
 
-  // Handle auth state changes
   useEffect(() => {
     if (!authLoading) {
       if (user && profile) {
@@ -95,16 +96,15 @@ const AppContent = () => {
     }
   };
 
-  const getNavItems = () => {
-    return [
-      { id: "dashboard", label: "Início" },
-      { id: "path", label: "Trilha" },
-      { id: "modules", label: "Módulos" },
-      { id: "areas", label: "Áreas de Atuação" },
-      { id: "lab", label: "Laboratório" },
-      { id: "profile", label: "Meu Perfil" },
-    ];
-  };
+  const getNavItems = () => [
+    { id: "dashboard", label: "Inicio" },
+    { id: "path", label: "Trilha" },
+    { id: "modules", label: "Modulos" },
+    { id: "areas", label: "Areas de Atuacao" },
+    { id: "lab", label: "Laboratorio" },
+    { id: "achievements", label: "Conquistas" },
+    { id: "profile", label: "Meu Perfil" },
+  ];
 
   const handleUpdateUser = async (userData: { name: string; email: string; age: number; interests: string[]; profileImage?: string }) => {
     await updateProfile({
@@ -112,7 +112,7 @@ const AppContent = () => {
       email: userData.email,
       age: userData.age,
       interests: userData.interests,
-      profile_image: userData.profileImage
+      profile_image: userData.profileImage,
     });
   };
 
@@ -120,9 +120,9 @@ const AppContent = () => {
     switch (activeSection) {
       case "dashboard":
         return (
-          <Dashboard 
-            userPoints={progress?.points || 0} 
-            userLevel={progress?.level || 1} 
+          <Dashboard
+            userPoints={progress?.points || 0}
+            userLevel={progress?.level || 1}
             userName={profile?.name || "Estudante"}
             selectedAreas={profile?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
@@ -135,8 +135,8 @@ const AppContent = () => {
         );
       case "path":
         return (
-          <LearningPath 
-            onPointsEarned={addPoints} 
+          <LearningPath
+            onPointsEarned={addPoints}
             selectedArea={selectedArea || "science"}
             onLessonComplete={completeLesson}
             completedLessons={stats.completedLessonIds}
@@ -144,8 +144,8 @@ const AppContent = () => {
         );
       case "modules":
         return (
-          <ScienceModules 
-            onPointsEarned={addPoints} 
+          <ScienceModules
+            onPointsEarned={addPoints}
             selectedArea={selectedArea || "science"}
             userName={profile?.name || "Estudante"}
             onModuleComplete={completeModule}
@@ -155,31 +155,47 @@ const AppContent = () => {
         );
       case "areas":
         return (
-          <AreasDeAtuacao 
+          <AreasDeAtuacao
             onPointsEarned={addPoints}
             selectedArea={selectedArea || "science"}
           />
         );
       case "lab":
         return (
-          <VirtualLab 
+          <VirtualLab
             onPointsEarned={addPoints}
             onExperimentComplete={completeExperiment}
             selectedArea={selectedArea || "science"}
             completedExperimentIds={stats.completedExperimentIds}
           />
         );
+      case "achievements":
+        return (
+          <Achievements
+            userPoints={progress?.points || 0}
+            userLevel={progress?.level || 1}
+            selectedArea={selectedArea || "science"}
+            stats={{
+              modulesCompleted: stats.modulesCompleted,
+              experimentsCompleted: stats.experimentsCompleted,
+              lessonsCompleted: stats.lessonsCompleted,
+              daysStreak: 1,
+              completedLevels: new Set(Array.from(stats.completedLessonIds || new Set()).map(String)),
+              completedModules: new Set(Array.from(stats.completedModuleIds || new Set()).map(String)),
+            }}
+          />
+        );
       case "profile":
         return profile ? (
-          <UserProfile 
+          <UserProfile
             user={{
               name: profile.name,
               email: profile.email,
               age: profile.age || 0,
               interests: profile.interests,
-              profileImage: profile.profile_image || undefined
-            }} 
-            userPoints={progress?.points || 0} 
+              profileImage: profile.profile_image || undefined,
+            }}
+            userPoints={progress?.points || 0}
             userLevel={progress?.level || 1}
             onUpdateUser={handleUpdateUser}
             onLogout={handleLogout}
@@ -187,16 +203,16 @@ const AppContent = () => {
               modulesCompleted: stats.modulesCompleted,
               experimentsCompleted: stats.experimentsCompleted,
               lessonsCompleted: stats.lessonsCompleted,
-              daysStreak: 1
+              daysStreak: 1,
             }}
           />
         ) : null;
       default:
         return (
-          <Dashboard 
-            userPoints={progress?.points || 0} 
-            userLevel={progress?.level || 1} 
-            userName={profile?.name || "Estudante"} 
+          <Dashboard
+            userPoints={progress?.points || 0}
+            userLevel={progress?.level || 1}
+            userName={profile?.name || "Estudante"}
             selectedAreas={profile?.interests || [selectedArea || "science"]}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
@@ -209,7 +225,6 @@ const AppContent = () => {
     }
   };
 
-  // Loading state
   if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
@@ -218,18 +233,12 @@ const AppContent = () => {
     );
   }
 
-  // Footer pages
-  if (footerPage === 'about') {
-    return <About onBack={() => setFooterPage(null)} />;
-  }
-
-  if (footerPage === 'blog') {
-    return <Blog onBack={() => setFooterPage(null)} />;
-  }
+  if (footerPage === 'about') return <About onBack={() => setFooterPage(null)} />;
+  if (footerPage === 'blog') return <Blog onBack={() => setFooterPage(null)} />;
 
   if (authView === 'landing') {
     return (
-      <LandingPage 
+      <LandingPage
         onGetStarted={() => setAuthView('register')}
         onLogin={() => setAuthView('login')}
       />
@@ -238,7 +247,7 @@ const AppContent = () => {
 
   if (authView === 'login') {
     return (
-      <Login 
+      <Login
         onLogin={() => {}}
         onBack={() => setAuthView('landing')}
         onGoToRegister={() => setAuthView('register')}
@@ -249,28 +258,19 @@ const AppContent = () => {
 
   if (authView === 'forgotPassword') {
     return (
-      <ForgotPassword 
+      <ForgotPassword
         onBack={() => setAuthView('login')}
         onGoToLogin={() => setAuthView('login')}
       />
     );
   }
 
-  if (authView === 'admin' && isAdmin) {
-    return (
-      <AdminPanel onBack={() => setAuthView('app')} />
-    );
-  }
-
-  if (authView === 'moderator' && isModerator && !isAdmin) {
-    return (
-      <ModeratorPanel onBack={() => setAuthView('app')} />
-    );
-  }
+  if (authView === 'admin' && isAdmin) return <AdminPanel onBack={() => setAuthView('app')} />;
+  if (authView === 'moderator' && isModerator && !isAdmin) return <ModeratorPanel onBack={() => setAuthView('app')} />;
 
   if (authView === 'register') {
     return (
-      <Registration 
+      <Registration
         onComplete={() => setAuthView('interests')}
         onBack={() => setAuthView('landing')}
         onGoToLogin={() => setAuthView('login')}
@@ -280,39 +280,35 @@ const AppContent = () => {
 
   if (authView === 'interests' && user) {
     return (
-      <STEMInterestSelection 
+      <STEMInterestSelection
         userName={profile?.name || ''}
         onComplete={handleInterestSelectionComplete}
       />
     );
   }
 
-  // Show area selection if user has multiple interests and hasn't selected one
   if (profile && profile.interests.length > 1 && !selectedArea) {
     return (
-      <AreaSelection 
+      <AreaSelection
         interests={profile.interests}
         onSelectArea={handleSelectArea}
       />
     );
   }
 
-  // Set default area if only one interest
   if (profile && profile.interests.length === 1 && !selectedArea) {
     setSelectedArea(profile.interests[0]);
   }
 
-  // Modal for adding new area
   if (showAddAreaModal) {
     const availableAreas = ['science', 'technology', 'engineering', 'math'].filter(
-      a => !profile?.interests.includes(a)
+      (a) => !profile?.interests.includes(a)
     );
-
     if (availableAreas.length === 0) {
       setShowAddAreaModal(false);
     } else {
       return (
-        <AreaSelection 
+        <AreaSelection
           interests={availableAreas}
           onSelectArea={handleAddNewInterest}
           onBack={() => setShowAddAreaModal(false)}
@@ -323,22 +319,22 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col">
-      <Header 
-        userPoints={progress?.points || 0} 
-        userLevel={progress?.level || 1} 
+      <Header
+        userPoints={progress?.points || 0}
+        userLevel={progress?.level || 1}
         userName={profile?.name}
         userProfileImage={profile?.profile_image || undefined}
       />
       {isAdmin && (
-        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-red-200 px-6 py-2">
+        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-red-200 px-4 sm:px-6 py-2">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-red-700">
               <Shield className="w-4 h-4" />
-              <span>Você está logada como administradora</span>
+              <span className="hidden sm:inline">Voce esta logada como administradora</span>
+              <span className="sm:hidden">Admin</span>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline" size="sm"
               onClick={() => setAuthView('admin')}
               className="border-red-300 text-red-700 hover:bg-red-50"
             >
@@ -348,34 +344,37 @@ const AppContent = () => {
         </div>
       )}
       {isModerator && !isAdmin && (
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-200 px-6 py-2">
+        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-200 px-4 sm:px-6 py-2">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <UserCog className="w-4 h-4" />
-              <span>Você está logada como moderadora</span>
+              <span className="hidden sm:inline">Voce esta logada como moderadora</span>
+              <span className="sm:hidden">Moderadora</span>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline" size="sm"
               onClick={() => setAuthView('moderator')}
               className="border-blue-300 text-blue-700 hover:bg-blue-50"
             >
-              Painel Moderação
+              Painel Moderacao
             </Button>
           </div>
         </div>
       )}
       <div className="flex flex-1">
-        <Navigation 
-          activeSection={activeSection} 
+        <Navigation
+          activeSection={activeSection}
           setActiveSection={setActiveSection}
           navItems={getNavItems()}
         />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6 pb-24 md:pb-6 overflow-x-hidden">
           {renderActiveSection()}
         </main>
       </div>
-      <Footer onNavigate={handleFooterNavigate} />
+      <div className="hidden md:block">
+        <Footer onNavigate={handleFooterNavigate} />
+      </div>
+      <MobileNav activeSection={activeSection} setActiveSection={setActiveSection} />
     </div>
   );
 };
