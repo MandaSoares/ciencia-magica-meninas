@@ -22,6 +22,7 @@ interface LessonStep {
   content: string;
   videoUrl?: string;
   correctAnswer?: string;
+  explanation?: string;
 }
 
 interface LessonContentProps {
@@ -296,7 +297,7 @@ export const LessonContent = ({
                         <div className="mt-3 p-3 bg-green-100 rounded-xl ml-13">
                           <p className="text-green-700 text-sm font-bold flex items-center gap-2">
                             <Sparkles className="w-4 h-4" />
-                            Perfeito! Voce acertou!
+                            {step.explanation || "Perfeito! Voce acertou!"}
                           </p>
                         </div>
                       )}
