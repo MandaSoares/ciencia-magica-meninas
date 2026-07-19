@@ -1,4 +1,4 @@
-import { Crown } from "lucide-react";
+import { Sparkles, Flame } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface HeaderProps {
@@ -14,26 +14,37 @@ export const Header = ({ userPoints, userLevel, userName = "Estudante", userProf
   };
 
   return (
-    <header className="bg-white shadow-lg border-b-4 border-purple-400">
-      <div className="px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-            <Crown className="w-6 h-6 text-white" />
+    <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-purple-100 sticky top-0 z-50">
+      <div className="px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              ScienceGirls
-            </h1>
-            <p className="text-gray-600 text-sm">Descobrindo o mundo da ciência!</p>
-          </div>
+          <h1 className="text-xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Conscientistas
+          </h1>
         </div>
-        
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={userProfileImage} />
-          <AvatarFallback className="bg-gradient-to-r from-pink-400 to-purple-400 text-white font-bold">
-            {getUserInitials(userName)}
-          </AvatarFallback>
-        </Avatar>
+
+        <div className="flex items-center gap-4">
+          {/* XP pill */}
+          <div className="hidden sm:flex items-center gap-1.5 bg-purple-50 px-3 py-1.5 rounded-full">
+            <span className="text-sm font-bold text-purple-600">{userPoints}</span>
+            <span className="text-xs text-purple-400 font-semibold">XP</span>
+          </div>
+
+          {/* Level badge */}
+          <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 px-3 py-1.5 rounded-full border border-amber-200">
+            <Flame className="w-4 h-4 text-orange-500" />
+            <span className="text-sm font-bold text-amber-700">Nv {userLevel}</span>
+          </div>
+
+          <Avatar className="w-9 h-9 ring-2 ring-purple-200 ring-offset-2">
+            <AvatarImage src={userProfileImage} />
+            <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-bold text-sm">
+              {getUserInitials(userName)}
+            </AvatarFallback>
+          </Avatar>
+        </div>
       </div>
     </header>
   );

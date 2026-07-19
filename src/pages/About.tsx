@@ -24,7 +24,7 @@ export const About = ({ onBack }: AboutProps) => {
             <Sparkles className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            Sobre o ScienceGirls
+            Sobre o Conscientistas
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Inspirando meninas a descobrir o fascinante mundo da ciência, tecnologia, engenharia e matemática.
@@ -57,7 +57,7 @@ export const About = ({ onBack }: AboutProps) => {
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">Por Que Existimos</h2>
                 <p className="text-gray-600 leading-relaxed">
                   Estudos mostram que meninas começam a perder interesse em STEM já na infância, muitas vezes por falta de 
-                  representatividade e incentivo. O ScienceGirls nasceu para mudar essa realidade, apresentando modelos 
+                  representatividade e incentivo. O Conscientistas nasceu para mudar essa realidade, apresentando modelos 
                   inspiradores de mulheres cientistas e criando experiências de aprendizado que valorizam a curiosidade 
                   e a criatividade feminina.
                 </p>

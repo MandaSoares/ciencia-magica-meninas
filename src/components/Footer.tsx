@@ -26,9 +26,9 @@ export const Footer = ({ onNavigate }: FooterProps) => {
           
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500">Siga-nos:</span>
-            <a 
-              href="https://instagram.com/sciencegirls" 
-              target="_blank" 
+            <a
+              href="https://instagram.com/conscientistas"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white hover:opacity-90 transition-opacity"
             >
@@ -39,7 +39,7 @@ export const Footer = ({ onNavigate }: FooterProps) => {
         
         <div className="text-center mt-4 pt-4 border-t border-gray-100">
           <p className="text-xs text-gray-400">
-            © 2024 ScienceGirls. Inspirando meninas a descobrir o mundo STEM.
+            © 2025 Conscientistas. Inspirando meninas a descobrir o mundo STEM.
           </p>
         </div>
       </div>
