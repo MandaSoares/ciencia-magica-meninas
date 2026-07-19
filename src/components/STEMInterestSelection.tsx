@@ -75,19 +75,19 @@ export const STEMInterestSelection = ({ userName, onComplete }: STEMInterestSele
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 p-6 transition-colors">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
             Olá, {userName}! 👋
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 dark:text-gray-300 text-lg">
             Quais áreas de STEM mais despertam sua curiosidade?
           </p>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
             Escolha uma ou mais áreas (você pode mudar depois!)
           </p>
         </div>

@@ -42,7 +42,7 @@ const areaMetadata: Record<string, { name: string; icon: string; color: string; 
     color: "bg-blue-500",
     gradient: "from-blue-500 to-indigo-500",
     light: "from-blue-50 to-indigo-50",
-    description: "Crie o futuro com codigo e inovacao"
+    description: "Crie o futuro com código e inovação"
   },
   engineering: {
     name: "Engenharia",
@@ -151,7 +151,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
         <div className={`bg-gradient-to-r ${currentAreaMeta.gradient} rounded-2xl p-5 text-white text-center animate-slide-up`}>
           <Sparkles className="w-6 h-6 mx-auto mb-2 animate-float" />
           <p className="font-semibold">
-            Voce pode ser a proxima grande inspiracao em {selectedCareer?.name}!
+            Você pode ser a próxima grande inspiração em {selectedCareer?.name}!
           </p>
         </div>
       </div>
@@ -239,7 +239,7 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Briefcase className="w-8 h-8 text-gray-400" />
           </div>
-          <p className="text-gray-500">Nenhuma carreira cadastrada para esta area ainda.</p>
+          <p className="text-gray-500">Nenhuma carreira cadastrada para esta área ainda.</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -98,11 +98,11 @@ const AppContent = () => {
   };
 
   const getNavItems = () => [
-    { id: "dashboard", label: "Inicio" },
+    { id: "dashboard", label: "Início" },
     { id: "path", label: "Trilha" },
-    { id: "modules", label: "Modulos" },
-    { id: "areas", label: "Areas de Atuacao" },
-    { id: "lab", label: "Laboratorio" },
+    { id: "modules", label: "Módulos" },
+    { id: "areas", label: "Áreas de Atuação" },
+    { id: "lab", label: "Laboratório" },
     { id: "achievements", label: "Conquistas" },
     { id: "profile", label: "Meu Perfil" },
   ];
@@ -331,7 +331,7 @@ const AppContent = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-red-700">
               <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Voce esta logada como administradora</span>
+              <span className="hidden sm:inline">Você está logada como administradora</span>
               <span className="sm:hidden">Admin</span>
             </div>
             <Button
@@ -349,7 +349,7 @@ const AppContent = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <UserCog className="w-4 h-4" />
-              <span className="hidden sm:inline">Voce esta logada como moderadora</span>
+              <span className="hidden sm:inline">Você está logada como moderadora</span>
               <span className="sm:hidden">Moderadora</span>
             </div>
             <Button

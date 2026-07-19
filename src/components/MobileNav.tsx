@@ -7,9 +7,9 @@ interface MobileNavProps {
 }
 
 const items = [
-  { id: "dashboard", label: "Inicio", icon: Home },
+  { id: "dashboard", label: "Início", icon: Home },
   { id: "path", label: "Trilha", icon: Map },
-  { id: "modules", label: "Modulos", icon: BookOpen },
+  { id: "modules", label: "Módulos", icon: BookOpen },
   { id: "lab", label: "Lab", icon: Beaker },
   { id: "achievements", label: "Medalhas", icon: Trophy },
   { id: "profile", label: "Perfil", icon: User },

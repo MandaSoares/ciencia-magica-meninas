@@ -689,8 +689,8 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
               <div className="space-y-6">
                 <div className="text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
                   <div className="text-6xl mb-4 animate-pop-in">🎉</div>
-                  <h4 className="text-2xl font-bold text-green-700 mb-2">Parabens!</h4>
-                  <p className="text-gray-600 mb-3">Voce concluiu o experimento "{currentExperiment.title}"!</p>
+                  <h4 className="text-2xl font-bold text-green-700 mb-2">Parabéns!</h4>
+                  <p className="text-gray-600 mb-3">Você concluiu o experimento "{currentExperiment.title}"!</p>
                   <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-white px-4 py-2 rounded-full font-bold animate-pop-in shadow-md">
                     <Sparkles className="w-4 h-4" />
                     +100 XP

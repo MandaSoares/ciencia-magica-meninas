@@ -9,7 +9,7 @@ interface ModeratorPanelProps {
 
 export const ModeratorPanel = ({ onBack }: ModeratorPanelProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 p-6 transition-colors">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={onBack} className="gap-2">
@@ -18,7 +18,7 @@ export const ModeratorPanel = ({ onBack }: ModeratorPanelProps) => {
           </Button>
         </div>
 
-        <Card className="p-6 bg-white/95 backdrop-blur-sm shadow-xl border-0">
+        <Card className="p-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-xl border-0 dark:border dark:border-gray-700 rounded-2xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
               <UserCog className="w-6 h-6 text-white" />

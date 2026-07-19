@@ -190,7 +190,7 @@ export const LearningPath = ({
           Trilha de {areaName}
         </h2>
         <p className="text-gray-500">
-          Complete cada nivel para desbloquear o proximo!
+          Complete cada nível para desbloquear o próximo!
         </p>
       </div>
 
@@ -355,9 +355,9 @@ export const LearningPath = ({
       <AlertDialog open={!!deleteLevelId} onOpenChange={() => setDeleteLevelId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusao</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este nivel? Esta acao nao pode ser desfeita.
+              Tem certeza que deseja excluir este nível? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

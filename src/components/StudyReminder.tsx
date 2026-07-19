@@ -66,7 +66,7 @@ export const StudyReminder = () => {
 
         if (hasPermission) {
           new Notification("Hora de estudar! 📚", {
-            body: "Sua trilha STEM esta te esperando no Conscientistas!",
+            body: "Sua trilha STEM está te esperando no Conscientistas!",
             icon: "/favicon.ico",
           });
         }
@@ -118,7 +118,7 @@ export const StudyReminder = () => {
       saveSettings(newSettings);
       toast({
         title: "Lembrete ativado!",
-        description: `Voce sera lembrada todos os dias as ${hour}h${minute > 0 ? minute.toString().padStart(2, "0") : ""}.`,
+        description: `Você será lembrada todos os dias às ${hour}h${minute > 0 ? minute.toString().padStart(2, "0") : ""}.`,
       });
     }
   };

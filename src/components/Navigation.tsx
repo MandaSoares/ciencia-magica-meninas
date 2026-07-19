@@ -33,11 +33,11 @@ const emojiMap: Record<string, string> = {
 
 export const Navigation = ({ activeSection, setActiveSection, navItems }: NavigationProps) => {
   const items = navItems || [
-    { id: "dashboard", label: "Inicio" },
+    { id: "dashboard", label: "Início" },
     { id: "path", label: "Trilha" },
-    { id: "modules", label: "Modulos" },
-    { id: "areas", label: "Areas de Atuacao" },
-    { id: "lab", label: "Laboratorio" },
+    { id: "modules", label: "Módulos" },
+    { id: "areas", label: "Áreas de Atuação" },
+    { id: "lab", label: "Laboratório" },
     { id: "profile", label: "Meu Perfil" },
   ];
 

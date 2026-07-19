@@ -43,9 +43,9 @@ const stepColors: Record<string, { bg: string; text: string; icon: string }> = {
 const stepLabels: Record<string, string> = {
   video: "Video",
   reading: "Leitura",
-  practice: "Pratica",
+  practice: "Prática",
   quiz: "Quiz",
-  inspiration: "Inspiracao",
+  inspiration: "Inspiração",
 };
 
 export const LessonContent = ({
@@ -229,7 +229,7 @@ export const LessonContent = ({
                 {step.type === "inspiration" && (
                   <div className="flex items-center gap-2 mb-3">
                     <Heart className="w-5 h-5 text-pink-500" />
-                    <span className="text-sm font-bold text-pink-600">Historia inspiradora</span>
+                    <span className="text-sm font-bold text-pink-600">História inspiradora</span>
                   </div>
                 )}
                 <p className="text-gray-700 whitespace-pre-line leading-relaxed">{step.content}</p>
@@ -297,14 +297,14 @@ export const LessonContent = ({
                         <div className="mt-3 p-3 bg-green-100 rounded-xl ml-13">
                           <p className="text-green-700 text-sm font-bold flex items-center gap-2">
                             <Sparkles className="w-4 h-4" />
-                            {step.explanation || "Perfeito! Voce acertou!"}
+                            {step.explanation || "Perfeito! Você acertou!"}
                           </p>
                         </div>
                       )}
                       {showIncorrect && (
                         <div className="mt-3 p-3 bg-red-100 rounded-xl ml-13">
                           <p className="text-red-700 text-sm font-bold">
-                            Quase la! Tente novamente.
+                            Quase lá! Tente novamente.
                           </p>
                         </div>
                       )}
@@ -338,13 +338,13 @@ export const LessonContent = ({
           >
             {currentStep < lessonSteps.length - 1 ? (
               <>
-                Proximo
+                Próximo
                 <ArrowRight className="w-4 h-4 ml-2" />
               </>
             ) : (
               <>
                 <Award className="w-5 h-5 mr-2" />
-                Concluir Licao
+                Concluir Lição
               </>
             )}
           </Button>

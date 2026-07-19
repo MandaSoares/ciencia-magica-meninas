@@ -86,7 +86,7 @@ export const LevelCompleteScreen = ({
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-black mb-4 animate-pop-in" style={{ animationDelay: "0.3s" }}>
-          Nivel Completo!
+          Nível Completo!
         </h1>
 
         <p className="text-xl text-white/90 mb-2 font-bold animate-slide-up" style={{ animationDelay: "0.6s" }}>
@@ -114,7 +114,7 @@ export const LevelCompleteScreen = ({
             ))}
           </div>
           <p className="text-sm text-white/70">
-            {totalCompleted} de {totalLevels} niveis completos
+            {totalCompleted} de {totalLevels} níveis completos
           </p>
         </div>
 

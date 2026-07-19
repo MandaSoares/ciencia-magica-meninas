@@ -69,7 +69,7 @@ const areaNames: Record<string, string> = {
 
 export const AreaSelection = ({ interests, onSelectArea, onBack }: AreaSelectionProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
       <div className="max-w-4xl w-full">
         {onBack && (
           <Button 
@@ -82,8 +82,8 @@ export const AreaSelection = ({ interests, onSelectArea, onBack }: AreaSelection
           </Button>
         )}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Escolha sua Trilha</h1>
-          <p className="text-xl text-gray-600">Qual área você quer explorar hoje?</p>
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">Escolha sua Trilha</h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300">Qual área você quer explorar hoje?</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -95,15 +95,15 @@ export const AreaSelection = ({ interests, onSelectArea, onBack }: AreaSelection
             return (
               <Card 
                 key={interest}
-                className="p-8 hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer border-2 border-transparent hover:border-purple-300 bg-white"
+                className="p-8 hover:shadow-2xl transition-all duration-300 hover:scale-105 cursor-pointer border-2 border-transparent hover:border-purple-300 dark:hover:border-purple-700 bg-white dark:bg-gray-800"
                 onClick={() => onSelectArea(interest)}
               >
                 <div className="flex flex-col items-center text-center">
                   <div className={`w-20 h-20 ${config.iconBgColor} rounded-2xl flex items-center justify-center mb-4 shadow-lg`}>
                     <Icon className="w-10 h-10 text-gray-700" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{displayName}</h2>
-                  <p className="text-gray-600 mb-4">{config.description}</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{displayName}</h2>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">{config.description}</p>
                   <Button className={`bg-gradient-to-r ${config.gradient} hover:opacity-90`}>
                     Começar Trilha
                   </Button>

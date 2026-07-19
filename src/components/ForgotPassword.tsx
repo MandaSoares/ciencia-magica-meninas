@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2, KeyRound, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Logo } from "./Logo";
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -27,7 +28,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
 
     setLoading(true);
     const redirectUrl = `${window.location.origin}/?reset=true`;
-    
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
     });
@@ -44,7 +45,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast.error('As senhas não coincidem');
       return;
@@ -55,7 +56,6 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
       return;
     }
 
-    // Password strength validation
     const hasUpperCase = /[A-Z]/.test(newPassword);
     const hasNumber = /[0-9]/.test(newPassword);
     if (!hasUpperCase || !hasNumber) {
@@ -78,19 +78,33 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
     onGoToLogin();
   };
 
+  const PageWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6 animate-slide-up">
+          <Logo size={56} className="mx-auto mb-3" />
+          <h2 className="text-lg font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+            Conscientistas
+          </h2>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+
   if (step === 'sent') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md p-8 bg-white/95 backdrop-blur-sm shadow-2xl border-0">
+      <PageWrapper>
+        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
           <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="w-10 h-10 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-200 dark:shadow-green-900/30">
+              <Check className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-4">
               Email Enviado!
             </h1>
             <p className="text-muted-foreground mb-6">
-              Enviamos um link de recuperação para <strong>{email}</strong>. 
+              Enviamos um link de recuperação para <strong>{email}</strong>.
               Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
@@ -100,30 +114,30 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
               <Button
                 onClick={() => setStep('email')}
                 variant="outline"
-                className="w-full"
+                className="w-full rounded-xl"
               >
                 Tentar novamente
               </Button>
               <Button
                 onClick={onGoToLogin}
-                className="w-full bg-primary hover:bg-primary/90"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl"
               >
                 Voltar ao Login
               </Button>
             </div>
           </div>
         </Card>
-      </div>
+      </PageWrapper>
     );
   }
 
   if (step === 'newPassword') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md p-8 bg-white/95 backdrop-blur-sm shadow-2xl border-0">
+      <PageWrapper>
+        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-              <KeyRound className="w-10 h-10 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
+              <KeyRound className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">
               Nova Senha
@@ -142,7 +156,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
                 placeholder="Digite sua nova senha"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full py-5"
+                className="w-full py-5 rounded-xl"
                 required
                 disabled={loading}
                 minLength={8}
@@ -160,7 +174,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
                 placeholder="Confirme sua nova senha"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full py-5"
+                className="w-full py-5 rounded-xl"
                 required
                 disabled={loading}
                 minLength={8}
@@ -169,7 +183,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
 
             <Button
               type="submit"
-              className="w-full py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
+              className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
               disabled={loading}
             >
               {loading ? (
@@ -183,14 +197,14 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
             </Button>
           </form>
         </Card>
-      </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center p-6">
-      <Card className="w-full max-w-md p-8 bg-white/95 backdrop-blur-sm shadow-2xl border-0">
-        <button 
+    <PageWrapper>
+      <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
+        <button
           onClick={onBack}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
@@ -199,8 +213,8 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
         </button>
 
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-10 h-10 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
+            <Mail className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Recuperar Senha
@@ -222,7 +236,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
               placeholder="Digite seu email cadastrado"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-5"
+              className="w-full py-5 rounded-xl"
               required
               disabled={loading}
             />
@@ -230,7 +244,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
 
           <Button
             type="submit"
-            className="w-full py-6 text-lg font-semibold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30"
+            className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
             disabled={loading}
           >
             {loading ? (
@@ -247,7 +261,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
         <div className="mt-6 text-center">
           <p className="text-muted-foreground">
             Lembrou a senha?{" "}
-            <button 
+            <button
               onClick={onGoToLogin}
               className="text-primary font-semibold hover:underline"
             >
@@ -256,6 +270,6 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
           </p>
         </div>
       </Card>
-    </div>
+    </PageWrapper>
   );
 };
