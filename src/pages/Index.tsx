@@ -21,6 +21,7 @@ import { Footer } from "@/components/Footer";
 import { About } from "@/pages/About";
 import { Blog } from "@/pages/Blog";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useStudyHours } from "@/hooks/useStudyHours";
@@ -227,7 +228,7 @@ const AppContent = () => {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -318,7 +319,7 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex flex-col transition-colors duration-300">
       <Header
         userPoints={progress?.points || 0}
         userLevel={progress?.level || 1}
@@ -381,9 +382,11 @@ const AppContent = () => {
 
 const Index = () => {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

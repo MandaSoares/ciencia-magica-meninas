@@ -6,19 +6,19 @@ interface FooterProps {
 
 export const Footer = ({ onNavigate }: FooterProps) => {
   return (
-    <footer className="bg-white border-t border-gray-200 mt-8">
+    <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 mt-8 transition-colors">
       <div className="max-w-4xl mx-auto px-6 py-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <button 
               onClick={() => onNavigate?.('about')}
-              className="text-gray-600 hover:text-purple-600 transition-colors text-sm font-medium"
+              className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors text-sm font-medium"
             >
               Sobre o Projeto
             </button>
-            <button 
+            <button
               onClick={() => onNavigate?.('blog')}
-              className="text-gray-600 hover:text-purple-600 transition-colors text-sm font-medium"
+              className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors text-sm font-medium"
             >
               Blog
             </button>

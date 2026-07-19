@@ -19,7 +19,6 @@ const iconMap: Record<string, React.ElementType> = {
   areas: Briefcase,
   lab: Beaker,
   achievements: Trophy,
-  areas: Briefcase,
   profile: User,
 };
 
@@ -43,7 +42,7 @@ export const Navigation = ({ activeSection, setActiveSection, navItems }: Naviga
   ];
 
   return (
-    <nav className="w-64 bg-white/80 backdrop-blur-md border-r border-purple-100 h-screen sticky top-0 hidden md:block">
+    <nav className="w-64 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-r border-purple-100 dark:border-gray-700 h-screen sticky top-0 hidden md:block transition-colors">
       <div className="p-4 pt-6">
         <ul className="space-y-1.5">
           {items.map((item) => {
@@ -57,15 +56,15 @@ export const Navigation = ({ activeSection, setActiveSection, navItems }: Naviga
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group",
                     isActive
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200 scale-[1.02]"
-                      : "text-gray-600 hover:bg-purple-50 hover:text-purple-700 hover:scale-[1.01]"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200 dark:shadow-purple-900/30 scale-[1.02]"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-800 hover:text-purple-700 dark:hover:text-purple-300 hover:scale-[1.01]"
                   )}
                 >
                   <div className={cn(
                     "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
                     isActive
                       ? "bg-white/20"
-                      : "bg-gray-100 group-hover:bg-purple-100"
+                      : "bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-100 dark:group-hover:bg-gray-600"
                   )}>
                     <Icon className="w-4 h-4" />
                   </div>

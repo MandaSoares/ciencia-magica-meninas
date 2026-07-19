@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2, Edit2 } from "lucide-react";
+import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2, Edit2, CheckCircle2, Clock, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ExperimentComments } from "./ExperimentComments";
 import { useExperimentsContent, Experiment as DbExperiment, getAreaName } from "@/hooks/useExperimentsContent";
 import { AddExperimentInline } from "./admin/AddExperimentInline";
@@ -338,6 +339,13 @@ const getExperimentsByArea = (area: string, dbExperiments: DbExperiment[]): Expe
   return staticExperiments[area] || staticExperiments.science;
 };
 
+const areaThemes: Record<string, { gradient: string; light: string; accent: string; emoji: string }> = {
+  science: { gradient: "from-emerald-500 to-teal-500", light: "from-emerald-50 to-teal-50", accent: "text-emerald-600", emoji: "🔬" },
+  technology: { gradient: "from-blue-500 to-indigo-500", light: "from-blue-50 to-indigo-50", accent: "text-blue-600", emoji: "💻" },
+  engineering: { gradient: "from-orange-500 to-amber-500", light: "from-orange-50 to-amber-50", accent: "text-orange-600", emoji: "⚙️" },
+  math: { gradient: "from-purple-500 to-violet-500", light: "from-purple-50 to-violet-50", accent: "text-purple-600", emoji: "📐" },
+};
+
 export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science", completedExperimentIds = new Set() }: VirtualLabProps) => {
   const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
   const [experimentStep, setExperimentStep] = useState(0);
@@ -354,6 +362,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   const { data: dbExperiments, isLoading } = useExperimentsContent(selectedArea);
   const experiments = getExperimentsByArea(selectedArea, dbExperiments || []);
   const areaName = getAreaName(selectedArea);
+  const theme = areaThemes[selectedArea] || areaThemes.science;
 
   const handleContentChange = () => {
     queryClient.invalidateQueries({ queryKey: ["experiments-content"] });
@@ -427,75 +436,101 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Laboratório de {areaName}</h2>
-        <p className="text-gray-600">Experimentos práticos e divertidos para explorar {areaName.toLowerCase()}!</p>
+    <div className="space-y-6">
+      <div className={`bg-gradient-to-r ${theme.gradient} rounded-2xl p-6 text-white animate-slide-up shadow-lg`}>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm animate-float">
+            {theme.emoji}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Laboratorio de {areaName}</h2>
+            <p className="opacity-90 text-sm">Experimentos praticos e divertidos para explorar!</p>
+          </div>
+          <div className="ml-auto hidden sm:flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 backdrop-blur-sm">
+            <Beaker className="w-4 h-4" />
+            <span className="text-sm font-semibold">{experiments.length} experimentos</span>
+          </div>
+        </div>
       </div>
 
       {!activeExperiment ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {experiments.map((experiment) => {
+            {experiments.map((experiment, idx) => {
               const Icon = experiment.icon;
               const isCompleted = completedExperiments.has(experiment.id);
               const isFromDb = dbExperiments?.some(e => e.id === experiment.id);
               return (
-                <Card key={experiment.id} className="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105 relative group">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${experiment.color} rounded-lg flex items-center justify-center`}>
-                      <Icon className="w-6 h-6 text-white" />
+                <Card
+                  key={experiment.id}
+                  className={cn(
+                    "overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.03] relative group animate-pop-in",
+                    isCompleted && "ring-2 ring-green-400/60"
+                  )}
+                  style={{ animationDelay: `${idx * 0.08}s` }}
+                >
+                  <div className={`h-1.5 bg-gradient-to-r ${theme.gradient}`} />
+
+                  <div className="p-5 pb-3 flex justify-center">
+                    <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${theme.light} flex items-center justify-center text-4xl animate-float shadow-inner`}>
+                      {experiment.image}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {isCompleted && (
-                        <span className="text-green-500 text-sm font-medium">✓ Concluído</span>
-                      )}
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  </div>
+
+                  <div className="px-5 pb-5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{experiment.title}</h3>
+                      {isCompleted && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                    </div>
+
+                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">{experiment.description}</p>
+
+                    <div className="flex gap-2 mb-3 flex-wrap">
+                      <span className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-semibold",
                         experiment.difficulty === 'Fácil' ? 'bg-green-100 text-green-700' :
-                        experiment.difficulty === 'Médio' ? 'bg-yellow-100 text-yellow-700' :
+                        experiment.difficulty === 'Médio' ? 'bg-amber-100 text-amber-700' :
                         'bg-red-100 text-red-700'
-                      }`}>
+                      )}>
                         {experiment.difficulty}
                       </span>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {experiment.time}
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-600">
+                        {experiment.materials.length} materiais
+                      </span>
                     </div>
-                  </div>
 
-                  <div className="text-center text-6xl mb-4">{experiment.image}</div>
-
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{experiment.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4">{experiment.description}</p>
-
-                  <div className="flex items-center space-x-4 mb-4 text-sm text-gray-500">
-                    <span>⏱️ {experiment.time}</span>
-                    <span>🧪 {experiment.materials.length} materiais</span>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <h4 className="font-semibold text-gray-700 text-sm">Materiais:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {experiment.materials.map((material, index) => (
-                        <span key={index} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {experiment.materials.slice(0, 3).map((material, index) => (
+                        <span key={index} className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-full text-xs text-gray-600">
                           {material}
                         </span>
                       ))}
+                      {experiment.materials.length > 3 && (
+                        <span className="px-2 py-0.5 bg-gray-50 border border-gray-100 rounded-full text-xs text-gray-400">
+                          +{experiment.materials.length - 3}
+                        </span>
+                      )}
                     </div>
+
+                    <Button
+                      onClick={() => startExperiment(experiment.id)}
+                      className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 transition-opacity`}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      {isCompleted ? "Refazer Experimento" : "Iniciar Experimento"}
+                    </Button>
                   </div>
 
-                  <Button
-                    onClick={() => startExperiment(experiment.id)}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isCompleted ? "Refazer Experimento" : "Começar Experimento"}
-                  </Button>
-                  
-                  {/* Admin controls */}
                   {isAdmin && isFromDb && (
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 w-8 p-0 bg-white"
+                        className="h-8 w-8 p-0 bg-white/90 backdrop-blur-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingExperiment(experiment);
@@ -528,39 +563,22 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
             />
           </div>
 
-          <Card className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">🛡️ Dicas de Segurança</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">✓</span>
-                  </div>
-                  <span className="text-gray-700">Sempre peça ajuda de um adulto</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">✓</span>
-                  </div>
-                  <span className="text-gray-700">Use óculos de proteção quando necessário</span>
-                </div>
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center text-lg">
+                🛡️
               </div>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">✓</span>
-                  </div>
-                  <span className="text-gray-700">Mantenha o ambiente limpo e organizado</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">✓</span>
-                  </div>
-                  <span className="text-gray-700">Lave as mãos antes e depois</span>
-                </div>
-              </div>
+              <h3 className="text-lg font-bold text-amber-800">Dicas de Seguranca</h3>
             </div>
-          </Card>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {["Peca ajuda de um adulto", "Use oculos de protecao", "Mantenha tudo organizado", "Lave as maos"].map((tip, i) => (
+                <div key={i} className="flex items-center gap-2 bg-white/60 rounded-xl px-3 py-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <span className="text-xs text-gray-700 font-medium">{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       ) : currentExperiment && (
         <div className="space-y-6">
@@ -592,56 +610,76 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
           )}
 
           {!showSafetyWarning && (
-          <Card className="p-6">
-            <div className="flex items-center space-x-4 mb-6">
-              <div className={`w-12 h-12 ${currentExperiment.color} rounded-lg flex items-center justify-center`}>
-                <currentExperiment.icon className="w-6 h-6 text-white" />
+          <Card className="overflow-hidden">
+            <div className={`bg-gradient-to-r ${theme.gradient} p-5`}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <currentExperiment.icon className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 text-white">
+                  <h3 className="text-xl font-bold">{currentExperiment.title}</h3>
+                  <p className="text-sm opacity-90">
+                    {showComments ? "Experimento concluido!" : `Passo ${experimentStep + 1} de ${currentExperiment.steps.length}`}
+                  </p>
+                </div>
+                <Button variant="outline" onClick={finishExperiment} className="bg-white/20 border-white/30 text-white hover:bg-white/30">
+                  Sair
+                </Button>
               </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-bold text-gray-800">{currentExperiment.title}</h3>
-                <p className="text-gray-600">
-                  {showComments ? "Experimento concluído!" : `Passo ${experimentStep + 1} de ${currentExperiment.steps.length}`}
-                </p>
-              </div>
-              <Button variant="outline" onClick={finishExperiment}>
-                Sair
-              </Button>
             </div>
 
+            <div className="p-6">
             {!showComments && (
               <>
-                <div className="mb-6">
-                  <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-                    <div
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${((experimentStep + 1) / currentExperiment.steps.length) * 100}%` }}
-                    ></div>
-                  </div>
+                <div className="flex items-center justify-center gap-0 mb-8 overflow-x-auto py-2">
+                  {currentExperiment.steps.map((_, i) => (
+                    <div key={i} className="flex items-center flex-shrink-0">
+                      <div className={cn(
+                        "w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300",
+                        i < experimentStep
+                          ? `bg-gradient-to-r ${theme.gradient} text-white shadow-md`
+                          : i === experimentStep
+                            ? `bg-gradient-to-r ${theme.gradient} text-white ring-4 ring-purple-200 animate-pulse-glow shadow-lg scale-110`
+                            : "bg-gray-100 text-gray-400 border-2 border-gray-200"
+                      )}>
+                        {i < experimentStep ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                      </div>
+                      {i < currentExperiment.steps.length - 1 && (
+                        <div className={cn(
+                          "w-8 h-1 rounded-full transition-all duration-300 mx-0.5",
+                          i < experimentStep ? `bg-gradient-to-r ${theme.gradient}` : "bg-gray-200"
+                        )} />
+                      )}
+                    </div>
+                  ))}
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg mb-6">
+                <div className={`bg-gradient-to-br ${theme.light} p-6 rounded-2xl mb-6 border border-gray-100`}>
                   <div className="text-center mb-4">
-                    <span className="text-6xl">{currentExperiment.stepImages[experimentStep]}</span>
+                    <div className="inline-flex w-20 h-20 rounded-full bg-white shadow-md items-center justify-center text-5xl animate-pop-in">
+                      {currentExperiment.stepImages[experimentStep]}
+                    </div>
                   </div>
-                  <h4 className="font-semibold text-lg mb-3 text-gray-800">
-                    Passo {experimentStep + 1}:
-                  </h4>
-                  <p className="text-gray-700 text-lg">{currentExperiment.steps[experimentStep]}</p>
+                  <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 bg-gradient-to-r ${theme.gradient} text-white`}>
+                    Passo {experimentStep + 1}
+                  </div>
+                  <p className="text-gray-700 text-lg leading-relaxed">{currentExperiment.steps[experimentStep]}</p>
                 </div>
 
-                <div className="flex space-x-4">
+                <div className="flex gap-3">
                   <Button
                     onClick={finishExperiment}
                     variant="outline"
-                    className="flex-1"
+                    className="flex-1 rounded-xl"
                   >
-                    Sair do Experimento
+                    Sair
                   </Button>
                   <Button
                     onClick={nextStep}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className={`flex-1 bg-gradient-to-r ${theme.gradient} hover:opacity-90 rounded-xl`}
                   >
-                    {experimentStep < currentExperiment.steps.length - 1 ? "Próximo Passo" : "Finalizar Experimento"}
+                    {experimentStep < currentExperiment.steps.length - 1 ? "Proximo Passo" : "Finalizar!"}
+                    <Sparkles className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </>
@@ -649,22 +687,27 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
 
             {showComments && (
               <div className="space-y-6">
-                <div className="text-center py-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
-                  <span className="text-6xl mb-4 block">🎉</span>
-                  <h4 className="text-xl font-bold text-green-700 mb-2">Parabéns!</h4>
-                  <p className="text-gray-600">Você concluiu o experimento "{currentExperiment.title}"!</p>
+                <div className="text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
+                  <div className="text-6xl mb-4 animate-pop-in">🎉</div>
+                  <h4 className="text-2xl font-bold text-green-700 mb-2">Parabens!</h4>
+                  <p className="text-gray-600 mb-3">Voce concluiu o experimento "{currentExperiment.title}"!</p>
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 text-white px-4 py-2 rounded-full font-bold animate-pop-in shadow-md">
+                    <Sparkles className="w-4 h-4" />
+                    +100 XP
+                  </div>
                 </div>
 
                 <ExperimentComments experimentId={currentExperiment.id} experimentTitle={currentExperiment.title} />
 
                 <Button
                   onClick={finishExperiment}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className={`w-full bg-gradient-to-r ${theme.gradient} hover:opacity-90 rounded-xl`}
                 >
-                  Voltar ao Laboratório
+                  Voltar ao Laboratorio
                 </Button>
               </div>
             )}
+            </div>
           </Card>
           )}
         </div>

@@ -100,10 +100,10 @@ export const Dashboard = ({
       <div className="animate-slide-up">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h2 className="text-3xl font-extrabold text-gray-800">
+            <h2 className="text-3xl font-extrabold text-gray-800 dark:text-white">
               Ola, {userName}!
             </h2>
-            <p className="text-gray-500 mt-1">Pronta para mais uma aventura em STEM hoje?</p>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Pronta para mais uma aventura em STEM hoje?</p>
           </div>
 
           {/* XP / Level Badge */}
@@ -117,7 +117,7 @@ export const Dashboard = ({
               </div>
             </div>
             <div className="min-w-[140px]">
-              <p className="text-sm font-bold text-purple-700">{getLevelTitle(userLevel)}</p>
+              <p className="text-sm font-bold text-purple-700 dark:text-purple-400">{getLevelTitle(userLevel)}</p>
               <div className="flex items-center gap-2">
                 <Progress value={xpProgress} className="h-2.5 flex-1" />
                 <span className="text-xs text-gray-500 font-semibold">{userPoints} XP</span>
