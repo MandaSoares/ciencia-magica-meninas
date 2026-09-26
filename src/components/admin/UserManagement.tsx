@@ -97,7 +97,7 @@ export const UserManagement = () => {
     setUpdatingUserId(null);
 
     if (error) {
-      toast.error('Erro ao atualizar função');
+      toast.error(error.message?.includes('ultima_admin') ? 'Não é possível remover a última administradora.' : 'Erro ao atualizar função');
       console.error(error);
       return;
     }

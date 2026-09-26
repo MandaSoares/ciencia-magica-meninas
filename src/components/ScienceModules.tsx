@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toSafeYoutubeEmbed } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -387,10 +388,13 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             </div>
           </div>
 
-          {currentContent.type === 'video' && currentContent.videoUrl && (
+          {currentContent.type === 'video' && toSafeYoutubeEmbed(currentContent.videoUrl) && (
             <div className="aspect-video rounded-lg overflow-hidden mb-4">
               <iframe
-                src={currentContent.videoUrl}
+                src={toSafeYoutubeEmbed(currentContent.videoUrl) ?? undefined}
+                title={currentContent.title}
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                referrerPolicy="strict-origin-when-cross-origin"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

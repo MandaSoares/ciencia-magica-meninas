@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toSafeYoutubeEmbed } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -204,12 +205,14 @@ export const LessonContent = ({
         {/* Content card */}
         <Card className="p-5 sm:p-8 mb-6 animate-slide-up stagger-1">
           {/* Video content */}
-          {step.type === "video" && step.videoUrl && (
+          {step.type === "video" && toSafeYoutubeEmbed(step.videoUrl) && (
             <div className="mb-6">
               <div className="aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-lg">
                 <iframe
-                  src={step.videoUrl}
-                  title={step.title}
+                  src={toSafeYoutubeEmbed(step.videoUrl) ?? undefined}
+                title={step.title}
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                referrerPolicy="strict-origin-when-cross-origin"
                   className="w-full h-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen

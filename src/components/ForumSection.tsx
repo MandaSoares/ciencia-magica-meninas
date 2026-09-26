@@ -2,43 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MessageCircle, Send, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Send, AlertTriangle, Loader2, Trash2, Flag } from "lucide-react";
 import { useComments } from "@/hooks/useComments";
 import { toast } from "sonner";
+import { checkComment, commentErrorMessage, MAX_COMMENT_LENGTH } from "@/lib/moderation";
 
 interface ForumSectionProps {
   moduleId: string;
 }
-
-// Lista de palavras proibidas (palavrões, ofensas racistas, machistas, sexuais, etc.)
-const BLOCKED_WORDS = [
-  // Palavrões
-  "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
-  "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
-  // Ofensas racistas
-  "macaco", "macaca", "crioulo", "crioula",
-  // Ofensas machistas
-  "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
-  // Ofensas homofóbicas
-  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola",
-  // Outras ofensas
-  "retardado", "retardada", "imbecil", "lixo", "nojento", "nojenta",
-  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária",
-  // Termos sexuais
-  "sexo", "transar", "foder", "gozar", "punheta", "masturbacao", "masturbação", "porno", "pornografia",
-  "bucetinha", "piriquita", "xoxota", "tesao", "tesão"
-];
-
-const containsBlockedContent = (text: string): boolean => {
-  const normalizedText = text.toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // Remove acentos
-  
-  return BLOCKED_WORDS.some(word => {
-    const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return normalizedText.includes(normalizedWord);
-  });
-};
 
 const formatTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
@@ -52,25 +23,36 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export const ForumSection = ({ moduleId }: ForumSectionProps) => {
-  const { comments, loading, addComment, deleteComment, toggleLike, userName, currentUserId } = useComments(moduleId);
+  const { comments, loading, addComment, deleteComment, toggleLike, reportComment, currentUserId } = useComments(moduleId);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim()) return;
-    
-    if (containsBlockedContent(newComment)) {
-      toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
+    const check = checkComment(newComment);
+    if (!check.ok) {
+      toast.error(check.message);
       return;
     }
 
     setSubmitting(true);
-    await addComment(newComment);
-    setNewComment("");
+    const { error } = await addComment(newComment.trim());
     setSubmitting(false);
+    if (error) {
+      toast.error(commentErrorMessage(error));
+      return;
+    }
+    setNewComment("");
     toast.success("Comentário publicado!");
+  };
+
+  const handleReport = async (commentId: string) => {
+    if (!window.confirm("Denunciar este comentário para a moderação? Ele será revisado por uma moderadora.")) return;
+    const result = await reportComment(commentId);
+    if (result === "ok") toast.success("Obrigada! A moderação vai revisar esse comentário.");
+    else if (result === "duplicate") toast.info("Você já denunciou esse comentário.");
+    else toast.error("Não foi possível enviar a denúncia. Tente novamente.");
   };
 
   const handleLike = async (commentId: string) => {
@@ -87,18 +69,21 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
   };
 
   const handleSubmitReply = async (commentId: string) => {
-    if (!replyContent.trim()) return;
-    
-    if (containsBlockedContent(replyContent)) {
-      toast.error("Sua resposta contém palavras inapropriadas. Por favor, revise e tente novamente.");
+    const check = checkComment(replyContent);
+    if (!check.ok) {
+      toast.error(check.message);
       return;
     }
 
     setSubmitting(true);
-    await addComment(replyContent, commentId);
+    const { error } = await addComment(replyContent.trim(), commentId);
+    setSubmitting(false);
+    if (error) {
+      toast.error(commentErrorMessage(error));
+      return;
+    }
     setReplyContent("");
     setReplyingTo(null);
-    setSubmitting(false);
     toast.success("Resposta publicada!");
   };
 
@@ -121,13 +106,14 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
           placeholder="Escreva seu comentário..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
+          maxLength={MAX_COMMENT_LENGTH}
           className="mb-2 resize-none border-gray-200"
           rows={3}
         />
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-400 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            Comentários ofensivos serão bloqueados
+            Seja gentil. Não compartilhe links, telefone, email ou redes sociais.
           </p>
           <Button
             onClick={handleSubmitComment}
@@ -179,6 +165,16 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
                       <MessageCircle className="w-4 h-4" />
                       <span>Responder</span>
                     </button>
+{currentUserId && currentUserId !== comment.user_id && (
+                      <button
+                        onClick={() => handleReport(comment.id)}
+                        className="flex items-center gap-1 text-sm text-gray-400 hover:text-orange-500 transition-colors"
+                        aria-label="Denunciar comentário"
+                        title="Denunciar"
+                      >
+                        <Flag className="w-4 h-4" />
+                      </button>
+                    )}
                     {currentUserId === comment.user_id && (
                       <button
                         onClick={() => handleDelete(comment.id)}
@@ -207,6 +203,16 @@ export const ForumSection = ({ moduleId }: ForumSectionProps) => {
                           </div>
                           <div className="flex items-center justify-between">
                             <p className="text-gray-700 text-sm ml-8">{reply.content}</p>
+                            {currentUserId && currentUserId !== reply.user_id && (
+                              <button
+                                onClick={() => handleReport(reply.id)}
+                                className="text-gray-400 hover:text-orange-500 transition-colors"
+                                aria-label="Denunciar resposta"
+                                title="Denunciar"
+                              >
+                                <Flag className="w-3 h-3" />
+                              </button>
+                            )}
                             {currentUserId === reply.user_id && (
                               <button
                                 onClick={() => handleDelete(reply.id)}

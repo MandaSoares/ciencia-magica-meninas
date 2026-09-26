@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { User, Mail, Calendar, ArrowLeft, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "./Logo";
@@ -22,6 +23,14 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
     age: "",
     password: ""
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const ageNumber = parseInt(formData.age);
+  // LGPD art. 14: criança (menos de 12 anos) precisa de consentimento de um responsável.
+  const needsGuardian = !Number.isNaN(ageNumber) && ageNumber < 12;
+  const isMinor = !Number.isNaN(ageNumber) && ageNumber < 18;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,19 +49,41 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
       return;
     }
 
+    if (!acceptedTerms) return;
+    if (needsGuardian && !guardianConsent) return;
+
     setLoading(true);
-    const { error } = await signUp(
+    const { error, needsConfirmation } = await signUp(
       formData.email,
       formData.password,
-      formData.name,
-      parseInt(formData.age)
+      formData.name.trim(),
+      ageNumber,
+      { terms: acceptedTerms, guardian: guardianConsent }
     );
     setLoading(false);
 
-    if (!error) {
+    if (error) return;
+    if (needsConfirmation) {
+      setEmailSent(true);
+    } else {
       onComplete();
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md p-8 text-center rounded-3xl">
+          <Mail className="w-12 h-12 mx-auto mb-4 text-purple-500" />
+          <h1 className="text-2xl font-bold mb-2">Confirme seu email</h1>
+          <p className="text-muted-foreground mb-6">
+            Enviamos um link para <strong>{formData.email}</strong>. Clique nele para ativar sua conta e depois faça login.
+          </p>
+          <Button onClick={onGoToLogin} className="w-full rounded-xl">Ir para o login</Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
@@ -94,8 +125,10 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
               <Input
                 id="name"
                 type="text"
-                placeholder="Digite seu nome"
+                placeholder="Seu primeiro nome ou apelido"
                 value={formData.name}
+                maxLength={60}
+                autoComplete="given-name"
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 className="w-full rounded-xl"
                 required
@@ -164,10 +197,48 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
               />
             </div>
 
+            <div className="space-y-3 pt-2">
+              <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer">
+                <Checkbox
+                  checked={acceptedTerms}
+                  onCheckedChange={(v) => setAcceptedTerms(v === true)}
+                  disabled={loading}
+                  className="mt-0.5"
+                  required
+                />
+                <span>
+                  Li e aceito os{" "}
+                  <a href="/termos" target="_blank" rel="noopener noreferrer" className="text-primary underline">Termos de Uso</a>{" "}
+                  e a{" "}
+                  <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-primary underline">Política de Privacidade</a>.
+                </span>
+              </label>
+
+              {isMinor && (
+                <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer rounded-xl bg-purple-50 dark:bg-purple-900/20 p-3">
+                  <Checkbox
+                    checked={guardianConsent}
+                    onCheckedChange={(v) => setGuardianConsent(v === true)}
+                    disabled={loading}
+                    className="mt-0.5"
+                    required={needsGuardian}
+                  />
+                  <span>
+                    {needsGuardian
+                      ? "Minha mãe, pai ou responsável leu a Política de Privacidade e autoriza meu cadastro. (obrigatório para menores de 12 anos)"
+                      : "Minha mãe, pai ou responsável sabe que estou criando esta conta."}
+                  </span>
+                </label>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Dica de segurança: use só seu primeiro nome ou um apelido. Nunca compartilhe endereço, escola ou telefone.
+              </p>
+            </div>
+
             <Button
               type="submit"
               className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
-              disabled={loading}
+              disabled={loading || !acceptedTerms || (needsGuardian && !guardianConsent)}
             >
               {loading ? (
                 <>
@@ -192,11 +263,6 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
             </p>
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Ao continuar, você concorda com nossos termos de uso
-            </p>
-          </div>
         </Card>
       </div>
     </div>

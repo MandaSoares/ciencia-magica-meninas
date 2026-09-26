@@ -5,14 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, Save, X, LogOut, Camera, Loader2, BookOpen, Beaker, Trophy, Flame, Star, Sparkles } from "lucide-react";
+import { Edit3, Save, X, LogOut, Camera, Loader2, BookOpen, Beaker, Trophy, Flame, Star, Sparkles, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 200;
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const resizeImageToBlob = (file: File, maxDimension: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -100,7 +111,15 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
   const [editForm, setEditForm] = useState(user);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user: authUser } = useAuth();
+  const { user: authUser, deleteAccount } = useAuth();
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const ok = await deleteAccount();
+    setDeleting(false);
+    if (ok) onLogout();
+  };
 
   const handleSave = () => {
     onUpdateUser(editForm);
@@ -122,7 +141,7 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
     }
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      toast.error('Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.');
+      toast.error('Tipo de arquivo não permitido. Use JPEG, PNG ou WebP.');
       return;
     }
 
@@ -130,12 +149,15 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
 
     try {
       const resizedBlob = await resizeImageToBlob(file, MAX_IMAGE_DIMENSION);
-      const fileName = `${authUser.id}/${Date.now()}.jpg`;
+      // Nome fixo: substitui a foto anterior em vez de acumular arquivos.
+      // O canvas regrava como JPEG, removendo metadados EXIF (ex.: localização GPS).
+      const fileName = `${authUser.id}/avatar.jpg`;
 
       const { data, error } = await supabase.storage
         .from('profile-images')
         .upload(fileName, resizedBlob, {
           cacheControl: '3600',
+          contentType: 'image/jpeg',
           upsert: true
         });
 
@@ -145,7 +167,7 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
         .from('profile-images')
         .getPublicUrl(data.path);
 
-      const publicUrl = urlData.publicUrl;
+      const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
       setEditForm({ ...editForm, profileImage: publicUrl });
       toast.success('Imagem atualizada!');
     } catch (error) {
@@ -309,9 +331,11 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
                   id="edit-email"
                   type="email"
                   value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  readOnly
+                  disabled
                   className="rounded-xl"
                 />
+                <p className="text-xs text-muted-foreground mt-1">Para trocar o email, fale com a equipe.</p>
               </div>
               <div>
                 <Label htmlFor="edit-age">Idade</Label>
@@ -339,6 +363,36 @@ export const UserProfile = ({ user, userPoints, userLevel, onUpdateUser, onLogou
             </div>
           </div>
         </div>
+      </Card>
+
+      <Card className="p-6 dark:bg-gray-800/50 dark:border-gray-700 rounded-2xl border-red-200 dark:border-red-900/50">
+        <h3 className="font-bold text-gray-800 dark:text-white mb-1">Privacidade e dados</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Você pode excluir sua conta a qualquer momento. Isso apaga seu perfil, foto, progresso, comentários e curtidas. Não dá para desfazer.
+          Veja a <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-primary underline">Política de Privacidade</a>.
+        </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20 rounded-xl" disabled={deleting}>
+              {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir minha conta
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir conta definitivamente?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Todos os seus dados serão apagados: perfil, foto, pontos, conquistas e comentários. Essa ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">
+                Sim, excluir tudo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Card>
     </div>
   );

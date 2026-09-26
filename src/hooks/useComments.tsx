@@ -118,8 +118,8 @@ export const useComments = (experimentId: string) => {
     fetchComments();
   }, [fetchComments]);
 
-  const addComment = async (content: string, parentId?: string) => {
-    if (!user) return;
+  const addComment = async (content: string, parentId?: string): Promise<{ error: { message?: string } | null }> => {
+    if (!user) return { error: { message: 'nao_autenticada' } };
 
     const { error } = await supabase
       .from('experiment_comments')
@@ -133,17 +133,20 @@ export const useComments = (experimentId: string) => {
     if (!error) {
       fetchComments();
     }
+    return { error };
   };
 
   const deleteComment = async (commentId: string) => {
     if (!user) return false;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('experiment_comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .select('id');
 
-    if (!error) {
+    // RLS não retorna erro quando nada é apagado: confere se a linha saiu.
+    if (!error && data && data.length > 0) {
       fetchComments();
       return true;
     }
@@ -167,9 +170,7 @@ export const useComments = (experimentId: string) => {
         .from('comment_likes')
         .delete()
         .eq('id', existingLike.id);
-
-      // Decrement likes count
-      await supabase.rpc('decrement_likes' as never, { comment_id: commentId } as never);
+      // O contador de curtidas é atualizado por trigger no banco.
     } else {
       // Like
       await supabase
@@ -179,15 +180,24 @@ export const useComments = (experimentId: string) => {
           comment_id: commentId
         });
 
-      // Increment likes count
-      await supabase.rpc('increment_likes' as never, { comment_id: commentId } as never);
     }
 
     fetchComments();
   };
 
+  const reportComment = async (commentId: string, reason?: string): Promise<'ok' | 'duplicate' | 'error'> => {
+    if (!user) return 'error';
+    const { error } = await supabase
+      .from('comment_reports' as never)
+      .insert({ comment_id: commentId, reporter_id: user.id, reason: reason?.slice(0, 300) || null } as never);
+    if (!error) return 'ok';
+    if ((error as { code?: string }).code === '23505') return 'duplicate';
+    return 'error';
+  };
+
   return {
     comments,
+    reportComment,
     loading,
     addComment,
     deleteComment,

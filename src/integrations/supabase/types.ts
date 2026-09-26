@@ -107,6 +107,39 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_reports: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
@@ -213,6 +246,7 @@ export type Database = {
           content: string
           created_at: string
           experiment_id: string
+          hidden: boolean
           id: string
           likes: number | null
           parent_id: string | null
@@ -223,6 +257,7 @@ export type Database = {
           content: string
           created_at?: string
           experiment_id: string
+          hidden?: boolean
           id?: string
           likes?: number | null
           parent_id?: string | null
@@ -233,6 +268,7 @@ export type Database = {
           content?: string
           created_at?: string
           experiment_id?: string
+          hidden?: boolean
           id?: string
           likes?: number | null
           parent_id?: string | null
@@ -416,30 +452,36 @@ export type Database = {
           age: number | null
           created_at: string
           email: string
+          guardian_consent_at: string | null
           id: string
           interests: string[] | null
           name: string
           profile_image: string | null
+          terms_accepted_at: string | null
           updated_at: string
         }
         Insert: {
           age?: number | null
           created_at?: string
           email: string
+          guardian_consent_at?: string | null
           id: string
           interests?: string[] | null
           name: string
           profile_image?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Update: {
           age?: number | null
           created_at?: string
           email?: string
+          guardian_consent_at?: string | null
           id?: string
           interests?: string[] | null
           name?: string
           profile_image?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -504,6 +546,11 @@ export type Database = {
     }
     Functions: {
       decrement_likes: { Args: { comment_id: string }; Returns: undefined }
+      delete_my_account: { Args: never; Returns: undefined }
+      moderate_comment: {
+        Args: { _action: string; _comment_id: string }
+        Returns: undefined
+      }
       get_comment_user_info: {
         Args: { user_ids: string[] }
         Returns: {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
 import { MobileNav } from "@/components/MobileNav";
@@ -14,12 +14,12 @@ import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { ForgotPassword } from "@/components/ForgotPassword";
-import { AdminPanel } from "@/components/AdminPanel";
-import { ModeratorPanel } from "@/components/ModeratorPanel";
+const AdminPanel = lazy(() => import("@/components/AdminPanel").then(m => ({ default: m.AdminPanel })));
+const ModeratorPanel = lazy(() => import("@/components/ModeratorPanel").then(m => ({ default: m.ModeratorPanel })));
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
-import { About } from "@/pages/About";
-import { Blog } from "@/pages/Blog";
+const About = lazy(() => import("@/pages/About").then(m => ({ default: m.About })));
+const Blog = lazy(() => import("@/pages/Blog").then(m => ({ default: m.Blog })));
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useUserProgress } from "@/hooks/useUserProgress";
@@ -32,7 +32,7 @@ type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgot
 type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
-  const { user, profile, loading: authLoading, signOut, updateProfile } = useAuth();
+  const { user, profile, loading: authLoading, signOut, updateProfile, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { isAdmin, isModerator, loading: adminLoading } = useAdminCheck();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authView, setAuthView] = useState<AuthView>('landing');
@@ -110,7 +110,6 @@ const AppContent = () => {
   const handleUpdateUser = async (userData: { name: string; email: string; age: number; interests: string[]; profileImage?: string }) => {
     await updateProfile({
       name: userData.name,
-      email: userData.email,
       age: userData.age,
       interests: userData.interests,
       profile_image: userData.profileImage,
@@ -234,8 +233,27 @@ const AppContent = () => {
     );
   }
 
-  if (footerPage === 'about') return <About onBack={() => setFooterPage(null)} />;
-  if (footerPage === 'blog') return <Blog onBack={() => setFooterPage(null)} />;
+  // Link de "esqueci minha senha": a usuária chega logada temporariamente e
+  // precisa definir a nova senha antes de qualquer outra tela.
+  if (isPasswordRecovery) {
+    return (
+      <ForgotPassword
+        initialStep="newPassword"
+        onBack={() => clearPasswordRecovery()}
+        onGoToLogin={() => clearPasswordRecovery()}
+        onPasswordUpdated={() => clearPasswordRecovery()}
+      />
+    );
+  }
+
+  const pageLoader = (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+
+  if (footerPage === 'about') return <Suspense fallback={pageLoader}><About onBack={() => setFooterPage(null)} /></Suspense>;
+  if (footerPage === 'blog') return <Suspense fallback={pageLoader}><Blog onBack={() => setFooterPage(null)} /></Suspense>;
 
   if (authView === 'landing') {
     return (
@@ -266,8 +284,8 @@ const AppContent = () => {
     );
   }
 
-  if (authView === 'admin' && isAdmin) return <AdminPanel onBack={() => setAuthView('app')} />;
-  if (authView === 'moderator' && isModerator && !isAdmin) return <ModeratorPanel onBack={() => setAuthView('app')} />;
+  if (authView === 'admin' && isAdmin) return <Suspense fallback={pageLoader}><AdminPanel onBack={() => setAuthView('app')} /></Suspense>;
+  if (authView === 'moderator' && isModerator && !isAdmin) return <Suspense fallback={pageLoader}><ModeratorPanel onBack={() => setAuthView('app')} /></Suspense>;
 
   if (authView === 'register') {
     return (
@@ -295,10 +313,6 @@ const AppContent = () => {
         onSelectArea={handleSelectArea}
       />
     );
-  }
-
-  if (profile && profile.interests.length === 1 && !selectedArea) {
-    setSelectedArea(profile.interests[0]);
   }
 
   if (showAddAreaModal) {

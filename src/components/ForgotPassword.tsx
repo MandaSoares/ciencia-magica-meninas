@@ -11,12 +11,15 @@ import { Logo } from "./Logo";
 interface ForgotPasswordProps {
   onBack: () => void;
   onGoToLogin: () => void;
+  /** 'newPassword' quando a usuária chega pelo link de recuperação do email */
+  initialStep?: 'email' | 'newPassword';
+  onPasswordUpdated?: () => void;
 }
 
 type Step = 'email' | 'sent' | 'newPassword';
 
-export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => {
-  const [step, setStep] = useState<Step>('email');
+export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = 'email', onPasswordUpdated }: ForgotPasswordProps) => {
+  const [step, setStep] = useState<Step>(initialStep);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -34,12 +37,13 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
     });
     setLoading(false);
 
-    if (error) {
-      toast.error(error.message);
+    // Mesma resposta exista ou não a conta (não revela emails cadastrados).
+    if (error && (error.status === 429 || error.message.toLowerCase().includes('rate limit'))) {
+      toast.error('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
       return;
     }
 
-    toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+    toast.success('Se existir uma conta com esse email, você vai receber um link de recuperação.');
     setStep('sent');
   };
 
@@ -70,12 +74,20 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
     setLoading(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(
+        error.message.toLowerCase().includes('different from the old')
+          ? 'A nova senha precisa ser diferente da anterior.'
+          : 'Não foi possível atualizar a senha. Peça um novo link e tente de novo.'
+      );
       return;
     }
 
     toast.success('Senha atualizada com sucesso!');
-    onGoToLogin();
+    if (onPasswordUpdated) {
+      onPasswordUpdated();
+    } else {
+      onGoToLogin();
+    }
   };
 
   const PageWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -104,7 +116,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin }: ForgotPasswordProps) => 
               Email Enviado!
             </h1>
             <p className="text-muted-foreground mb-6">
-              Enviamos um link de recuperação para <strong>{email}</strong>.
+              Se existir uma conta com <strong>{email}</strong>, enviamos um link de recuperação.
               Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
             </p>
             <p className="text-sm text-muted-foreground mb-6">

@@ -142,8 +142,12 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             </div>
           ))}
         </div>
+        <nav className="flex flex-wrap justify-center gap-6 mt-6 text-sm text-gray-500">
+          <a href="/privacidade" className="hover:text-purple-600">Política de Privacidade</a>
+          <a href="/termos" className="hover:text-purple-600">Termos de Uso</a>
+        </nav>
         <p className="text-center text-xs text-gray-400 mt-4">
-          © 2025 Conscientistas. Inspirando meninas a descobrir o mundo STEM.
+          © {new Date().getFullYear()} Conscientistas. Inspirando meninas a descobrir o mundo STEM.
         </p>
       </footer>
     </div>
