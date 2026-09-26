@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Mail, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField, isStrongPassword } from "./auth/PasswordField";
+import { VerifyCode } from "./auth/VerifyCode";
 
 interface RegistrationProps {
   onComplete: () => void;
   onBack: () => void;
   onGoToLogin: () => void;
+  onForgotPassword?: () => void;
 }
 
 type Step = "age" | "name" | "account" | "consent" | "checkEmail";
@@ -28,8 +30,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  * A idade vem primeiro porque define se precisamos do consentimento de
  * um responsável (LGPD art. 14: menores de 12 anos).
  */
-export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationProps) => {
-  const { signUp } = useAuth();
+export const Registration = ({ onComplete, onBack, onGoToLogin, onForgotPassword }: RegistrationProps) => {
+  const { signUp, verifyEmailCode, resendConfirmation } = useAuth();
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [step, setStep] = useState<Step>("age");
   const [age, setAge] = useState<number | null>(null);
   const [name, setName] = useState("");
@@ -74,8 +77,9 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
 
     if (result.error) {
       setError(result.message ?? "Não foi possível criar a conta.");
+      setAlreadyRegistered(!!result.alreadyRegistered);
       // Problema de email/senha: volta para a etapa onde dá para corrigir
-      if (/email|senha/i.test(result.message ?? "")) setStep("account");
+      if (result.alreadyRegistered || /email|senha/i.test(result.message ?? "")) setStep("account");
       return;
     }
     if (result.needsConfirmation) {
@@ -87,21 +91,22 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
 
   if (step === "checkEmail") {
     return (
-      <AuthShell>
-        <div className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center mb-6 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
-            <Mail className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3">Confirme seu email</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-2">
-            Enviamos um link para <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>.
+      <VerifyCode
+        email={email.trim().toLowerCase()}
+        title="Confirme seu email"
+        submitLabel="Confirmar e entrar"
+        onVerify={(code) => verifyEmailCode(email, code)}
+        onResend={() => resendConfirmation(email)}
+        onBack={() => setStep("account")}
+        footer={
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Digitou o email errado?{" "}
+            <button type="button" onClick={() => setStep("account")} className="font-bold text-purple-600 dark:text-purple-400 hover:underline">
+              Corrigir
+            </button>
           </p>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">
-            Abra o email, clique no link e depois volte aqui para entrar. Se não achar, olhe no spam.
-          </p>
-          <Button onClick={onGoToLogin} className={primaryButtonClass}>Ir para o login</Button>
-        </div>
-      </AuthShell>
+        }
+      />
     );
   }
 
@@ -220,7 +225,7 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
                 spellCheck={false}
                 placeholder="seuemail@exemplo.com"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                onChange={(e) => { setEmail(e.target.value); setError(null); setAlreadyRegistered(false); }}
                 onBlur={() => setTouched({ email: true })}
                 className={cn(inputClass, touched.email && email && !emailValid && "border-red-300 focus-visible:border-red-400")}
                 aria-invalid={touched.email && !!email && !emailValid}
@@ -243,7 +248,19 @@ export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationPr
               />
             </div>
 
-            {error && <FormError>{error}</FormError>}
+            {error && (
+              <FormError>
+                {error}
+                {alreadyRegistered && (
+                  <span className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    <button type="button" onClick={onGoToLogin} className="font-bold underline">Entrar</button>
+                    {onForgotPassword && (
+                      <button type="button" onClick={onForgotPassword} className="font-bold underline">Esqueci minha senha</button>
+                    )}
+                  </span>
+                )}
+              </FormError>
+            )}
           </div>
           <div className="mt-auto pt-8">
             <Button type="submit" className={primaryButtonClass} disabled={!emailValid || !passwordValid}>

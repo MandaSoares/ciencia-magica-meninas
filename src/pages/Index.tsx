@@ -27,12 +27,13 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useStudyHours } from "@/hooks/useStudyHours";
 import { Loader2, Shield, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgotPassword' | 'admin' | 'moderator';
 type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
-  const { user, profile, loading: authLoading, signOut, updateProfile, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, profile, loading: authLoading, signOut, updateProfile, isPasswordRecovery, clearPasswordRecovery, linkNotice, clearLinkNotice } = useAuth();
   const { isAdmin, isModerator, loading: adminLoading } = useAdminCheck();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authView, setAuthView] = useState<AuthView>('landing');
@@ -61,6 +62,18 @@ const AppContent = () => {
       }
     }
   }, [user, profile, authLoading, selectedArea]);
+
+  // Volta de um link de email (confirmação ok, expirado ou inválido)
+  useEffect(() => {
+    if (authLoading || !linkNotice) return;
+    if (user) {
+      if (linkNotice.kind === 'confirmed') toast.success(linkNotice.message);
+      clearLinkNotice();
+    } else {
+      setAuthView('login');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, linkNotice?.kind, linkNotice?.message, user?.id]);
 
   const handleLogout = async () => {
     await signOut();
@@ -238,8 +251,8 @@ const AppContent = () => {
     return (
       <ForgotPassword
         initialStep="newPassword"
-        onBack={() => clearPasswordRecovery()}
-        onGoToLogin={() => clearPasswordRecovery()}
+        onBack={() => { clearPasswordRecovery(); setAuthView('login'); }}
+        onGoToLogin={() => { clearPasswordRecovery(); setAuthView('login'); }}
         onPasswordUpdated={() => clearPasswordRecovery()}
       />
     );
@@ -292,6 +305,7 @@ const AppContent = () => {
         onComplete={() => setAuthView('interests')}
         onBack={() => setAuthView('landing')}
         onGoToLogin={() => setAuthView('login')}
+        onForgotPassword={() => setAuthView('forgotPassword')}
       />
     );
   }

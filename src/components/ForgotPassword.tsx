@@ -1,48 +1,54 @@
 import { useState } from "react";
-import { Loader2, MailCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { authErrorMessage, useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField, isStrongPassword } from "./auth/PasswordField";
+import { VerifyCode } from "./auth/VerifyCode";
 
 interface ForgotPasswordProps {
   onBack: () => void;
   onGoToLogin: () => void;
-  /** 'newPassword' quando a usuária chega pelo link de recuperação do email */
+  /** 'newPassword' quando a usuária já validou o código ou abriu o link do email */
   initialStep?: "email" | "newPassword";
   onPasswordUpdated?: () => void;
 }
 
-type Step = "email" | "sent" | "newPassword";
+type Step = "email" | "code" | "newPassword";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/**
+ * Recuperação de senha:
+ * 1. email → 2. código de 6 dígitos (ou link do email) → 3. nova senha.
+ * Ao validar o código, o Supabase dispara PASSWORD_RECOVERY e a Index
+ * renderiza este componente já na etapa "newPassword".
+ */
 export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onPasswordUpdated }: ForgotPasswordProps) => {
+  const { sendPasswordReset, verifyRecoveryCode, signOut, user } = useAuth();
   const [step, setStep] = useState<Step>(initialStep);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const handleSendResetEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!EMAIL_RE.test(email.trim())) return;
+  const emailValid = EMAIL_RE.test(email.trim());
 
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailValid) return;
     setLoading(true);
     setError(null);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${window.location.origin}/`,
-    });
+    const result = await sendPasswordReset(email);
     setLoading(false);
-
-    // Mesma resposta exista ou não a conta (não revela emails cadastrados).
-    if (resetError && (resetError.status === 429 || resetError.message.toLowerCase().includes("rate limit"))) {
-      setError("Muitas tentativas. Aguarde alguns minutos e tente de novo.");
+    if (result.error) {
+      setError(result.message ?? "Não foi possível enviar agora.");
       return;
     }
-    setStep("sent");
+    setStep("code");
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -55,10 +61,11 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
     setLoading(false);
 
     if (updateError) {
+      const msg = authErrorMessage(updateError);
       setError(
-        updateError.message.toLowerCase().includes("different from the old")
-          ? "A nova senha precisa ser diferente da anterior."
-          : "Não foi possível trocar a senha. O link pode ter expirado: peça um novo."
+        /session|jwt|auth session missing/i.test(updateError.message)
+          ? "Sua sessão de recuperação expirou. Peça um novo código."
+          : msg
       );
       return;
     }
@@ -68,34 +75,37 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
     else onGoToLogin();
   };
 
-  if (step === "sent") {
+  if (step === "code") {
     return (
-      <AuthShell onBack={onGoToLogin}>
-        <div className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mb-6 shadow-lg shadow-green-200 dark:shadow-green-900/30">
-            <MailCheck className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3">Confira seu email</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-2">
-            Se existir uma conta com <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>, enviamos um link para criar uma nova senha.
-          </p>
-          <p className="text-gray-500 dark:text-gray-400 mb-8">O link vale por pouco tempo. Não achou? Olhe no spam.</p>
-          <div className="w-full space-y-3">
-            <Button onClick={onGoToLogin} className={primaryButtonClass}>Voltar para o login</Button>
-            <Button variant="ghost" onClick={() => setStep("email")} className="w-full h-12 rounded-2xl font-semibold">
-              Usar outro email
-            </Button>
-          </div>
-        </div>
-      </AuthShell>
+      <VerifyCode
+        email={email.trim().toLowerCase()}
+        title="Digite o código"
+        subtitle={
+          <>
+            Se existir uma conta com <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>, enviamos um código para criar uma nova senha. Olhe também no spam.
+          </>
+        }
+        submitLabel="Continuar"
+        onVerify={(code) => verifyRecoveryCode(email, code)}
+        onResend={() => sendPasswordReset(email)}
+        onBack={() => setStep("email")}
+      />
     );
   }
 
   if (step === "newPassword") {
     return (
-      <AuthShell>
+      <AuthShell
+        onBack={async () => {
+          // Sair do fluxo sem trocar a senha: encerra a sessão temporária
+          await signOut();
+          onGoToLogin();
+        }}
+      >
         <AuthTitle title="Crie uma nova senha" subtitle="Escolha uma senha que você não usa em outros sites." />
         <form onSubmit={handleUpdatePassword} className="flex-1 flex flex-col" noValidate>
+          {/* ajuda o gerenciador de senhas do navegador a salvar a nova senha */}
+          <input type="email" autoComplete="username" value={email || user?.email || ""} readOnly hidden />
           <div className="space-y-2 animate-slide-up stagger-1">
             <Label htmlFor="new-password" className="font-semibold">Nova senha</Label>
             <PasswordField
@@ -122,8 +132,8 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
 
   return (
     <AuthShell onBack={onBack}>
-      <AuthTitle title="Esqueceu a senha?" subtitle="Tudo bem! Digite seu email e enviamos um link para criar outra." />
-      <form onSubmit={handleSendResetEmail} className="flex-1 flex flex-col" noValidate>
+      <AuthTitle title="Esqueceu a senha?" subtitle="Tudo bem! Digite seu email e enviamos um código para criar outra." />
+      <form onSubmit={handleSendCode} className="flex-1 flex flex-col" noValidate>
         <div className="space-y-2 animate-slide-up stagger-1">
           <Label htmlFor="reset-email" className="font-semibold">Email</Label>
           <Input
@@ -143,8 +153,8 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
           {error && <div className="pt-3"><FormError>{error}</FormError></div>}
         </div>
         <div className="mt-auto pt-8 space-y-3">
-          <Button type="submit" className={primaryButtonClass} disabled={!EMAIL_RE.test(email.trim()) || loading}>
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enviar link"}
+          <Button type="submit" className={primaryButtonClass} disabled={!emailValid || loading}>
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enviar código"}
           </Button>
           <Button type="button" variant="ghost" onClick={onGoToLogin} className="w-full h-12 rounded-2xl font-semibold">
             Lembrei a senha
