@@ -48,7 +48,6 @@ import {
 import { getPathByArea } from "@/data/learningPathData";
 
 interface LearningPathProps {
-  onPointsEarned: (points: number) => void;
   selectedArea: string;
   onLessonComplete: (lessonId: number) => void;
   completedLessons?: Set<number>;
@@ -60,7 +59,6 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export const LearningPath = ({
-  onPointsEarned,
   selectedArea,
   onLessonComplete,
   completedLessons = new Set(),
@@ -129,7 +127,6 @@ export const LearningPath = ({
       const level = pathLevels.find((l) => l.id === currentLevel);
       if (level) {
         setCompletedLevels((prev) => new Set([...prev, currentLevel]));
-        onPointsEarned(level.points);
         setShowLesson(false);
         setCompletedLevelData(level);
         setShowLevelComplete(true);

@@ -545,6 +545,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_activity: {
+        Args: { _kind: string; _ref: string; _stem_area: string }
+        Returns: Json
+      }
       decrement_likes: { Args: { comment_id: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
       moderate_comment: {
@@ -559,6 +563,7 @@ export type Database = {
           profile_image: string
         }[]
       }
+      get_my_streak: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

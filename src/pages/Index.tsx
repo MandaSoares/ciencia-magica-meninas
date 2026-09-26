@@ -40,7 +40,7 @@ const AppContent = () => {
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
 
-  const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } =
+  const { progress, stats, streak, isPathCompleted, recordActivity, completeLesson, completeModule, completeExperiment } =
     useUserProgress(selectedArea || 'science');
 
   const { studyHours } = useStudyHours(selectedArea || 'science');
@@ -136,7 +136,6 @@ const AppContent = () => {
       case "path":
         return (
           <LearningPath
-            onPointsEarned={addPoints}
             selectedArea={selectedArea || "science"}
             onLessonComplete={completeLesson}
             completedLessons={stats.completedLessonIds}
@@ -145,7 +144,7 @@ const AppContent = () => {
       case "modules":
         return (
           <ScienceModules
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             selectedArea={selectedArea || "science"}
             userName={profile?.name || "Estudante"}
             onModuleComplete={completeModule}
@@ -156,14 +155,14 @@ const AppContent = () => {
       case "areas":
         return (
           <AreasDeAtuacao
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             selectedArea={selectedArea || "science"}
           />
         );
       case "lab":
         return (
           <VirtualLab
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             onExperimentComplete={completeExperiment}
             selectedArea={selectedArea || "science"}
             completedExperimentIds={stats.completedExperimentIds}
@@ -179,7 +178,7 @@ const AppContent = () => {
               modulesCompleted: stats.modulesCompleted,
               experimentsCompleted: stats.experimentsCompleted,
               lessonsCompleted: stats.lessonsCompleted,
-              daysStreak: 1,
+              daysStreak: streak.longest, // conquista "7 dias seguidos" não se perde se a sequência quebrar
               completedLevels: new Set(Array.from(stats.completedLessonIds || new Set()).map(String)),
               completedModules: new Set(Array.from(stats.completedModuleIds || new Set()).map(String)),
             }}
@@ -203,7 +202,7 @@ const AppContent = () => {
               modulesCompleted: stats.modulesCompleted,
               experimentsCompleted: stats.experimentsCompleted,
               lessonsCompleted: stats.lessonsCompleted,
-              daysStreak: 1,
+              daysStreak: streak.current,
             }}
           />
         ) : null;
@@ -339,6 +338,8 @@ const AppContent = () => {
         userLevel={progress?.level || 1}
         userName={profile?.name}
         userProfileImage={profile?.profile_image || undefined}
+        streak={streak.current}
+        studiedToday={streak.studiedToday}
       />
       {isAdmin && (
         <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-red-200 px-4 sm:px-6 py-2">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ActivityKind } from "@/hooks/useUserProgress";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lightbulb, Beaker, Zap, Sparkles, Flame, Droplets, Wind, Magnet, Loader2, Trash2, Edit2, CheckCircle2, Clock, Play } from "lucide-react";
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface VirtualLabProps {
-  onPointsEarned: (points: number) => void;
+  onActivity: (kind: ActivityKind, ref: string) => void;
   onExperimentComplete: (experimentId: string) => void;
   selectedArea?: string;
   completedExperimentIds?: Set<string>;
@@ -346,7 +347,7 @@ const areaThemes: Record<string, { gradient: string; light: string; accent: stri
   math: { gradient: "from-purple-500 to-violet-500", light: "from-purple-50 to-violet-50", accent: "text-purple-600", emoji: "📐" },
 };
 
-export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea = "science", completedExperimentIds = new Set() }: VirtualLabProps) => {
+export const VirtualLab = ({ onActivity, onExperimentComplete, selectedArea = "science", completedExperimentIds = new Set() }: VirtualLabProps) => {
   const [activeExperiment, setActiveExperiment] = useState<string | null>(null);
   const [experimentStep, setExperimentStep] = useState(0);
   const [completedExperiments, setCompletedExperiments] = useState<Set<string>>(new Set());
@@ -398,7 +399,7 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
     setExperimentStep(0);
     setShowComments(false);
     setShowSafetyWarning(true);
-    onPointsEarned(30);
+    onActivity('experiment_start', experimentId);
   };
 
   const dismissSafetyWarning = () => {
@@ -409,12 +410,11 @@ export const VirtualLab = ({ onPointsEarned, onExperimentComplete, selectedArea 
     const experiment = experiments.find(exp => exp.id === activeExperiment);
     if (experiment && experimentStep < experiment.steps.length - 1) {
       setExperimentStep(prev => prev + 1);
-      onPointsEarned(20);
+      onActivity('experiment_step', `${activeExperiment}:${experimentStep}`);
     } else {
       // Experiment completed - show comments
       setShowComments(true);
       setCompletedExperiments(prev => new Set([...prev, activeExperiment!]));
-      onPointsEarned(100);
       onExperimentComplete(activeExperiment!);
     }
   };
