@@ -23,8 +23,9 @@ interface AuthContextType {
     name: string,
     age: number,
     consents: { terms: boolean; guardian: boolean }
-  ) => Promise<{ error: Error | null; needsConfirmation?: boolean }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  ) => Promise<{ error: Error | null; message?: string; needsConfirmation?: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; message?: string; unconfirmed?: boolean }>;
+  resendConfirmation: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   deleteAccount: () => Promise<boolean>;
@@ -33,7 +34,7 @@ interface AuthContextType {
 }
 
 // Mensagens genéricas: não revelam se um email já está cadastrado.
-const authErrorMessage = (error: { message?: string; status?: number } | null): string => {
+export const authErrorMessage = (error: { message?: string; status?: number } | null): string => {
   const msg = (error?.message || '').toLowerCase();
   if (msg.includes('invalid login credentials')) return 'Email ou senha incorretos.';
   if (msg.includes('email not confirmed')) return 'Confirme seu email pelo link que enviamos antes de entrar.';
@@ -41,6 +42,10 @@ const authErrorMessage = (error: { message?: string; status?: number } | null): 
   if (msg.includes('password') && (msg.includes('weak') || msg.includes('pwned') || msg.includes('leaked')))
     return 'Essa senha é fraca ou já apareceu em vazamentos. Escolha outra.';
   if (msg.includes('captcha')) return 'Não foi possível verificar que você não é um robô. Tente de novo.';
+  if (msg.includes('already registered') || msg.includes('already exists'))
+    return 'Não foi possível criar a conta com esse email. Se você já tem conta, entre ou recupere a senha.';
+  if (msg.includes('invalid') && msg.includes('email')) return 'Esse email não parece válido. Confira se digitou certo.';
+  if (msg.includes('fetch') || msg.includes('network')) return 'Sem conexão com o servidor. Verifique sua internet.';
   return 'Não foi possível concluir. Tente novamente em instantes.';
 };
 
@@ -122,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Nome, idade e consentimentos vão como metadata e são gravados pelo
     // trigger handle_new_user (funciona com confirmação de email ligada).
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
       options: {
         emailRedirectTo: redirectUrl,
@@ -136,32 +141,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) {
-      toast.error(authErrorMessage(error));
-      return { error };
+      return { error, message: authErrorMessage(error) };
     }
 
     const needsConfirmation = !data.session;
-    toast.success(
-      needsConfirmation
-        ? 'Conta criada! Enviamos um link de confirmação para o seu email.'
-        : 'Conta criada com sucesso!'
-    );
     return { error: null, needsConfirmation };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim().toLowerCase(),
       password
     });
 
     if (error) {
-      toast.error(authErrorMessage(error));
-      return { error };
+      return {
+        error,
+        message: authErrorMessage(error),
+        unconfirmed: error.message.toLowerCase().includes('email not confirmed'),
+      };
     }
 
-    toast.success('Login realizado com sucesso!');
     return { error: null };
+  };
+
+  const resendConfirmation = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim().toLowerCase(),
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    return !error;
   };
 
   const signOut = async () => {
@@ -228,6 +238,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loading,
       signUp,
       signIn,
+      resendConfirmation,
       signOut,
       updateProfile,
       deleteAccount,

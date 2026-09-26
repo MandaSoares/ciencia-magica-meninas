@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, Lock, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Logo } from "./Logo";
+import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
+import { PasswordField } from "./auth/PasswordField";
 
 interface LoginProps {
   onLogin: () => void;
@@ -15,128 +15,118 @@ interface LoginProps {
 }
 
 export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: LoginProps) => {
-  const { signIn } = useAuth();
+  const { signIn, resendConfirmation } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+  const [error, setError] = useState<string | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  const canSubmit = email.trim().length > 3 && password.length > 0 && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.password) return;
+    if (!canSubmit) return;
 
     setLoading(true);
-    const { error } = await signIn(formData.email, formData.password);
+    setError(null);
+    setUnconfirmed(false);
+    const result = await signIn(email, password);
     setLoading(false);
 
-    if (!error) {
-      onLogin();
+    if (result.error) {
+      setError(result.message ?? "Não foi possível entrar.");
+      setUnconfirmed(!!result.unconfirmed);
+      return;
     }
+    onLogin();
+  };
+
+  const handleResend = async () => {
+    setLoading(true);
+    const ok = await resendConfirmation(email);
+    setLoading(false);
+    setResent(ok);
+    if (!ok) setError("Não foi possível reenviar agora. Aguarde alguns minutos e tente de novo.");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6 animate-slide-up">
-          <Logo size={56} className="mx-auto mb-3" />
-          <h2 className="text-lg font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Conscientistas
-          </h2>
+    <AuthShell
+      onBack={onBack}
+      footer={
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          Ainda não tem conta?{" "}
+          <button type="button" onClick={onGoToRegister} className="font-bold text-purple-600 dark:text-purple-400 hover:underline">
+            Criar conta grátis
+          </button>
+        </p>
+      }
+    >
+      <AuthTitle title="Bem-vinda de volta!" subtitle="Entre para continuar sua jornada científica." />
+
+      <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up stagger-1" noValidate>
+        <div className="space-y-2">
+          <Label htmlFor="login-email" className="font-semibold">Email</Label>
+          <Input
+            id="login-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="seuemail@exemplo.com"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+            className={inputClass}
+            disabled={loading}
+            autoFocus
+          />
         </div>
 
-        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Voltar</span>
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Bem-vinda de volta!
-            </h1>
-            <p className="text-muted-foreground">
-              Entre na sua conta para continuar aprendendo
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center space-x-2">
-                <Mail className="w-4 h-4" />
-                <span>Email</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Digite seu email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full py-5 rounded-xl"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center space-x-2">
-                <Lock className="w-4 h-4" />
-                <span>Senha</span>
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Digite sua senha"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                className="w-full py-5 rounded-xl"
-                required
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                className="text-sm text-primary hover:underline mt-1"
-              >
-                Esqueci minha senha
-              </button>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
-              disabled={loading}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="login-password" className="font-semibold">Senha</Label>
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:underline"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Entrando...
-                </>
-              ) : (
-                'Entrar'
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              Não tem uma conta?{" "}
-              <button
-                onClick={onGoToRegister}
-                className="text-primary font-semibold hover:underline"
-              >
-                Cadastre-se
-              </button>
-            </p>
+              Esqueci minha senha
+            </button>
           </div>
-        </Card>
-      </div>
-    </div>
+          <PasswordField
+            id="login-password"
+            autoComplete="current-password"
+            placeholder="Sua senha"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setError(null); }}
+            disabled={loading}
+          />
+        </div>
+
+        {error && (
+          <FormError>
+            {error}
+            {unconfirmed && !resent && (
+              <button type="button" onClick={handleResend} className="block mt-2 font-bold underline">
+                Reenviar email de confirmação
+              </button>
+            )}
+          </FormError>
+        )}
+
+        {resent && (
+          <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <MailCheck className="w-4 h-4 mt-0.5 shrink-0" />
+            Enviamos um novo link para {email.trim()}. Confira também o spam.
+          </div>
+        )}
+
+        <Button type="submit" className={primaryButtonClass} disabled={!canSubmit}>
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 };

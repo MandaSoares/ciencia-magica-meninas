@@ -1,287 +1,156 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowLeft, Loader2, KeyRound, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Logo } from "./Logo";
+import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
+import { PasswordField, isStrongPassword } from "./auth/PasswordField";
 
 interface ForgotPasswordProps {
   onBack: () => void;
   onGoToLogin: () => void;
   /** 'newPassword' quando a usuária chega pelo link de recuperação do email */
-  initialStep?: 'email' | 'newPassword';
+  initialStep?: "email" | "newPassword";
   onPasswordUpdated?: () => void;
 }
 
-type Step = 'email' | 'sent' | 'newPassword';
+type Step = "email" | "sent" | "newPassword";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = 'email', onPasswordUpdated }: ForgotPasswordProps) => {
+export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onPasswordUpdated }: ForgotPasswordProps) => {
   const [step, setStep] = useState<Step>(initialStep);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSendResetEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!EMAIL_RE.test(email.trim())) return;
 
     setLoading(true);
-    const redirectUrl = `${window.location.origin}/?reset=true`;
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl
+    setError(null);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/`,
     });
     setLoading(false);
 
     // Mesma resposta exista ou não a conta (não revela emails cadastrados).
-    if (error && (error.status === 429 || error.message.toLowerCase().includes('rate limit'))) {
-      toast.error('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+    if (resetError && (resetError.status === 429 || resetError.message.toLowerCase().includes("rate limit"))) {
+      setError("Muitas tentativas. Aguarde alguns minutos e tente de novo.");
       return;
     }
-
-    toast.success('Se existir uma conta com esse email, você vai receber um link de recuperação.');
-    setStep('sent');
+    setStep("sent");
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast.error('As senhas não coincidem');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast.error('A senha deve ter pelo menos 8 caracteres');
-      return;
-    }
-
-    const hasUpperCase = /[A-Z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
-    if (!hasUpperCase || !hasNumber) {
-      toast.error('A senha deve conter pelo menos uma letra maiúscula e um número');
-      return;
-    }
+    if (!isStrongPassword(newPassword)) return;
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
+    setError(null);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
     setLoading(false);
 
-    if (error) {
-      toast.error(
-        error.message.toLowerCase().includes('different from the old')
-          ? 'A nova senha precisa ser diferente da anterior.'
-          : 'Não foi possível atualizar a senha. Peça um novo link e tente de novo.'
+    if (updateError) {
+      setError(
+        updateError.message.toLowerCase().includes("different from the old")
+          ? "A nova senha precisa ser diferente da anterior."
+          : "Não foi possível trocar a senha. O link pode ter expirado: peça um novo."
       );
       return;
     }
 
-    toast.success('Senha atualizada com sucesso!');
-    if (onPasswordUpdated) {
-      onPasswordUpdated();
-    } else {
-      onGoToLogin();
-    }
+    toast.success("Senha atualizada! Você já está conectada.");
+    if (onPasswordUpdated) onPasswordUpdated();
+    else onGoToLogin();
   };
 
-  const PageWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6 animate-slide-up">
-          <Logo size={56} className="mx-auto mb-3" />
-          <h2 className="text-lg font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Conscientistas
-          </h2>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-
-  if (step === 'sent') {
+  if (step === "sent") {
     return (
-      <PageWrapper>
-        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-200 dark:shadow-green-900/30">
-              <Check className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-4">
-              Email Enviado!
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Se existir uma conta com <strong>{email}</strong>, enviamos um link de recuperação.
-              Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
-            </p>
-            <p className="text-sm text-muted-foreground mb-6">
-              Não recebeu? Verifique a pasta de spam ou tente novamente.
-            </p>
-            <div className="space-y-3">
-              <Button
-                onClick={() => setStep('email')}
-                variant="outline"
-                className="w-full rounded-xl"
-              >
-                Tentar novamente
-              </Button>
-              <Button
-                onClick={onGoToLogin}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl"
-              >
-                Voltar ao Login
-              </Button>
-            </div>
+      <AuthShell onBack={onGoToLogin}>
+        <div className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center mb-6 shadow-lg shadow-green-200 dark:shadow-green-900/30">
+            <MailCheck className="w-10 h-10 text-white" />
           </div>
-        </Card>
-      </PageWrapper>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3">Confira seu email</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            Se existir uma conta com <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>, enviamos um link para criar uma nova senha.
+          </p>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">O link vale por pouco tempo. Não achou? Olhe no spam.</p>
+          <div className="w-full space-y-3">
+            <Button onClick={onGoToLogin} className={primaryButtonClass}>Voltar para o login</Button>
+            <Button variant="ghost" onClick={() => setStep("email")} className="w-full h-12 rounded-2xl font-semibold">
+              Usar outro email
+            </Button>
+          </div>
+        </div>
+      </AuthShell>
     );
   }
 
-  if (step === 'newPassword') {
+  if (step === "newPassword") {
     return (
-      <PageWrapper>
-        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
-              <KeyRound className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Nova Senha
-            </h1>
-            <p className="text-muted-foreground">
-              Digite sua nova senha
-            </p>
-          </div>
-
-          <form onSubmit={handleUpdatePassword} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="Digite sua nova senha"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full py-5 rounded-xl"
-                required
-                disabled={loading}
-                minLength={8}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Mínimo 8 caracteres, incluindo letra maiúscula e número
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirme sua nova senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full py-5 rounded-xl"
-                required
-                disabled={loading}
-                minLength={8}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
+      <AuthShell>
+        <AuthTitle title="Crie uma nova senha" subtitle="Escolha uma senha que você não usa em outros sites." />
+        <form onSubmit={handleUpdatePassword} className="flex-1 flex flex-col" noValidate>
+          <div className="space-y-2 animate-slide-up stagger-1">
+            <Label htmlFor="new-password" className="font-semibold">Nova senha</Label>
+            <PasswordField
+              id="new-password"
+              autoComplete="new-password"
+              placeholder="Nova senha"
+              value={newPassword}
+              onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
               disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Atualizando...
-                </>
-              ) : (
-                'Atualizar Senha'
-              )}
+              showRules
+              autoFocus
+            />
+            {error && <div className="pt-3"><FormError>{error}</FormError></div>}
+          </div>
+          <div className="mt-auto pt-8">
+            <Button type="submit" className={primaryButtonClass} disabled={!isStrongPassword(newPassword) || loading}>
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Salvar nova senha"}
             </Button>
-          </form>
-        </Card>
-      </PageWrapper>
+          </div>
+        </form>
+      </AuthShell>
     );
   }
 
   return (
-    <PageWrapper>
-      <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Voltar</span>
-        </button>
-
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
-            <Mail className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Recuperar Senha
-          </h1>
-          <p className="text-muted-foreground">
-            Digite seu email para receber o link de recuperação
-          </p>
-        </div>
-
-        <form onSubmit={handleSendResetEmail} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="flex items-center space-x-2">
-              <Mail className="w-4 h-4" />
-              <span>Email</span>
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Digite seu email cadastrado"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-5 rounded-xl"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
+    <AuthShell onBack={onBack}>
+      <AuthTitle title="Esqueceu a senha?" subtitle="Tudo bem! Digite seu email e enviamos um link para criar outra." />
+      <form onSubmit={handleSendResetEmail} className="flex-1 flex flex-col" noValidate>
+        <div className="space-y-2 animate-slide-up stagger-1">
+          <Label htmlFor="reset-email" className="font-semibold">Email</Label>
+          <Input
+            id="reset-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="seuemail@exemplo.com"
+            value={email}
+            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+            className={inputClass}
             disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              'Enviar Link de Recuperação'
-            )}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-muted-foreground">
-            Lembrou a senha?{" "}
-            <button
-              onClick={onGoToLogin}
-              className="text-primary font-semibold hover:underline"
-            >
-              Voltar ao Login
-            </button>
-          </p>
+            autoFocus
+          />
+          {error && <div className="pt-3"><FormError>{error}</FormError></div>}
         </div>
-      </Card>
-    </PageWrapper>
+        <div className="mt-auto pt-8 space-y-3">
+          <Button type="submit" className={primaryButtonClass} disabled={!EMAIL_RE.test(email.trim()) || loading}>
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enviar link"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onGoToLogin} className="w-full h-12 rounded-2xl font-semibold">
+            Lembrei a senha
+          </Button>
+        </div>
+      </form>
+    </AuthShell>
   );
 };
