@@ -3,39 +3,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Heart, Send, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { MessageCircle, Heart, Send, AlertTriangle, Loader2, Trash2, Flag } from "lucide-react";
 import { useComments } from "@/hooks/useComments";
 import { toast } from "sonner";
+import { checkComment, commentErrorMessage, MAX_COMMENT_LENGTH } from "@/lib/moderation";
 
 interface ExperimentCommentsProps {
   experimentId: string;
   experimentTitle: string;
 }
-
-// Lista de palavras proibidas
-const BLOCKED_WORDS = [
-  "merda", "bosta", "caralho", "porra", "foder", "foda", "fodase", "pqp", "vsf", "vtnc", "tnc",
-  "cacete", "buceta", "piroca", "pau", "rola", "pinto", "cu", "cuzao", "cuzão", "arrombado",
-  "macaco", "macaca", "crioulo", "crioula",
-  "piranha", "vadia", "vagabunda", "puta", "prostituta", "vaca", "galinha",
-  "viado", "veado", "bicha", "sapatao", "sapatão", "boiola",
-  "retardado", "retardada", "imbecil", "lixo", "nojento", "nojenta",
-  "inutil", "inútil", "estupido", "estúpido", "estupida", "estúpida", "otario", "otário", "otaria", "otária",
-  // Termos sexuais
-  "sexo", "transar", "foder", "gozar", "punheta", "masturbacao", "masturbação", "porno", "pornografia",
-  "bucetinha", "piriquita", "xoxota", "tesao", "tesão"
-];
-
-const containsBlockedContent = (text: string): boolean => {
-  const normalizedText = text.toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  
-  return BLOCKED_WORDS.some(word => {
-    const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return normalizedText.includes(normalizedWord);
-  });
-};
 
 const formatTimeAgo = (dateString: string): string => {
   const date = new Date(dateString);
@@ -49,38 +25,34 @@ const formatTimeAgo = (dateString: string): string => {
 };
 
 export const ExperimentComments = ({ experimentId, experimentTitle }: ExperimentCommentsProps) => {
-  const { comments, loading, addComment, deleteComment, toggleLike, userName, currentUserId } = useComments(experimentId);
+  const { comments, loading, addComment, deleteComment, toggleLike, reportComment, currentUserId } = useComments(experimentId);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim()) return;
-    
-    // Client-side check for immediate UX feedback
-    // NOTE: Server-side validation via database trigger also enforces this
-    if (containsBlockedContent(newComment)) {
-      toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
+    const check = checkComment(newComment);
+    if (!check.ok) {
+      toast.error(check.message);
       return;
     }
 
     setSubmitting(true);
-    try {
-      await addComment(newComment);
-      setNewComment("");
-      toast.success("Comentário publicado!");
-    } catch (error: any) {
-      // Handle server-side rejection (database trigger validation)
-      if (error?.message?.includes('inappropriate content') || 
-          error?.code === '23514' || // Check constraint violation
-          error?.message?.includes('Comment contains')) {
-        toast.error("Seu comentário contém palavras inapropriadas. Por favor, revise e tente novamente.");
-      } else {
-        toast.error("Erro ao publicar comentário. Tente novamente.");
-        console.error('Comment submission error:', error);
-      }
-    } finally {
-      setSubmitting(false);
+    const { error } = await addComment(newComment.trim());
+    setSubmitting(false);
+    if (error) {
+      toast.error(commentErrorMessage(error));
+      return;
     }
+    setNewComment("");
+    toast.success("Comentário publicado!");
+  };
+
+  const handleReport = async (commentId: string) => {
+    if (!window.confirm("Denunciar este comentário para a moderação? Ele será revisado por uma moderadora.")) return;
+    const result = await reportComment(commentId);
+    if (result === "ok") toast.success("Obrigada! A moderação vai revisar esse comentário.");
+    else if (result === "duplicate") toast.info("Você já denunciou esse comentário.");
+    else toast.error("Não foi possível enviar a denúncia. Tente novamente.");
   };
 
   const handleLike = async (commentId: string) => {
@@ -123,12 +95,13 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
           placeholder="Compartilhe seu resultado! Como ficou seu experimento? O que você aprendeu?"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
+          maxLength={MAX_COMMENT_LENGTH}
           className="min-h-[100px]"
         />
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-400 flex items-center gap-1">
             <AlertTriangle className="w-3 h-3" />
-            Comentários ofensivos serão bloqueados
+            Seja gentil. Não compartilhe links, telefone, email ou redes sociais.
           </p>
           <Button
             onClick={handleSubmitComment}
@@ -175,6 +148,16 @@ export const ExperimentComments = ({ experimentId, experimentTitle }: Experiment
                       <Heart className={`w-4 h-4 ${comment.user_liked ? 'fill-pink-500' : ''}`} />
                       <span className="text-sm">{comment.likes || 0}</span>
                     </button>
+{currentUserId && currentUserId !== comment.user_id && (
+                      <button
+                        onClick={() => handleReport(comment.id)}
+                        className="flex items-center space-x-1 text-gray-400 hover:text-orange-500 transition-colors"
+                        aria-label="Denunciar comentário"
+                        title="Denunciar"
+                      >
+                        <Flag className="w-4 h-4" />
+                      </button>
+                    )}
                     {currentUserId === comment.user_id && (
                       <button
                         onClick={() => handleDelete(comment.id)}

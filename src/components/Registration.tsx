@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Mail, Calendar, ArrowLeft, Lock, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
-import { Logo } from "./Logo";
+import { cn } from "@/lib/utils";
+import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
+import { PasswordField, isStrongPassword } from "./auth/PasswordField";
 
 interface RegistrationProps {
   onComplete: () => void;
@@ -13,192 +15,320 @@ interface RegistrationProps {
   onGoToLogin: () => void;
 }
 
+type Step = "age" | "name" | "account" | "consent" | "checkEmail";
+const STEPS: Step[] = ["age", "name", "account", "consent"];
+
+const AGES = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const ADULT = 18;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * Cadastro em etapas (estilo Duolingo): idade → nome → email/senha → autorização.
+ * A idade vem primeiro porque define se precisamos do consentimento de
+ * um responsável (LGPD art. 14: menores de 12 anos).
+ */
 export const Registration = ({ onComplete, onBack, onGoToLogin }: RegistrationProps) => {
   const { signUp } = useAuth();
+  const [step, setStep] = useState<Step>("age");
+  const [age, setAge] = useState<number | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [guardianConsent, setGuardianConsent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    age: "",
-    password: ""
-  });
+  const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState({ email: false });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.age || !formData.password) return;
+  const isChild = age !== null && age < 12;
+  const isMinor = age !== null && age < 18;
+  const stepIndex = STEPS.indexOf(step as (typeof STEPS)[number]);
 
-    if (formData.password.length < 8) {
-      return;
-    }
+  const trimmedName = name.trim();
+  const nameValid = trimmedName.length >= 2 && trimmedName.length <= 40;
+  const emailValid = EMAIL_RE.test(email.trim());
+  const passwordValid = isStrongPassword(password);
+  const consentValid = acceptedTerms && (!isChild || guardianConsent);
 
-    const hasUpperCase = /[A-Z]/.test(formData.password);
-    const hasNumber = /[0-9]/.test(formData.password);
-    if (!hasUpperCase || !hasNumber) {
-      const passwordInput = document.getElementById('password') as HTMLInputElement;
-      passwordInput?.setCustomValidity('A senha deve conter pelo menos uma letra maiúscula e um número');
-      passwordInput?.reportValidity();
-      return;
-    }
+  const goBack = () => {
+    setError(null);
+    if (stepIndex <= 0) return onBack();
+    setStep(STEPS[stepIndex - 1]);
+  };
 
+  const next = () => {
+    setError(null);
+    setStep(STEPS[stepIndex + 1]);
+  };
+
+  const handleCreate = async () => {
+    if (!consentValid || age === null) return;
     setLoading(true);
-    const { error } = await signUp(
-      formData.email,
-      formData.password,
-      formData.name,
-      parseInt(formData.age)
-    );
+    setError(null);
+    const result = await signUp(email, password, trimmedName, age, {
+      terms: acceptedTerms,
+      guardian: guardianConsent,
+    });
     setLoading(false);
 
-    if (!error) {
+    if (result.error) {
+      setError(result.message ?? "Não foi possível criar a conta.");
+      // Problema de email/senha: volta para a etapa onde dá para corrigir
+      if (/email|senha/i.test(result.message ?? "")) setStep("account");
+      return;
+    }
+    if (result.needsConfirmation) {
+      setStep("checkEmail");
+    } else {
       onComplete();
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-6 transition-colors">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6 animate-slide-up">
-          <Logo size={56} className="mx-auto mb-3" />
-          <h2 className="text-lg font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Conscientistas
-          </h2>
+  if (step === "checkEmail") {
+    return (
+      <AuthShell>
+        <div className="flex-1 flex flex-col items-center justify-center text-center animate-slide-up">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center mb-6 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
+            <Mail className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-3">Confirme seu email</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            Enviamos um link para <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>.
+          </p>
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
+            Abra o email, clique no link e depois volte aqui para entrar. Se não achar, olhe no spam.
+          </p>
+          <Button onClick={onGoToLogin} className={primaryButtonClass}>Ir para o login</Button>
         </div>
+      </AuthShell>
+    );
+  }
 
-        <Card className="p-8 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-2xl border-0 dark:border dark:border-gray-700 rounded-3xl animate-slide-up stagger-1">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Voltar</span>
-          </button>
-
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200 dark:shadow-purple-900/30">
-              <User className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Bem-vinda ao Conscientistas!
-            </h1>
-            <p className="text-muted-foreground">
-              Vamos começar sua jornada científica!
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center space-x-2">
-                <User className="w-4 h-4" />
-                <span>Seu nome</span>
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Digite seu nome"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full rounded-xl"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center space-x-2">
-                <Mail className="w-4 h-4" />
-                <span>Seu email</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Digite seu email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full rounded-xl"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="flex items-center space-x-2">
-                <Lock className="w-4 h-4" />
-                <span>Sua senha</span>
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Crie uma senha forte"
-                value={formData.password}
-                onChange={(e) => {
-                  const input = e.target as HTMLInputElement;
-                  input.setCustomValidity('');
-                  setFormData(prev => ({ ...prev, password: e.target.value }));
-                }}
-                className="w-full rounded-xl"
-                required
-                disabled={loading}
-                minLength={8}
-              />
-              <p className="text-xs text-muted-foreground">
-                Mínimo 8 caracteres, incluindo letra maiúscula e número
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="age" className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
-                <span>Sua idade</span>
-              </Label>
-              <Input
-                id="age"
-                type="number"
-                placeholder="Digite sua idade"
-                min="6"
-                max="18"
-                value={formData.age}
-                onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                className="w-full rounded-xl"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-200 dark:shadow-purple-900/30 rounded-xl"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Criando conta...
-                </>
-              ) : (
-                'Criar conta'
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              Já tem uma conta?{" "}
+  return (
+    <AuthShell
+      onBack={goBack}
+      progress={(stepIndex + 1) / STEPS.length}
+      footer={
+        stepIndex === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400">
+            Já tem conta?{" "}
+            <button type="button" onClick={onGoToLogin} className="font-bold text-purple-600 dark:text-purple-400 hover:underline">
+              Entrar
+            </button>
+          </p>
+        ) : null
+      }
+    >
+      {/* 1. Idade */}
+      {step === "age" && (
+        <div key="age" className="flex-1 flex flex-col">
+          <AuthTitle title="Quantos anos você tem?" subtitle="Assim mostramos o conteúdo certo para você." />
+          <div className="grid grid-cols-4 gap-3 animate-slide-up stagger-1" role="radiogroup" aria-label="Sua idade">
+            {AGES.map((a) => (
               <button
-                onClick={onGoToLogin}
-                className="text-primary font-semibold hover:underline"
+                key={a}
+                type="button"
+                role="radio"
+                aria-checked={age === a}
+                onClick={() => setAge(a)}
+                className={cn(
+                  "h-14 rounded-2xl border-2 text-lg font-bold transition-all",
+                  age === a
+                    ? "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200 scale-[1.03]"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                )}
               >
-                Entrar
+                {a}
               </button>
-            </p>
+            ))}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={age === ADULT}
+              onClick={() => setAge(ADULT)}
+              className={cn(
+                "col-span-4 h-14 rounded-2xl border-2 font-bold transition-all",
+                age === ADULT
+                  ? "border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-purple-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+              )}
+            >
+              18 anos ou mais
+            </button>
+          </div>
+          <div className="mt-auto pt-8">
+            <Button type="button" className={primaryButtonClass} disabled={age === null} onClick={next}>
+              Continuar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Nome */}
+      {step === "name" && (
+        <form
+          key="name"
+          className="flex-1 flex flex-col"
+          onSubmit={(e) => { e.preventDefault(); if (nameValid) next(); }}
+        >
+          <AuthTitle title="Como quer ser chamada?" subtitle="Esse nome aparece no seu perfil e nos comentários." />
+          <div className="space-y-2 animate-slide-up stagger-1">
+            <Label htmlFor="reg-name" className="font-semibold">Nome ou apelido</Label>
+            <Input
+              id="reg-name"
+              autoComplete="nickname"
+              placeholder="Ex.: Ana, Cientista Bia"
+              maxLength={40}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              autoFocus
+            />
+            <div className="flex items-start gap-2 rounded-2xl bg-purple-50 dark:bg-purple-900/20 px-4 py-3 text-sm text-purple-800 dark:text-purple-200">
+              <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
+              Use só o primeiro nome ou um apelido. Não coloque sobrenome, escola ou cidade.
+            </div>
+          </div>
+          <div className="mt-auto pt-8">
+            <Button type="submit" className={primaryButtonClass} disabled={!nameValid}>Continuar</Button>
+          </div>
+        </form>
+      )}
+
+      {/* 3. Email e senha */}
+      {step === "account" && (
+        <form
+          key="account"
+          className="flex-1 flex flex-col"
+          onSubmit={(e) => { e.preventDefault(); if (emailValid && passwordValid) next(); }}
+          noValidate
+        >
+          <AuthTitle
+            title="Crie seu acesso"
+            subtitle={isChild ? "Se preferir, use o email da sua mãe, pai ou responsável." : "Você vai usar isso para entrar."}
+          />
+          <div className="space-y-5 animate-slide-up stagger-1">
+            <div className="space-y-2">
+              <Label htmlFor="reg-email" className="font-semibold">Email</Label>
+              <Input
+                id="reg-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="seuemail@exemplo.com"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                onBlur={() => setTouched({ email: true })}
+                className={cn(inputClass, touched.email && email && !emailValid && "border-red-300 focus-visible:border-red-400")}
+                aria-invalid={touched.email && !!email && !emailValid}
+                autoFocus
+              />
+              {touched.email && email && !emailValid && (
+                <p className="text-sm text-red-600 dark:text-red-400">Confira o email: parece que falta alguma parte.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reg-password" className="font-semibold">Senha</Label>
+              <PasswordField
+                id="reg-password"
+                autoComplete="new-password"
+                placeholder="Crie uma senha"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                showRules
+              />
+            </div>
+
+            {error && <FormError>{error}</FormError>}
+          </div>
+          <div className="mt-auto pt-8">
+            <Button type="submit" className={primaryButtonClass} disabled={!emailValid || !passwordValid}>
+              Continuar
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* 4. Consentimentos */}
+      {step === "consent" && (
+        <div key="consent" className="flex-1 flex flex-col">
+          <AuthTitle
+            title={isChild ? "Chame um adulto" : "Quase lá!"}
+            subtitle={
+              isChild
+                ? "Como você tem menos de 12 anos, sua mãe, pai ou responsável precisa ler e autorizar."
+                : "Leia e confirme para criar sua conta."
+            }
+          />
+
+          <div className="space-y-3 animate-slide-up stagger-1">
+            <ConsentItem checked={acceptedTerms} onChange={setAcceptedTerms} disabled={loading}>
+              Li e aceito os{" "}
+              <a href="/termos" target="_blank" rel="noopener noreferrer" className="font-semibold text-purple-600 dark:text-purple-400 underline">
+                Termos de Uso
+              </a>{" "}
+              e a{" "}
+              <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-semibold text-purple-600 dark:text-purple-400 underline">
+                Política de Privacidade
+              </a>
+              .
+            </ConsentItem>
+
+            {isMinor && (
+              <ConsentItem checked={guardianConsent} onChange={setGuardianConsent} disabled={loading}>
+                {isChild ? (
+                  <>
+                    <strong>Sou mãe, pai ou responsável</strong> desta criança, li a Política de Privacidade e autorizo o cadastro.
+                  </>
+                ) : (
+                  <>Minha mãe, pai ou responsável sabe que estou criando esta conta.</>
+                )}
+              </ConsentItem>
+            )}
+
+            {error && <FormError>{error}</FormError>}
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Ao continuar, você concorda com nossos termos de uso
-            </p>
+          <div className="mt-auto pt-8">
+            <Button type="button" className={primaryButtonClass} disabled={!consentValid || loading} onClick={handleCreate}>
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Criar minha conta"}
+            </Button>
           </div>
-        </Card>
-      </div>
-    </div>
+        </div>
+      )}
+    </AuthShell>
   );
 };
+
+const ConsentItem = ({
+  checked,
+  onChange,
+  disabled,
+  children,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) => (
+  <label
+    className={cn(
+      "flex items-start gap-3 rounded-2xl border-2 p-4 cursor-pointer transition-colors",
+      checked
+        ? "border-purple-400 bg-purple-50 dark:bg-purple-900/30"
+        : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+    )}
+  >
+    <Checkbox
+      checked={checked}
+      onCheckedChange={(v) => onChange(v === true)}
+      disabled={disabled}
+      className="mt-0.5 h-5 w-5 rounded-md"
+    />
+    <span className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{children}</span>
+  </label>
+);

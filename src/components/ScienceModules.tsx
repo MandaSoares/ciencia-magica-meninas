@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import type { ActivityKind } from "@/hooks/useUserProgress";
+import { toSafeYoutubeEmbed } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -53,7 +55,7 @@ import {
 import { allModules } from "@/data/modulesData";
 
 interface ScienceModulesProps {
-  onPointsEarned: (points: number) => void;
+  onActivity: (kind: ActivityKind, ref: string) => void;
   selectedArea: string;
   userName: string;
   onModuleComplete: (moduleId: string) => void;
@@ -94,7 +96,7 @@ const getCategoryName = (area: string): string => {
   return areaToCategory[area] || "Ciência";
 };
 
-export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModuleComplete, completedModuleIds = new Set(), isPathCompleted = false }: ScienceModulesProps) => {
+export const ScienceModules = ({ onActivity, selectedArea, userName, onModuleComplete, completedModuleIds = new Set(), isPathCompleted = false }: ScienceModulesProps) => {
   const [activeModule, setActiveModule] = useState<Module | null>(null);
   const [activeContentIndex, setActiveContentIndex] = useState(0);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
@@ -155,7 +157,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
     setQuizAnswer(null);
     setAnswerSubmitted(false);
     setIsCorrect(null);
-    onPointsEarned(20);
+    onActivity('module_start', module.id);
   };
 
   const previousContent = () => {
@@ -184,7 +186,7 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
       setQuizAnswer(null);
       setAnswerSubmitted(false);
       setIsCorrect(null);
-      onPointsEarned(30);
+      onActivity('module_step', `${activeModule.id}:${activeContentIndex}`);
     } else {
       setShowProject(true);
     }
@@ -195,7 +197,6 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
     
     setCompletedModules(prev => new Set([...prev, activeModule.id]));
     setCompletedModuleName(activeModule.title);
-    onPointsEarned(200);
     onModuleComplete(activeModule.id);
     setActiveModule(null);
     setActiveContentIndex(0);
@@ -387,10 +388,13 @@ export const ScienceModules = ({ onPointsEarned, selectedArea, userName, onModul
             </div>
           </div>
 
-          {currentContent.type === 'video' && currentContent.videoUrl && (
+          {currentContent.type === 'video' && toSafeYoutubeEmbed(currentContent.videoUrl) && (
             <div className="aspect-video rounded-lg overflow-hidden mb-4">
               <iframe
-                src={currentContent.videoUrl}
+                src={toSafeYoutubeEmbed(currentContent.videoUrl) ?? undefined}
+                title={currentContent.title}
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+                referrerPolicy="strict-origin-when-cross-origin"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

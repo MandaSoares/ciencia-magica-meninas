@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ActivityKind } from "@/hooks/useUserProgress";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft, Star, Award, Briefcase, Loader2, Trash2, Edit2, Users, Sparkles } from "lucide-react";
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface AreasDeAtuacaoProps {
-  onPointsEarned: (points: number) => void;
+  onActivity: (kind: ActivityKind, ref: string) => void;
   selectedArea?: string;
 }
 
@@ -62,7 +63,7 @@ const areaMetadata: Record<string, { name: string; icon: string; color: string; 
   }
 };
 
-export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: AreasDeAtuacaoProps) => {
+export const AreasDeAtuacao = ({ onActivity, selectedArea = "science" }: AreasDeAtuacaoProps) => {
   const [selectedCareer, setSelectedCareer] = useState<Career | null>(null);
   const [selectedWoman, setSelectedWoman] = useState<WomanProfile | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -96,12 +97,12 @@ export const AreasDeAtuacao = ({ onPointsEarned, selectedArea = "science" }: Are
   const handleSelectCareer = (career: Career) => {
     setSelectedCareer(career);
     setSelectedWoman(null);
-    onPointsEarned(15);
+    onActivity('career', career.id);
   };
 
   const handleSelectWoman = (woman: WomanProfile) => {
     setSelectedWoman(woman);
-    onPointsEarned(20);
+    onActivity('woman', `${selectedCareer?.id ?? 'x'}:${woman.name}`);
   };
 
   const goBack = () => {

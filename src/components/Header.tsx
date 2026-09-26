@@ -1,4 +1,4 @@
-import { Flame, Moon, Sun } from "lucide-react";
+import { Flame, Moon, Star, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { StudyReminder } from "./StudyReminder";
@@ -9,9 +9,11 @@ interface HeaderProps {
   userLevel: number;
   userName?: string;
   userProfileImage?: string;
+  streak?: number;
+  studiedToday?: boolean;
 }
 
-export const Header = ({ userPoints, userLevel, userName = "Estudante", userProfileImage }: HeaderProps) => {
+export const Header = ({ userPoints, userLevel, userName = "Estudante", userProfileImage, streak = 0, studiedToday = false }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
   const getUserInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -27,14 +29,27 @@ export const Header = ({ userPoints, userLevel, userName = "Estudante", userProf
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${
+              studiedToday
+                ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700"
+                : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+            }`}
+            title={studiedToday ? `${streak} dia(s) seguidos` : "Estude hoje para manter sua sequência"}
+            aria-label={`Sequência: ${streak} dia(s) seguidos`}
+          >
+            <Flame className={`w-4 h-4 ${studiedToday ? "text-orange-500 fill-orange-400" : "text-gray-400"}`} />
+            <span className={`text-sm font-bold ${studiedToday ? "text-orange-600 dark:text-orange-300" : "text-gray-500"}`}>{streak}</span>
+          </div>
+
           <div className="hidden sm:flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
             <span className="text-sm font-bold text-purple-600 dark:text-purple-300">{userPoints}</span>
             <span className="text-xs text-purple-400 dark:text-purple-500 font-semibold">XP</span>
           </div>
 
           <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-700">
-            <Flame className="w-4 h-4 text-orange-500" />
+            <Star className="w-4 h-4 text-amber-500" />
             <span className="text-sm font-bold text-amber-700 dark:text-amber-300">Nv {userLevel}</span>
           </div>
 

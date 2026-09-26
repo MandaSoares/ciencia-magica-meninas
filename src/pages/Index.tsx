@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Header } from "@/components/Header";
 import { Navigation } from "@/components/Navigation";
 import { MobileNav } from "@/components/MobileNav";
@@ -14,12 +14,12 @@ import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { ForgotPassword } from "@/components/ForgotPassword";
-import { AdminPanel } from "@/components/AdminPanel";
-import { ModeratorPanel } from "@/components/ModeratorPanel";
+const AdminPanel = lazy(() => import("@/components/AdminPanel").then(m => ({ default: m.AdminPanel })));
+const ModeratorPanel = lazy(() => import("@/components/ModeratorPanel").then(m => ({ default: m.ModeratorPanel })));
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
-import { About } from "@/pages/About";
-import { Blog } from "@/pages/Blog";
+const About = lazy(() => import("@/pages/About").then(m => ({ default: m.About })));
+const Blog = lazy(() => import("@/pages/Blog").then(m => ({ default: m.Blog })));
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useUserProgress } from "@/hooks/useUserProgress";
@@ -32,7 +32,7 @@ type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgot
 type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
-  const { user, profile, loading: authLoading, signOut, updateProfile } = useAuth();
+  const { user, profile, loading: authLoading, signOut, updateProfile, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { isAdmin, isModerator, loading: adminLoading } = useAdminCheck();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authView, setAuthView] = useState<AuthView>('landing');
@@ -40,7 +40,7 @@ const AppContent = () => {
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
 
-  const { progress, stats, isPathCompleted, addPoints, completeLesson, completeModule, completeExperiment } =
+  const { progress, stats, streak, isPathCompleted, recordActivity, completeLesson, completeModule, completeExperiment } =
     useUserProgress(selectedArea || 'science');
 
   const { studyHours } = useStudyHours(selectedArea || 'science');
@@ -110,7 +110,6 @@ const AppContent = () => {
   const handleUpdateUser = async (userData: { name: string; email: string; age: number; interests: string[]; profileImage?: string }) => {
     await updateProfile({
       name: userData.name,
-      email: userData.email,
       age: userData.age,
       interests: userData.interests,
       profile_image: userData.profileImage,
@@ -137,7 +136,6 @@ const AppContent = () => {
       case "path":
         return (
           <LearningPath
-            onPointsEarned={addPoints}
             selectedArea={selectedArea || "science"}
             onLessonComplete={completeLesson}
             completedLessons={stats.completedLessonIds}
@@ -146,7 +144,7 @@ const AppContent = () => {
       case "modules":
         return (
           <ScienceModules
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             selectedArea={selectedArea || "science"}
             userName={profile?.name || "Estudante"}
             onModuleComplete={completeModule}
@@ -157,14 +155,14 @@ const AppContent = () => {
       case "areas":
         return (
           <AreasDeAtuacao
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             selectedArea={selectedArea || "science"}
           />
         );
       case "lab":
         return (
           <VirtualLab
-            onPointsEarned={addPoints}
+            onActivity={recordActivity}
             onExperimentComplete={completeExperiment}
             selectedArea={selectedArea || "science"}
             completedExperimentIds={stats.completedExperimentIds}
@@ -180,7 +178,7 @@ const AppContent = () => {
               modulesCompleted: stats.modulesCompleted,
               experimentsCompleted: stats.experimentsCompleted,
               lessonsCompleted: stats.lessonsCompleted,
-              daysStreak: 1,
+              daysStreak: streak.longest, // conquista "7 dias seguidos" não se perde se a sequência quebrar
               completedLevels: new Set(Array.from(stats.completedLessonIds || new Set()).map(String)),
               completedModules: new Set(Array.from(stats.completedModuleIds || new Set()).map(String)),
             }}
@@ -204,7 +202,7 @@ const AppContent = () => {
               modulesCompleted: stats.modulesCompleted,
               experimentsCompleted: stats.experimentsCompleted,
               lessonsCompleted: stats.lessonsCompleted,
-              daysStreak: 1,
+              daysStreak: streak.current,
             }}
           />
         ) : null;
@@ -234,8 +232,27 @@ const AppContent = () => {
     );
   }
 
-  if (footerPage === 'about') return <About onBack={() => setFooterPage(null)} />;
-  if (footerPage === 'blog') return <Blog onBack={() => setFooterPage(null)} />;
+  // Link de "esqueci minha senha": a usuária chega logada temporariamente e
+  // precisa definir a nova senha antes de qualquer outra tela.
+  if (isPasswordRecovery) {
+    return (
+      <ForgotPassword
+        initialStep="newPassword"
+        onBack={() => clearPasswordRecovery()}
+        onGoToLogin={() => clearPasswordRecovery()}
+        onPasswordUpdated={() => clearPasswordRecovery()}
+      />
+    );
+  }
+
+  const pageLoader = (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+
+  if (footerPage === 'about') return <Suspense fallback={pageLoader}><About onBack={() => setFooterPage(null)} /></Suspense>;
+  if (footerPage === 'blog') return <Suspense fallback={pageLoader}><Blog onBack={() => setFooterPage(null)} /></Suspense>;
 
   if (authView === 'landing') {
     return (
@@ -266,8 +283,8 @@ const AppContent = () => {
     );
   }
 
-  if (authView === 'admin' && isAdmin) return <AdminPanel onBack={() => setAuthView('app')} />;
-  if (authView === 'moderator' && isModerator && !isAdmin) return <ModeratorPanel onBack={() => setAuthView('app')} />;
+  if (authView === 'admin' && isAdmin) return <Suspense fallback={pageLoader}><AdminPanel onBack={() => setAuthView('app')} /></Suspense>;
+  if (authView === 'moderator' && isModerator && !isAdmin) return <Suspense fallback={pageLoader}><ModeratorPanel onBack={() => setAuthView('app')} /></Suspense>;
 
   if (authView === 'register') {
     return (
@@ -297,10 +314,6 @@ const AppContent = () => {
     );
   }
 
-  if (profile && profile.interests.length === 1 && !selectedArea) {
-    setSelectedArea(profile.interests[0]);
-  }
-
   if (showAddAreaModal) {
     const availableAreas = ['science', 'technology', 'engineering', 'math'].filter(
       (a) => !profile?.interests.includes(a)
@@ -325,6 +338,8 @@ const AppContent = () => {
         userLevel={progress?.level || 1}
         userName={profile?.name}
         userProfileImage={profile?.profile_image || undefined}
+        streak={streak.current}
+        studiedToday={streak.studiedToday}
       />
       {isAdmin && (
         <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-red-200 px-4 sm:px-6 py-2">

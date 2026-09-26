@@ -2,6 +2,39 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { getPathByArea } from '@/data/learningPathData';
+import { toast } from 'sonner';
+
+export type ActivityKind =
+  | 'lesson'
+  | 'module_start'
+  | 'module_step'
+  | 'module'
+  | 'experiment_start'
+  | 'experiment_step'
+  | 'experiment'
+  | 'scientist'
+  | 'career'
+  | 'woman';
+
+interface ActivityResult {
+  awarded: number;
+  already_done: boolean;
+  daily_cap_reached: boolean;
+  points: number;
+  level: number;
+  current_lesson: number;
+  streak: number;
+  longest_streak: number;
+  studied_today: boolean;
+  today_xp: number;
+}
+
+export interface StreakInfo {
+  current: number;
+  longest: number;
+  studiedToday: boolean;
+  todayXp: number;
+}
 
 interface Progress {
   stemArea: string;
@@ -31,6 +64,15 @@ export const useUserProgress = (selectedArea: string) => {
     completedLessonIds: new Set()
   });
   const [loading, setLoading] = useState(true);
+  const [streak, setStreak] = useState<StreakInfo>({ current: 0, longest: 0, studiedToday: false, todayXp: 0 });
+
+  const fetchStreak = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase.rpc('get_my_streak');
+    if (error || !data) return;
+    const d = data as unknown as { streak: number; longest_streak: number; studied_today: boolean; today_xp: number };
+    setStreak({ current: d.streak, longest: d.longest_streak, studiedToday: d.studied_today, todayXp: d.today_xp });
+  }, [user]);
 
   const fetchProgress = useCallback(async () => {
     if (!user || !selectedArea) return;
@@ -125,116 +167,93 @@ export const useUserProgress = (selectedArea: string) => {
   useEffect(() => {
     fetchProgress();
     fetchStats();
-  }, [fetchProgress, fetchStats]);
+    fetchStreak();
+  }, [fetchProgress, fetchStats, fetchStreak]);
 
-  const addPoints = async (points: number) => {
-    if (!user || !selectedArea) return;
+  /**
+   * Registra uma atividade. O SERVIDOR decide o XP (award_activity), impede
+   * repetir a mesma atividade, aplica teto diário e atualiza a sequência.
+   */
+  const recordActivity = useCallback(async (kind: ActivityKind, ref: string): Promise<ActivityResult | null> => {
+    if (!user || !selectedArea) return null;
 
-    const newPoints = (progress?.points || 0) + points;
+    const safeRef = ref
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9_.:\- ]/g, '')
+      .trim()
+      .slice(0, 120);
+    if (!safeRef) return null;
 
-    const { error } = await supabase
-      .from('user_progress')
-      .update({ points: newPoints })
-      .eq('user_id', user.id)
-      .eq('stem_area', selectedArea);
+    const { data, error } = await supabase.rpc('award_activity', {
+      _stem_area: selectedArea,
+      _kind: kind,
+      _ref: safeRef,
+    });
 
-    if (!error) {
-      setProgress(prev => prev ? { ...prev, points: newPoints } : null);
+    if (error || !data) {
+      console.error('Error recording activity:', error);
+      return null;
     }
-  };
 
-  const levelUp = async () => {
-    if (!user || !selectedArea) return;
+    const result = data as unknown as ActivityResult;
+    setProgress(() => ({
+      stemArea: selectedArea,
+      points: result.points,
+      level: result.level,
+      currentLesson: result.current_lesson,
+    }));
 
-    const newLevel = (progress?.level || 1) + 1;
+    const wasStudiedToday = streak.studiedToday;
+    setStreak({
+      current: result.streak,
+      longest: result.longest_streak,
+      studiedToday: result.studied_today,
+      todayXp: result.today_xp,
+    });
 
-    const { error } = await supabase
-      .from('user_progress')
-      .update({ level: newLevel })
-      .eq('user_id', user.id)
-      .eq('stem_area', selectedArea);
-
-    if (!error) {
-      setProgress(prev => prev ? { ...prev, level: newLevel } : null);
+    if (result.awarded > 0) {
+      toast.success(`+${result.awarded} XP`, { duration: 1500 });
     }
-  };
+    if (!wasStudiedToday && result.studied_today && result.streak > 0) {
+      toast(result.streak === 1 ? '🔥 Sequência iniciada! Volte amanhã para continuar.' : `🔥 ${result.streak} dias seguidos!`);
+    }
+    return result;
+  }, [user, selectedArea, streak.studiedToday]);
 
   const completeLesson = async (lessonId: number) => {
-    if (!user || !selectedArea) return;
-
-    // Check if already completed
     if (stats.completedLessonIds.has(lessonId)) return;
-
-    const { error } = await supabase
-      .from('completed_lessons')
-      .insert({
-        user_id: user.id,
-        stem_area: selectedArea,
-        lesson_id: lessonId
-      });
-
-    if (!error) {
-      // Update current lesson
-      await supabase
-        .from('user_progress')
-        .update({ current_lesson: lessonId + 1 })
-        .eq('user_id', user.id)
-        .eq('stem_area', selectedArea);
-
-      setProgress(prev => prev ? { ...prev, currentLesson: lessonId + 1 } : null);
+    const result = await recordActivity('lesson', String(lessonId));
+    if (result) {
       setStats(prev => ({
         ...prev,
-        lessonsCompleted: prev.lessonsCompleted + 1,
+        lessonsCompleted: prev.completedLessonIds.has(lessonId) ? prev.lessonsCompleted : prev.lessonsCompleted + 1,
         completedLessonIds: new Set([...prev.completedLessonIds, lessonId])
       }));
     }
   };
 
   const completeModule = async (moduleId: string) => {
-    if (!user || !selectedArea) return;
-
-    // Check if already completed
     if (stats.completedModuleIds.has(moduleId)) return;
-
-    const { error } = await supabase
-      .from('completed_modules')
-      .insert({
-        user_id: user.id,
-        stem_area: selectedArea,
-        module_id: moduleId
-      });
-
-    if (!error) {
+    const result = await recordActivity('module', moduleId);
+    if (result) {
       setStats(prev => ({
         ...prev,
-        modulesCompleted: prev.modulesCompleted + 1,
+        modulesCompleted: prev.completedModuleIds.has(moduleId) ? prev.modulesCompleted : prev.modulesCompleted + 1,
         completedModuleIds: new Set([...prev.completedModuleIds, moduleId])
       }));
-      await levelUp();
     }
   };
 
   const completeExperiment = async (experimentId: string) => {
-    if (!user || !selectedArea) return;
-
-    // Check if already completed
     if (stats.completedExperimentIds.has(experimentId)) return;
-
-    const { error } = await supabase
-      .from('completed_experiments')
-      .insert({
-        user_id: user.id,
-        stem_area: selectedArea,
-        experiment_id: experimentId
-      });
-
-    if (!error) {
+    const result = await recordActivity('experiment', experimentId);
+    if (result) {
       setStats(prev => ({
         ...prev,
-        experimentsCompleted: prev.experimentsCompleted + 1,
+        experimentsCompleted: prev.completedExperimentIds.has(experimentId) ? prev.experimentsCompleted : prev.experimentsCompleted + 1,
         completedExperimentIds: new Set([...prev.completedExperimentIds, experimentId])
       }));
-      await levelUp();
     }
   };
 
@@ -250,8 +269,8 @@ export const useUserProgress = (selectedArea: string) => {
     stats,
     loading,
     isPathCompleted,
-    addPoints,
-    levelUp,
+    streak,
+    recordActivity,
     completeLesson,
     completeModule,
     completeExperiment,

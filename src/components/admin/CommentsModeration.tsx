@@ -19,6 +19,9 @@ import {
   AlertTriangle,
   Loader2,
   Filter,
+  Flag,
+  EyeOff,
+  Eye,
 } from "lucide-react";
 import {
   Select,
@@ -36,12 +39,15 @@ interface Comment {
   experiment_id: string;
   user_id: string;
   created_at: string;
+  hidden?: boolean;
   user_name?: string;
   user_image?: string;
+  open_reports: number;
 }
 
 const STEM_AREAS = [
   { value: "all", label: "Todas as áreas" },
+  { value: "reported", label: "Denunciados / ocultos" },
   { value: "science", label: "Ciências" },
   { value: "technology", label: "Tecnologia" },
   { value: "engineering", label: "Engenharia" },
@@ -162,20 +168,41 @@ export const CommentsModeration = () => {
       return;
     }
 
-    // Fetch user info for each comment
+    // Nome/foto via RPC (moderadoras não têm acesso à tabela profiles com email/idade)
     const userIds = [...new Set((data || []).map(c => c.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, name, profile_image')
-      .in('id', userIds);
+    const { data: profiles } = userIds.length > 0
+      ? await supabase.rpc('get_comment_user_info', { user_ids: userIds })
+      : { data: [] };
 
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    const profileMap = new Map(
+      ((profiles || []) as { id: string; name: string; profile_image: string | null }[]).map(p => [p.id, p])
+    );
+
+    // Denúncias abertas por comentário
+    const commentIds = (data || []).map(c => c.id);
+    const { data: reports } = commentIds.length > 0
+      ? await supabase
+          .from('comment_reports' as never)
+          .select('comment_id')
+          .eq('status', 'open')
+          .in('comment_id', commentIds)
+      : { data: [] };
+    const reportCount = new Map<string, number>();
+    ((reports || []) as { comment_id: string }[]).forEach(r =>
+      reportCount.set(r.comment_id, (reportCount.get(r.comment_id) || 0) + 1)
+    );
 
     const commentsWithUsers = (data || []).map(comment => ({
       ...comment,
-      user_name: profileMap.get(comment.user_id)?.name || 'Usuário',
-      user_image: profileMap.get(comment.user_id)?.profile_image
+      user_name: profileMap.get(comment.user_id)?.name || 'Usuária',
+      user_image: profileMap.get(comment.user_id)?.profile_image || undefined,
+      open_reports: reportCount.get(comment.id) || 0,
     }));
+
+    // Denunciados e ocultos primeiro
+    commentsWithUsers.sort((a, b) =>
+      (b.open_reports - a.open_reports) || (Number(!!b.hidden) - Number(!!a.hidden))
+    );
 
     setComments(commentsWithUsers);
     setLoading(false);
@@ -184,14 +211,15 @@ export const CommentsModeration = () => {
   const handleDeleteComment = async (commentId: string) => {
     setDeletingId(commentId);
     
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from('experiment_comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .select('id');
 
     setDeletingId(null);
 
-    if (error) {
+    if (error || !deleted || deleted.length === 0) {
       toast.error('Erro ao deletar comentário');
       console.error(error);
       return;
@@ -199,6 +227,19 @@ export const CommentsModeration = () => {
 
     setComments(prev => prev.filter(c => c.id !== commentId));
     toast.success('Comentário deletado com sucesso');
+  };
+
+  const handleModerate = async (commentId: string, action: 'hide' | 'restore') => {
+    const { error } = await supabase.rpc('moderate_comment' as never, { _comment_id: commentId, _action: action } as never);
+    if (error) {
+      toast.error('Não foi possível aplicar a ação');
+      console.error(error);
+      return;
+    }
+    setComments(prev => prev.map(c =>
+      c.id === commentId ? { ...c, hidden: action === 'hide', open_reports: 0 } : c
+    ));
+    toast.success(action === 'hide' ? 'Comentário ocultado' : 'Comentário reexibido');
   };
 
   const formatDate = (dateString: string) => {
@@ -213,6 +254,7 @@ export const CommentsModeration = () => {
 
   const filteredComments = comments.filter(comment => {
     if (filterArea === "all") return true;
+    if (filterArea === "reported") return comment.open_reports > 0 || !!comment.hidden;
     const context = getExperimentContext(comment.experiment_id);
     return context.area.toLowerCase().includes(filterArea.toLowerCase()) ||
            getAreaName(filterArea) === context.area;
@@ -287,8 +329,43 @@ export const CommentsModeration = () => {
                       {context.name}
                     </span>
                   </div>
+                  {(comment.open_reports > 0 || comment.hidden) && (
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {comment.open_reports > 0 && (
+                        <Badge variant="destructive" className="text-xs gap-1">
+                          <Flag className="w-3 h-3" /> {comment.open_reports} denúncia(s)
+                        </Badge>
+                      )}
+                      {comment.hidden && (
+                        <Badge variant="secondary" className="text-xs gap-1">
+                          <EyeOff className="w-3 h-3" /> Oculto
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                   <p className="text-sm text-foreground break-words">{comment.content}</p>
                 </div>
+
+                {comment.hidden || comment.open_reports > 0 ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Reexibir e descartar denúncias"
+                    onClick={() => handleModerate(comment.id, 'restore')}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                ) : null}
+                {!comment.hidden && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Ocultar comentário"
+                    onClick={() => handleModerate(comment.id, 'hide')}
+                  >
+                    <EyeOff className="w-4 h-4" />
+                  </Button>
+                )}
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

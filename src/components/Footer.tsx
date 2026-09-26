@@ -39,7 +39,9 @@ export const Footer = ({ onNavigate }: FooterProps) => {
         
         <div className="text-center mt-4 pt-4 border-t border-gray-100">
           <p className="text-xs text-gray-400">
-            © 2025 Conscientistas. Inspirando meninas a descobrir o mundo STEM.
+            © {new Date().getFullYear()} Conscientistas. Inspirando meninas a descobrir o mundo STEM.
+            {" · "}<a href="/privacidade" className="hover:text-purple-600">Privacidade</a>
+            {" · "}<a href="/termos" className="hover:text-purple-600">Termos</a>
           </p>
         </div>
       </div>

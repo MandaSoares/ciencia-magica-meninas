@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ActivityKind } from "@/hooks/useUserProgress";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Award, Calendar } from "lucide-react";
@@ -6,11 +7,11 @@ import { getScientistsByArea, getAreaLabel, Scientist } from "@/data/scientistsD
 import { ScientistStoryModal } from "@/components/ScientistStoryModal";
 
 interface ScientistProfilesProps {
-  onPointsEarned: (points: number) => void;
+  onActivity: (kind: ActivityKind, ref: string) => void;
   selectedArea?: string;
 }
 
-export const ScientistProfiles = ({ onPointsEarned, selectedArea = "Ciência" }: ScientistProfilesProps) => {
+export const ScientistProfiles = ({ onActivity, selectedArea = "Ciência" }: ScientistProfilesProps) => {
   const [selectedScientist, setSelectedScientist] = useState<Scientist | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -18,7 +19,7 @@ export const ScientistProfiles = ({ onPointsEarned, selectedArea = "Ciência" }:
   const areaLabel = getAreaLabel(selectedArea);
 
   const readMore = (scientist: Scientist) => {
-    onPointsEarned(25);
+    onActivity('scientist', String(scientist.id));
     setSelectedScientist(scientist);
     setIsModalOpen(true);
   };
