@@ -19,10 +19,15 @@ otp_length = 6
 otp_expiry = 3600
 max_frequency = "60s"
 
-[auth.email.template.confirmation]
-subject = "Seu código do Conscientistas"
-content_path = "./supabase/templates/confirmation.html"
-
-[auth.email.template.recovery]
-subject = "Criar uma nova senha no Conscientistas"
-content_path = "./supabase/templates/recovery.html"
+# Templates em português (com código de 6 dígitos): o Supabase só permite
+# alterar templates no plano grátis DEPOIS de configurar um SMTP próprio
+# (Authentication → Emails → SMTP Settings). Quando o SMTP estiver pronto,
+# descomente as linhas abaixo e rode `npx supabase config push` de novo.
+#
+# [auth.email.template.confirmation]
+# subject = "Seu código do Conscientistas"
+# content_path = "./supabase/templates/confirmation.html"
+#
+# [auth.email.template.recovery]
+# subject = "Criar uma nova senha no Conscientistas"
+# content_path = "./supabase/templates/recovery.html"
