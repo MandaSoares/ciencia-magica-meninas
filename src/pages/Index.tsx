@@ -144,6 +144,9 @@ const AppContent = () => {
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
             studyHours={studyHours}
+            streak={streak.current}
+            longestStreak={streak.longest}
+            todayXp={streak.todayXp}
           />
         );
       case "path":
@@ -232,6 +235,9 @@ const AppContent = () => {
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
             studyHours={studyHours}
+            streak={streak.current}
+            longestStreak={streak.longest}
+            todayXp={streak.todayXp}
           />
         );
     }
