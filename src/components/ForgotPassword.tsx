@@ -82,7 +82,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
         title="Digite o código"
         subtitle={
           <>
-            Se existir uma conta com <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>, enviamos um código para criar uma nova senha. Olhe também no spam.
+            Se existir uma conta com <strong className="text-gray-800 dark:text-gray-200">{email.trim()}</strong>, enviamos um email para criar uma nova senha. Clique no link do email ou digite aqui o código de 6 dígitos. Olhe também no spam.
           </>
         }
         submitLabel="Continuar"

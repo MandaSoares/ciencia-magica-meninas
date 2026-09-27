@@ -21,7 +21,7 @@ import { Footer } from "@/components/Footer";
 const About = lazy(() => import("@/pages/About").then(m => ({ default: m.About })));
 const Blog = lazy(() => import("@/pages/Blog").then(m => ({ default: m.Blog })));
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { ThemeProvider } from "@/hooks/useTheme";
+import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useStudyHours } from "@/hooks/useStudyHours";
@@ -62,6 +62,13 @@ const AppContent = () => {
       }
     }
   }, [user, profile, authLoading, selectedArea]);
+
+  // Modo escuro só dentro da conta (logada e fora das telas de login/cadastro/recuperação)
+  const { setThemeEnabled } = useTheme();
+  const inAccount = !!user && !isPasswordRecovery && ['app', 'admin', 'moderator', 'interests'].includes(authView);
+  useEffect(() => {
+    setThemeEnabled(inAccount);
+  }, [inAccount, setThemeEnabled]);
 
   // Volta de um link de email (confirmação ok, expirado ou inválido)
   useEffect(() => {
