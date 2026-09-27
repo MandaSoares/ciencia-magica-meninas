@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { AuthResult } from "@/hooks/useAuth";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./AuthShell";
+import { formatCountdown, rateLimitSeconds, useCooldown } from "./cooldown";
 
 const RESEND_COOLDOWN = 60;
 
@@ -19,6 +20,8 @@ interface VerifyCodeProps {
   onBack?: () => void;
   /** true se o email acabou de ser enviado (inicia a contagem para reenviar) */
   justSent?: boolean;
+  /** Chave da contagem compartilhada: "signup" (confirmação) ou "reset" (senha) */
+  cooldownKey?: string;
   footer?: React.ReactNode;
 }
 
@@ -36,20 +39,20 @@ export const VerifyCode = ({
   onResend,
   onBack,
   justSent = true,
+  cooldownKey = "signup",
   footer,
 }: VerifyCodeProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(justSent ? RESEND_COOLDOWN : 0);
+  const { remaining: cooldown, start: startCooldown } = useCooldown(cooldownKey);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
+    if (justSent) startCooldown(RESEND_COOLDOWN);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const digits = code.replace(/\D/g, "");
   const canSubmit = digits.length >= 6 && !loading;
@@ -76,11 +79,17 @@ export const VerifyCode = ({
     const result = await onResend();
     setLoading(false);
     if (result.error) {
-      setError(result.message ?? "Não foi possível reenviar.");
+      const wait = rateLimitSeconds(result.error as { message?: string; status?: number; code?: string });
+      if (wait) {
+        startCooldown(wait);
+        setError("Muitos pedidos seguidos. Aguarde a contagem abaixo; enquanto isso, o link do email anterior continua valendo.");
+      } else {
+        setError(result.message ?? "Não foi possível reenviar.");
+      }
       return;
     }
-    setInfo("Enviamos um novo código.");
-    setCooldown(RESEND_COOLDOWN);
+    setInfo("Enviamos um novo email.");
+    startCooldown(RESEND_COOLDOWN);
   };
 
   return (
@@ -136,7 +145,7 @@ export const VerifyCode = ({
             disabled={cooldown > 0 || loading}
             className="w-full h-12 rounded-2xl font-semibold"
           >
-            {cooldown > 0 ? `Reenviar código em ${cooldown}s` : "Reenviar código"}
+            {cooldown > 0 ? `Reenviar em ${formatCountdown(cooldown)}` : "Reenviar email"}
           </Button>
         </div>
       </form>

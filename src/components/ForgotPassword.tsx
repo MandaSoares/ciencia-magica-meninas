@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField, isStrongPassword } from "./auth/PasswordField";
 import { VerifyCode } from "./auth/VerifyCode";
+import { formatCountdown, rateLimitSeconds, useCooldown } from "./auth/cooldown";
 
 interface ForgotPasswordProps {
   onBack: () => void;
@@ -36,16 +37,23 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
   const [error, setError] = useState<string | null>(null);
 
   const emailValid = EMAIL_RE.test(email.trim());
+  const { remaining: cooldown, start: startCooldown } = useCooldown("reset");
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailValid) return;
+    if (!emailValid || cooldown > 0) return;
     setLoading(true);
     setError(null);
     const result = await sendPasswordReset(email);
     setLoading(false);
     if (result.error) {
-      setError(result.message ?? "Não foi possível enviar agora.");
+      const wait = rateLimitSeconds(result.error as { message?: string; status?: number; code?: string });
+      if (wait) {
+        startCooldown(wait);
+        setError("Muitos pedidos seguidos. Aguarde a contagem no botão. Se você já pediu antes, confira seu email (e o spam): o link anterior continua valendo.");
+      } else {
+        setError(result.message ?? "Não foi possível enviar agora.");
+      }
       return;
     }
     setStep("code");
@@ -89,6 +97,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
         onVerify={(code) => verifyRecoveryCode(email, code)}
         onResend={() => sendPasswordReset(email)}
         onBack={() => setStep("email")}
+        cooldownKey="reset"
       />
     );
   }
@@ -132,7 +141,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
 
   return (
     <AuthShell onBack={onBack}>
-      <AuthTitle title="Esqueceu a senha?" subtitle="Tudo bem! Digite seu email e enviamos um código para criar outra." />
+      <AuthTitle title="Esqueceu a senha?" subtitle="Tudo bem! Digite seu email e enviamos um link para criar outra." />
       <form onSubmit={handleSendCode} className="flex-1 flex flex-col" noValidate>
         <div className="space-y-2 animate-slide-up stagger-1">
           <Label htmlFor="reset-email" className="font-semibold">Email</Label>
@@ -153,8 +162,14 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
           {error && <div className="pt-3"><FormError>{error}</FormError></div>}
         </div>
         <div className="mt-auto pt-8 space-y-3">
-          <Button type="submit" className={primaryButtonClass} disabled={!emailValid || loading}>
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enviar código"}
+          <Button type="submit" className={primaryButtonClass} disabled={!emailValid || loading || cooldown > 0}>
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : cooldown > 0 ? (
+              `Tente de novo em ${formatCountdown(cooldown)}`
+            ) : (
+              "Enviar email"
+            )}
           </Button>
           <Button type="button" variant="ghost" onClick={onGoToLogin} className="w-full h-12 rounded-2xl font-semibold">
             Lembrei a senha

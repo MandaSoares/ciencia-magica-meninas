@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField, isStrongPassword } from "./auth/PasswordField";
 import { VerifyCode } from "./auth/VerifyCode";
+import { formatCountdown, rateLimitSeconds, useCooldown } from "./auth/cooldown";
 
 interface RegistrationProps {
   onComplete: () => void;
@@ -33,6 +34,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const Registration = ({ onComplete, onBack, onGoToLogin, onForgotPassword }: RegistrationProps) => {
   const { signUp, verifyEmailCode, resendConfirmation } = useAuth();
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const { remaining: cooldown, start: startCooldown } = useCooldown("signup");
   const [step, setStep] = useState<Step>("age");
   const [age, setAge] = useState<number | null>(null);
   const [name, setName] = useState("");
@@ -76,6 +78,12 @@ export const Registration = ({ onComplete, onBack, onGoToLogin, onForgotPassword
     setLoading(false);
 
     if (result.error) {
+      const wait = rateLimitSeconds(result.error as { message?: string; status?: number; code?: string });
+      if (wait) {
+        startCooldown(wait);
+        setError("Muitos cadastros seguidos. Aguarde a contagem no botão e tente de novo.");
+        return;
+      }
       setError(result.message ?? "Não foi possível criar a conta.");
       setAlreadyRegistered(!!result.alreadyRegistered);
       // Problema de email/senha: volta para a etapa onde dá para corrigir
@@ -311,8 +319,14 @@ export const Registration = ({ onComplete, onBack, onGoToLogin, onForgotPassword
           </div>
 
           <div className="mt-auto pt-8">
-            <Button type="button" className={primaryButtonClass} disabled={!consentValid || loading} onClick={handleCreate}>
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Criar minha conta"}
+            <Button type="button" className={primaryButtonClass} disabled={!consentValid || loading || cooldown > 0} onClick={handleCreate}>
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : cooldown > 0 ? (
+                `Tente de novo em ${formatCountdown(cooldown)}`
+              ) : (
+                "Criar minha conta"
+              )}
             </Button>
           </div>
         </div>
