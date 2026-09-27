@@ -356,7 +356,7 @@ export const VirtualLab = ({ onActivity, onExperimentComplete, selectedArea = "s
   const [deleteExperimentId, setDeleteExperimentId] = useState<string | null>(null);
   const [editingExperiment, setEditingExperiment] = useState<Experiment | null>(null);
   
-  const { isAdmin } = useAdminCheck();
+  const { canEditContent } = useAdminCheck();
   const queryClient = useQueryClient();
 
   // Fetch from database with fallback to static data
@@ -525,7 +525,7 @@ export const VirtualLab = ({ onActivity, onExperimentComplete, selectedArea = "s
                     </Button>
                   </div>
 
-                  {isAdmin && isFromDb && (
+                  {canEditContent && isFromDb && (
                     <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <Button
                         size="sm"
@@ -559,7 +559,7 @@ export const VirtualLab = ({ onActivity, onExperimentComplete, selectedArea = "s
             <AddExperimentInline
               selectedArea={selectedArea}
               onContentChange={handleContentChange}
-              isAdmin={isAdmin}
+              canEditContent={canEditContent}
             />
           </div>
 

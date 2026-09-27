@@ -13,8 +13,7 @@ import { ImageUpload } from "./ImageUpload";
 interface AddCareerInlineProps {
   selectedArea: string;
   onContentChange: () => void;
-  isAdmin: boolean;
-  isModerator?: boolean;
+  canEditContent: boolean;
   iconClassName?: string;
 }
 
@@ -45,7 +44,7 @@ const SALARY_OPTIONS = [
   "R$ 25.000+"
 ];
 
-export const AddCareerInline = ({ selectedArea, onContentChange, isAdmin, isModerator, iconClassName = "bg-gradient-to-r from-purple-500 to-pink-500" }: AddCareerInlineProps) => {
+export const AddCareerInline = ({ selectedArea, onContentChange, canEditContent, iconClassName = "bg-gradient-to-r from-purple-500 to-pink-500" }: AddCareerInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'info' | 'women'>('info');
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +62,7 @@ export const AddCareerInline = ({ selectedArea, onContentChange, isAdmin, isMode
   const [womanImage, setWomanImage] = useState("");
 
   const stemArea = areaMap[selectedArea] || "Ciência";
-  const canAdd = isAdmin || isModerator;
+  const canAdd = canEditContent;
 
   if (!canAdd) return null;
 

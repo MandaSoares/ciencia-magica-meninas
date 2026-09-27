@@ -34,7 +34,7 @@ type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
   const { user, profile, loading: authLoading, signOut, updateProfile, isPasswordRecovery, clearPasswordRecovery, linkNotice, clearLinkNotice } = useAuth();
-  const { isAdmin, isModerator, loading: adminLoading } = useAdminCheck();
+  const { isAdmin, isEditor, loading: adminLoading } = useAdminCheck();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authView, setAuthView] = useState<AuthView>('landing');
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
@@ -310,7 +310,7 @@ const AppContent = () => {
   }
 
   if (authView === 'admin' && isAdmin) return <Suspense fallback={pageLoader}><AdminPanel onBack={() => setAuthView('app')} /></Suspense>;
-  if (authView === 'moderator' && isModerator && !isAdmin) return <Suspense fallback={pageLoader}><ModeratorPanel onBack={() => setAuthView('app')} /></Suspense>;
+  if (authView === 'moderator' && isEditor && !isAdmin) return <Suspense fallback={pageLoader}><ModeratorPanel onBack={() => setAuthView('app')} /></Suspense>;
 
   if (authView === 'register') {
     return (
@@ -386,20 +386,20 @@ const AppContent = () => {
           </div>
         </div>
       )}
-      {isModerator && !isAdmin && (
+      {isEditor && !isAdmin && (
         <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-200 px-4 sm:px-6 py-2">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-blue-700">
               <UserCog className="w-4 h-4" />
-              <span className="hidden sm:inline">Você está logada como moderadora</span>
-              <span className="sm:hidden">Moderadora</span>
+              <span className="hidden sm:inline">Você está logada como editora: pode criar e editar conteúdo</span>
+              <span className="sm:hidden">Editora</span>
             </div>
             <Button
               variant="outline" size="sm"
               onClick={() => setAuthView('moderator')}
               className="border-blue-300 text-blue-700 hover:bg-blue-50"
             >
-              Painel Moderacao
+              Painel da Editora
             </Button>
           </div>
         </div>

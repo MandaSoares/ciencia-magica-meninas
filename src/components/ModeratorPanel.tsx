@@ -24,8 +24,11 @@ export const ModeratorPanel = ({ onBack }: ModeratorPanelProps) => {
               <UserCog className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Painel de Moderação</h1>
-              <p className="text-muted-foreground">Modere os comentários da plataforma</p>
+              <h1 className="text-2xl font-bold text-foreground">Painel da Editora</h1>
+              <p className="text-muted-foreground">
+                Modere os comentários. Para criar ou editar conteúdo, use os botões de edição direto nas páginas de
+                Trilha, Módulos, Laboratório, Áreas de Atuação e Blog.
+              </p>
             </div>
           </div>
 

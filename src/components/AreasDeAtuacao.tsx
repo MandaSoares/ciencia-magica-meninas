@@ -69,7 +69,7 @@ export const AreasDeAtuacao = ({ onActivity, selectedArea = "science" }: AreasDe
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingCareer, setEditingCareer] = useState<Career | null>(null);
 
-  const { isAdmin, isModerator } = useAdminCheck();
+  const { canEditContent } = useAdminCheck();
   const queryClient = useQueryClient();
 
   // Fetch from database
@@ -253,7 +253,7 @@ export const AreasDeAtuacao = ({ onActivity, selectedArea = "science" }: AreasDe
             >
               <div className={`h-1.5 bg-gradient-to-r ${currentAreaMeta.gradient}`} />
               <div className="p-5">
-                {(isAdmin || isModerator) && career.dbId && (
+                {canEditContent && career.dbId && (
                   <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <Button
                       size="sm"
@@ -266,7 +266,7 @@ export const AreasDeAtuacao = ({ onActivity, selectedArea = "science" }: AreasDe
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
-                    {isAdmin && (
+                    {canEditContent && (
                       <Button
                         size="sm"
                         variant="destructive"
@@ -305,8 +305,7 @@ export const AreasDeAtuacao = ({ onActivity, selectedArea = "science" }: AreasDe
           <AddCareerInline
             selectedArea={selectedArea}
             onContentChange={handleContentChange}
-            isAdmin={isAdmin}
-            isModerator={isModerator}
+            canEditContent={canEditContent}
             iconClassName={currentAreaMeta.color}
           />
         </div>
