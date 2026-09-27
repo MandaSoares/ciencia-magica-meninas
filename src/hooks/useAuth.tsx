@@ -12,6 +12,16 @@ interface Profile {
   profile_image: string | null;
 }
 
+export interface AuthResult {
+  error: Error | null;
+  message?: string;
+}
+
+export interface LinkNotice {
+  kind: 'confirmed' | 'error';
+  message: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -23,9 +33,15 @@ interface AuthContextType {
     name: string,
     age: number,
     consents: { terms: boolean; guardian: boolean }
-  ) => Promise<{ error: Error | null; message?: string; needsConfirmation?: boolean }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null; message?: string; unconfirmed?: boolean }>;
-  resendConfirmation: (email: string) => Promise<boolean>;
+  ) => Promise<AuthResult & { needsConfirmation?: boolean; alreadyRegistered?: boolean }>;
+  signIn: (email: string, password: string) => Promise<AuthResult & { unconfirmed?: boolean }>;
+  resendConfirmation: (email: string) => Promise<AuthResult>;
+  verifyEmailCode: (email: string, code: string) => Promise<AuthResult>;
+  sendPasswordReset: (email: string) => Promise<AuthResult>;
+  verifyRecoveryCode: (email: string, code: string) => Promise<AuthResult>;
+  /** Aviso vindo de um link de email (confirmado, expirado, inválido) */
+  linkNotice: LinkNotice | null;
+  clearLinkNotice: () => void;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
   deleteAccount: () => Promise<boolean>;
@@ -33,21 +49,76 @@ interface AuthContextType {
   clearPasswordRecovery: () => void;
 }
 
-// Mensagens genéricas: não revelam se um email já está cadastrado.
-export const authErrorMessage = (error: { message?: string; status?: number } | null): string => {
+type AuthErrorLike = { message?: string; status?: number; code?: string } | null;
+
+/** Traduz os erros do Supabase Auth para mensagens claras em português. */
+export const authErrorMessage = (error: AuthErrorLike): string => {
   const msg = (error?.message || '').toLowerCase();
-  if (msg.includes('invalid login credentials')) return 'Email ou senha incorretos.';
-  if (msg.includes('email not confirmed')) return 'Confirme seu email pelo link que enviamos antes de entrar.';
-  if (msg.includes('rate limit') || error?.status === 429) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
-  if (msg.includes('password') && (msg.includes('weak') || msg.includes('pwned') || msg.includes('leaked')))
-    return 'Essa senha é fraca ou já apareceu em vazamentos. Escolha outra.';
-  if (msg.includes('captcha')) return 'Não foi possível verificar que você não é um robô. Tente de novo.';
-  if (msg.includes('already registered') || msg.includes('already exists'))
-    return 'Não foi possível criar a conta com esse email. Se você já tem conta, entre ou recupere a senha.';
-  if (msg.includes('invalid') && msg.includes('email')) return 'Esse email não parece válido. Confira se digitou certo.';
-  if (msg.includes('fetch') || msg.includes('network')) return 'Sem conexão com o servidor. Verifique sua internet.';
+  const code = error?.code || '';
+
+  if (code === 'invalid_credentials' || msg.includes('invalid login credentials'))
+    return 'Email ou senha incorretos.';
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed'))
+    return 'Seu email ainda não foi confirmado.';
+  if (code === 'otp_expired' || msg.includes('expired'))
+    return 'Esse código expirou. Peça um novo.';
+  if (code === 'otp_disabled' || (msg.includes('token') && msg.includes('invalid')))
+    return 'Código incorreto. Confira os números e tente de novo.';
+  if (code === 'over_email_send_rate_limit' || msg.includes('email rate limit'))
+    return 'Enviamos emails demais em pouco tempo. Aguarde alguns minutos e tente de novo.';
+  if (code === 'over_request_rate_limit' || msg.includes('rate limit') || error?.status === 429)
+    return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
+  if (msg.includes('for security purposes'))
+    return 'Aguarde alguns segundos antes de pedir outro email.';
+  if (code === 'weak_password' || msg.includes('password should') || msg.includes('pwned') || msg.includes('leaked'))
+    return 'Essa senha não é aceita. Use pelo menos 8 caracteres com maiúscula, minúscula, número e um símbolo (ex.: ! @ #).';
+  if (code === 'same_password' || msg.includes('different from the old'))
+    return 'A nova senha precisa ser diferente da anterior.';
+  if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered'))
+    return 'Já existe uma conta com esse email.';
+  if (code === 'email_address_invalid' || (msg.includes('invalid') && msg.includes('email')))
+    return 'Esse email não parece válido. Confira se digitou certo.';
+  if (code === 'signup_disabled' || msg.includes('signups not allowed'))
+    return 'Novos cadastros estão pausados no momento.';
+  if (msg.includes('error sending') || msg.includes('smtp'))
+    return 'Não conseguimos enviar o email agora. Tente de novo em alguns minutos.';
+  if (msg.includes('database error'))
+    return 'Não conseguimos salvar seu cadastro. Tente de novo; se continuar, fale com a equipe.';
+  if (msg.includes('captcha'))
+    return 'Não foi possível verificar que você não é um robô. Tente de novo.';
+  if (msg.includes('fetch') || msg.includes('network'))
+    return 'Sem conexão com o servidor. Verifique sua internet.';
   return 'Não foi possível concluir. Tente novamente em instantes.';
 };
+
+/**
+ * Lê o resultado de um link de email (confirmação/recuperação) que o
+ * Supabase coloca no endereço (#... ou ?...), antes de o cliente limpá-lo.
+ */
+const readLinkNotice = (): LinkNotice | null => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(
+    [window.location.hash.replace(/^#/, ''), window.location.search.replace(/^\?/, '')].join('&')
+  );
+  const errorCode = params.get('error_code') || params.get('error');
+  if (errorCode) {
+    const expired = errorCode.includes('expired') || (params.get('error_description') || '').toLowerCase().includes('expired');
+    // limpa o endereço para o aviso não voltar ao recarregar
+    window.history.replaceState(null, '', window.location.pathname);
+    return {
+      kind: 'error',
+      message: expired
+        ? 'Esse link expirou ou já foi usado. Entre com seu email e senha; se precisar, peça um novo código.'
+        : 'Esse link não é válido. Entre com seu email e senha ou peça um novo código.',
+    };
+  }
+  if (params.get('type') === 'signup' || params.get('type') === 'email') {
+    return { kind: 'confirmed', message: 'Email confirmado! Bem-vinda ao Conscientistas 💜' };
+  }
+  return null;
+};
+
+const INITIAL_LINK_NOTICE = readLinkNotice();
 
 // Campos que a usuária pode alterar (o banco também restringe via GRANT).
 const EDITABLE_PROFILE_FIELDS = ['name', 'age', 'interests', 'profile_image'] as const;
@@ -60,20 +131,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [linkNotice, setLinkNotice] = useState<LinkNotice | null>(INITIAL_LINK_NOTICE);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (authUser: User): Promise<Profile | null> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', authUser.id)
       .maybeSingle();
 
     if (error) {
       console.error('Error fetching profile:', error);
       return null;
     }
+    if (data) return data as Profile;
 
-    return data as Profile | null;
+    // Conta sem perfil (ex.: criada antes do trigger): cria o perfil agora,
+    // senão a usuária entra e fica presa na tela de login.
+    const meta = authUser.user_metadata || {};
+    const fallbackName = String(meta.name || authUser.email?.split('@')[0] || 'Estudante').slice(0, 100);
+    const age = Number(meta.age);
+    const { data: created, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authUser.id,
+        email: authUser.email ?? '',
+        name: fallbackName,
+        age: Number.isFinite(age) && age >= 4 && age <= 120 ? age : null,
+      })
+      .select('*')
+      .maybeSingle();
+    if (insertError) {
+      console.error('Error creating missing profile:', insertError);
+      return null;
+    }
+    return created as Profile | null;
   };
 
   useEffect(() => {
@@ -83,13 +175,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsPasswordRecovery(true);
         }
+        if (event === 'SIGNED_IN' && INITIAL_LINK_NOTICE?.kind === 'confirmed') {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
         setSession(session);
         setUser(session?.user ?? null);
 
         // Defer profile fetch with setTimeout
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id).then(setProfile);
+            fetchProfile(session.user).then(setProfile);
           }, 0);
         } else {
           setProfile(null);
@@ -103,7 +198,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id).then((profile) => {
+        fetchProfile(session.user).then((profile) => {
           setProfile(profile);
           setLoading(false);
         });
@@ -141,7 +236,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) {
-      return { error, message: authErrorMessage(error) };
+      return { error, message: authErrorMessage(error), alreadyRegistered: error.code === 'user_already_exists' };
+    }
+
+    // Com confirmação de email ligada, o Supabase NÃO retorna erro para email
+    // já cadastrado: devolve um usuário sem "identities" e não envia email.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return {
+        error: new Error('already_registered'),
+        message: 'Já existe uma conta com esse email.',
+        alreadyRegistered: true,
+      };
     }
 
     const needsConfirmation = !data.session;
@@ -165,13 +270,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: null };
   };
 
-  const resendConfirmation = async (email: string) => {
+  const resendConfirmation = async (email: string): Promise<AuthResult> => {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email.trim().toLowerCase(),
       options: { emailRedirectTo: `${window.location.origin}/` },
     });
-    return !error;
+    return error ? { error, message: authErrorMessage(error) } : { error: null };
+  };
+
+  // Código de 6 dígitos do email de confirmação (funciona mesmo quando o
+  // link é aberto em outro aparelho ou "consumido" por antivírus de email).
+  const verifyEmailCode = async (email: string, code: string): Promise<AuthResult> => {
+    const token = code.replace(/\D/g, '');
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token,
+      type: 'signup',
+    });
+    if (!error) {
+      toast.success('Email confirmado! Bem-vinda ao Conscientistas 💜');
+      return { error: null };
+    }
+    return { error, message: authErrorMessage(error) };
+  };
+
+  const sendPasswordReset = async (email: string): Promise<AuthResult> => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/`,
+    });
+    // Não revela se a conta existe: só reporta limites de envio.
+    if (error && (error.status === 429 || /rate limit|security purposes/i.test(error.message))) {
+      return { error, message: authErrorMessage(error) };
+    }
+    return { error: null };
+  };
+
+  // Código do email de recuperação → abre a tela de nova senha (evento PASSWORD_RECOVERY).
+  const verifyRecoveryCode = async (email: string, code: string): Promise<AuthResult> => {
+    const token = code.replace(/\D/g, '');
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token,
+      type: 'recovery',
+    });
+    if (!error) {
+      setIsPasswordRecovery(true);
+      return { error: null };
+    }
+    return { error, message: authErrorMessage(error) };
   };
 
   const signOut = async () => {
@@ -239,6 +386,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signUp,
       signIn,
       resendConfirmation,
+      verifyEmailCode,
+      sendPasswordReset,
+      verifyRecoveryCode,
+      linkNotice,
+      clearLinkNotice: () => setLinkNotice(null),
       signOut,
       updateProfile,
       deleteAccount,

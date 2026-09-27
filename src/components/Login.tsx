@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Loader2, MailCheck } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField } from "./auth/PasswordField";
+import { VerifyCode } from "./auth/VerifyCode";
 
 interface LoginProps {
   onLogin: () => void;
@@ -14,42 +15,69 @@ interface LoginProps {
   onForgotPassword: () => void;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: LoginProps) => {
-  const { signIn, resendConfirmation } = useAuth();
+  const { signIn, resendConfirmation, verifyEmailCode, linkNotice, clearLinkNotice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [unconfirmed, setUnconfirmed] = useState(false);
-  const [resent, setResent] = useState(false);
+  const [errorKind, setErrorKind] = useState<"credentials" | "unconfirmed" | "other" | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
-  const canSubmit = email.trim().length > 3 && password.length > 0 && !loading;
+  const canSubmit = EMAIL_RE.test(email.trim()) && password.length > 0 && !loading;
+
+  const clearErrors = () => {
+    setError(null);
+    setErrorKind(null);
+    if (linkNotice) clearLinkNotice();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
 
     setLoading(true);
-    setError(null);
-    setUnconfirmed(false);
+    clearErrors();
     const result = await signIn(email, password);
     setLoading(false);
 
     if (result.error) {
       setError(result.message ?? "Não foi possível entrar.");
-      setUnconfirmed(!!result.unconfirmed);
+      setErrorKind(
+        result.unconfirmed ? "unconfirmed" : /incorretos/.test(result.message ?? "") ? "credentials" : "other"
+      );
       return;
     }
     onLogin();
   };
 
-  const handleResend = async () => {
+  // Email não confirmado: manda um código novo e abre a tela para digitá-lo
+  const startVerification = async () => {
     setLoading(true);
-    const ok = await resendConfirmation(email);
+    const result = await resendConfirmation(email);
     setLoading(false);
-    setResent(ok);
-    if (!ok) setError("Não foi possível reenviar agora. Aguarde alguns minutos e tente de novo.");
+    if (result.error) {
+      setError(result.message ?? "Não foi possível enviar o código.");
+      setErrorKind("other");
+      return;
+    }
+    setVerifying(true);
   };
+
+  if (verifying) {
+    return (
+      <VerifyCode
+        email={email.trim().toLowerCase()}
+        title="Confirme seu email"
+        submitLabel="Confirmar e entrar"
+        onVerify={(code) => verifyEmailCode(email, code)}
+        onResend={() => resendConfirmation(email)}
+        onBack={() => setVerifying(false)}
+      />
+    );
+  }
 
   return (
     <AuthShell
@@ -65,6 +93,19 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
     >
       <AuthTitle title="Bem-vinda de volta!" subtitle="Entre para continuar sua jornada científica." />
 
+      {linkNotice && (
+        <div className="mb-5 animate-slide-up">
+          {linkNotice.kind === "error" ? (
+            <FormError>{linkNotice.message}</FormError>
+          ) : (
+            <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+              {linkNotice.message} Agora é só entrar.
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5 animate-slide-up stagger-1" noValidate>
         <div className="space-y-2">
           <Label htmlFor="login-email" className="font-semibold">Email</Label>
@@ -72,12 +113,12 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
             id="login-email"
             type="email"
             inputMode="email"
-            autoComplete="email"
+            autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
             placeholder="seuemail@exemplo.com"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); setError(null); }}
+            onChange={(e) => { setEmail(e.target.value); clearErrors(); }}
             className={inputClass}
             disabled={loading}
             autoFocus
@@ -100,7 +141,7 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
             autoComplete="current-password"
             placeholder="Sua senha"
             value={password}
-            onChange={(e) => { setPassword(e.target.value); setError(null); }}
+            onChange={(e) => { setPassword(e.target.value); clearErrors(); }}
             disabled={loading}
           />
         </div>
@@ -108,19 +149,21 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
         {error && (
           <FormError>
             {error}
-            {unconfirmed && !resent && (
-              <button type="button" onClick={handleResend} className="block mt-2 font-bold underline">
-                Reenviar email de confirmação
+            {errorKind === "credentials" && (
+              <span className="block mt-1">
+                Confira maiúsculas e minúsculas ou{" "}
+                <button type="button" onClick={onForgotPassword} className="font-bold underline">
+                  crie uma nova senha
+                </button>
+                .
+              </span>
+            )}
+            {errorKind === "unconfirmed" && (
+              <button type="button" onClick={startVerification} className="block mt-2 font-bold underline" disabled={loading}>
+                Receber código de confirmação
               </button>
             )}
           </FormError>
-        )}
-
-        {resent && (
-          <div className="flex items-start gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-            <MailCheck className="w-4 h-4 mt-0.5 shrink-0" />
-            Enviamos um novo link para {email.trim()}. Confira também o spam.
-          </div>
         )}
 
         <Button type="submit" className={primaryButtonClass} disabled={!canSubmit}>
