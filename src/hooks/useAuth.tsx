@@ -70,10 +70,10 @@ export const authErrorMessage = (error: AuthErrorLike): string => {
     return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
   if (msg.includes('for security purposes'))
     return 'Aguarde alguns segundos antes de pedir outro email.';
+  if (code === 'same_password' || msg.includes('different from the old'))
+    return 'Essa já é a sua senha atual. Escolha uma senha diferente da anterior.';
   if (code === 'weak_password' || msg.includes('password should') || msg.includes('pwned') || msg.includes('leaked'))
     return 'Essa senha não é aceita. Use pelo menos 8 caracteres com maiúscula, minúscula, número e um símbolo (ex.: ! @ #).';
-  if (code === 'same_password' || msg.includes('different from the old'))
-    return 'A nova senha precisa ser diferente da anterior.';
   if (code === 'user_already_exists' || code === 'email_exists' || msg.includes('already registered'))
     return 'Já existe uma conta com esse email.';
   if (code === 'email_address_invalid' || (msg.includes('invalid') && msg.includes('email')))
