@@ -14,8 +14,7 @@ import { UserProfile } from "@/components/UserProfile";
 import { LandingPage } from "@/components/LandingPage";
 import { Login } from "@/components/Login";
 import { ForgotPassword } from "@/components/ForgotPassword";
-const AdminPanel = lazy(() => import("@/components/AdminPanel").then(m => ({ default: m.AdminPanel })));
-const ModeratorPanel = lazy(() => import("@/components/ModeratorPanel").then(m => ({ default: m.ModeratorPanel })));
+import { StaffWorkspace } from "@/components/staff/StaffWorkspace";
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
 const About = lazy(() => import("@/pages/About").then(m => ({ default: m.About })));
@@ -25,11 +24,10 @@ import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import { useUserProgress } from "@/hooks/useUserProgress";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useStudyHours } from "@/hooks/useStudyHours";
-import { Loader2, Shield, UserCog } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgotPassword' | 'admin' | 'moderator';
+type AuthView = 'landing' | 'login' | 'register' | 'interests' | 'app' | 'forgotPassword';
 type FooterPage = 'about' | 'blog' | null;
 
 const AppContent = () => {
@@ -40,6 +38,9 @@ const AppContent = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
   const [showAddAreaModal, setShowAddAreaModal] = useState(false);
   const [footerPage, setFooterPage] = useState<FooterPage>(null);
+  // Equipe (admin/editora) pode ver a plataforma como estudante
+  const [previewStudent, setPreviewStudent] = useState(false);
+  const ALL_AREAS = ['science', 'technology', 'engineering', 'math'];
 
   const { progress, stats, streak, isPathCompleted, recordActivity, completeLesson, completeModule, completeExperiment } =
     useUserProgress(selectedArea || 'science');
@@ -47,9 +48,12 @@ const AppContent = () => {
   const { studyHours } = useStudyHours(selectedArea || 'science');
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && !adminLoading) {
       if (user && profile) {
-        if (profile.interests && profile.interests.length > 0) {
+        if (isEditor) {
+          // Equipe não escolhe trilha: vai direto para o painel
+          setAuthView('app');
+        } else if (profile.interests && profile.interests.length > 0) {
           setAuthView('app');
           if (!selectedArea && profile.interests.length === 1) {
             setSelectedArea(profile.interests[0]);
@@ -61,11 +65,11 @@ const AppContent = () => {
         setAuthView('landing');
       }
     }
-  }, [user, profile, authLoading, selectedArea]);
+  }, [user, profile, authLoading, adminLoading, isEditor, selectedArea]);
 
   // Modo escuro só dentro da conta (logada e fora das telas de login/cadastro/recuperação)
   const { setThemeEnabled } = useTheme();
-  const inAccount = !!user && !isPasswordRecovery && ['app', 'admin', 'moderator', 'interests'].includes(authView);
+  const inAccount = !!user && !isPasswordRecovery && ['app', 'interests'].includes(authView);
   useEffect(() => {
     setThemeEnabled(inAccount);
   }, [inAccount, setThemeEnabled]);
@@ -85,6 +89,7 @@ const AppContent = () => {
   const handleLogout = async () => {
     await signOut();
     setSelectedArea(null);
+    setPreviewStudent(false);
     setAuthView('landing');
   };
 
@@ -136,6 +141,8 @@ const AppContent = () => {
     });
   };
 
+  const studentAreas = profile?.interests?.length ? profile.interests : isEditor ? ALL_AREAS : [selectedArea || "science"];
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case "dashboard":
@@ -144,7 +151,7 @@ const AppContent = () => {
             userPoints={progress?.points || 0}
             userLevel={progress?.level || 1}
             userName={profile?.name || "Estudante"}
-            selectedAreas={profile?.interests || [selectedArea || "science"]}
+            selectedAreas={studentAreas}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
@@ -235,7 +242,7 @@ const AppContent = () => {
             userPoints={progress?.points || 0}
             userLevel={progress?.level || 1}
             userName={profile?.name || "Estudante"}
-            selectedAreas={profile?.interests || [selectedArea || "science"]}
+            selectedAreas={studentAreas}
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
@@ -309,9 +316,6 @@ const AppContent = () => {
     );
   }
 
-  if (authView === 'admin' && isAdmin) return <Suspense fallback={pageLoader}><AdminPanel onBack={() => setAuthView('app')} /></Suspense>;
-  if (authView === 'moderator' && isEditor && !isAdmin) return <Suspense fallback={pageLoader}><ModeratorPanel onBack={() => setAuthView('app')} /></Suspense>;
-
   if (authView === 'register') {
     return (
       <Registration
@@ -323,7 +327,7 @@ const AppContent = () => {
     );
   }
 
-  if (authView === 'interests' && user) {
+  if (authView === 'interests' && user && !isEditor) {
     return (
       <STEMInterestSelection
         userName={profile?.name || ''}
@@ -332,7 +336,24 @@ const AppContent = () => {
     );
   }
 
-  if (profile && profile.interests.length > 1 && !selectedArea) {
+  // Painel da equipe (administradora e editora)
+  if (user && isEditor && !previewStudent) {
+    return (
+      <StaffWorkspace
+        isAdmin={isAdmin}
+        userName={profile?.name || 'Equipe'}
+        userImage={profile?.profile_image || undefined}
+        onPreviewStudent={() => {
+          setSelectedArea(selectedArea || 'science');
+          setActiveSection('dashboard');
+          setPreviewStudent(true);
+        }}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (profile && !isEditor && profile.interests.length > 1 && !selectedArea) {
     return (
       <AreaSelection
         interests={profile.interests}
@@ -368,39 +389,21 @@ const AppContent = () => {
         streak={streak.current}
         studiedToday={streak.studiedToday}
       />
-      {isAdmin && (
-        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-red-200 px-4 sm:px-6 py-2">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-red-700">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Você está logada como administradora</span>
-              <span className="sm:hidden">Admin</span>
+      {isEditor && previewStudent && (
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 sm:px-6 py-2 text-white">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Eye className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Você está vendo a plataforma como estudante</span>
+              <span className="sm:hidden">Visão de estudante</span>
             </div>
-            <Button
-              variant="outline" size="sm"
-              onClick={() => setAuthView('admin')}
-              className="border-red-300 text-red-700 hover:bg-red-50"
+            <button
+              type="button"
+              onClick={() => setPreviewStudent(false)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-3 py-1.5 text-sm font-semibold hover:bg-white/30 transition"
             >
-              Painel Admin
-            </Button>
-          </div>
-        </div>
-      )}
-      {isEditor && !isAdmin && (
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-200 px-4 sm:px-6 py-2">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-blue-700">
-              <UserCog className="w-4 h-4" />
-              <span className="hidden sm:inline">Você está logada como editora: pode criar e editar conteúdo</span>
-              <span className="sm:hidden">Editora</span>
-            </div>
-            <Button
-              variant="outline" size="sm"
-              onClick={() => setAuthView('moderator')}
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              Painel da Editora
-            </Button>
+              <ArrowLeft className="w-4 h-4" /> Voltar ao painel
+            </button>
           </div>
         </div>
       )}
