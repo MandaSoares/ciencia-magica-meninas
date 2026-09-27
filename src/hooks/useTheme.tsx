@@ -5,30 +5,47 @@ type Theme = "light" | "dark";
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  /** true só dentro da conta; telas públicas (landing, login, cadastro) são sempre claras */
+  setThemeEnabled: (enabled: boolean) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({ theme: "light", toggleTheme: () => {} });
+const ThemeContext = createContext<ThemeContextType>({
+  theme: "light",
+  toggleTheme: () => {},
+  setThemeEnabled: () => {},
+});
+
+const readSavedTheme = (): Theme => {
+  try {
+    return localStorage.getItem("conscientistas-theme") === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+};
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("conscientistas-theme");
-    return (saved === "dark" ? "dark" : "light") as Theme;
-  });
+  const [theme, setTheme] = useState<Theme>(readSavedTheme);
+  const [enabled, setThemeEnabled] = useState(false);
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    document.documentElement.classList.toggle("dark", enabled && theme === "dark");
+  }, [theme, enabled]);
+
+  // Ao sair do app (desmontar), garante o tema claro nas páginas públicas
+  useEffect(() => () => document.documentElement.classList.remove("dark"), []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("conscientistas-theme", theme);
+    } catch {
+      /* navegação privada sem storage: ignora */
     }
-    localStorage.setItem("conscientistas-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setThemeEnabled }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -93,7 +93,7 @@ export const VerifyCode = ({
         subtitle={
           subtitle ?? (
             <>
-              Enviamos um código para <strong className="text-gray-800 dark:text-gray-200">{email}</strong>. Olhe também no spam.
+              Enviamos um email para <strong className="text-gray-800 dark:text-gray-200">{email}</strong>. Clique no link do email ou digite aqui o código de 6 dígitos. Olhe também no spam.
             </>
           )
         }
@@ -119,9 +119,6 @@ export const VerifyCode = ({
             disabled={loading}
             autoFocus
           />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Também dá para clicar no botão do email, se preferir.
-          </p>
           {error && <div className="pt-2"><FormError>{error}</FormError></div>}
           {info && !error && (
             <p className="pt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">{info}</p>
