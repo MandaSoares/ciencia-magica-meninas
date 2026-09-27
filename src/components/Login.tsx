@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthShell, AuthTitle, FormError, inputClass, primaryButtonClass } from "./auth/AuthShell";
 import { PasswordField } from "./auth/PasswordField";
 import { VerifyCode } from "./auth/VerifyCode";
+import { formatCountdown, rateLimitSeconds, useCooldown } from "./auth/cooldown";
 
 interface LoginProps {
   onLogin: () => void;
@@ -25,8 +26,9 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<"credentials" | "unconfirmed" | "other" | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const { remaining: loginCooldown, start: startLoginCooldown } = useCooldown("login");
 
-  const canSubmit = EMAIL_RE.test(email.trim()) && password.length > 0 && !loading;
+  const canSubmit = EMAIL_RE.test(email.trim()) && password.length > 0 && !loading && loginCooldown <= 0;
 
   const clearErrors = () => {
     setError(null);
@@ -44,6 +46,8 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
     setLoading(false);
 
     if (result.error) {
+      const wait = rateLimitSeconds(result.error as { message?: string; status?: number; code?: string });
+      if (wait) startLoginCooldown(wait);
       setError(result.message ?? "Não foi possível entrar.");
       setErrorKind(
         result.unconfirmed ? "unconfirmed" : /incorretos/.test(result.message ?? "") ? "credentials" : "other"
@@ -58,11 +62,14 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
     setLoading(true);
     const result = await resendConfirmation(email);
     setLoading(false);
-    if (result.error) {
-      setError(result.message ?? "Não foi possível enviar o código.");
+    const wait = rateLimitSeconds(result.error as { message?: string; status?: number; code?: string } | null);
+    if (result.error && !wait) {
+      setError(result.message ?? "Não foi possível enviar o email.");
       setErrorKind("other");
       return;
     }
+    // Se bateu no limite, abre a tela mesmo assim: o email anterior ainda vale,
+    // e o botão "Reenviar" mostra a contagem.
     setVerifying(true);
   };
 
@@ -75,6 +82,8 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
         onVerify={(code) => verifyEmailCode(email, code)}
         onResend={() => resendConfirmation(email)}
         onBack={() => setVerifying(false)}
+        cooldownKey="signup"
+        justSent
       />
     );
   }
@@ -160,14 +169,20 @@ export const Login = ({ onLogin, onBack, onGoToRegister, onForgotPassword }: Log
             )}
             {errorKind === "unconfirmed" && (
               <button type="button" onClick={startVerification} className="block mt-2 font-bold underline" disabled={loading}>
-                Receber código de confirmação
+                Reenviar email de confirmação
               </button>
             )}
           </FormError>
         )}
 
         <Button type="submit" className={primaryButtonClass} disabled={!canSubmit}>
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar"}
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : loginCooldown > 0 ? (
+            `Tente de novo em ${formatCountdown(loginCooldown)}`
+          ) : (
+            "Entrar"
+          )}
         </Button>
       </form>
     </AuthShell>
