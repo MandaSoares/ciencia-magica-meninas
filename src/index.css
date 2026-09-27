@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 270 30% 15%;
+    --foreground: 300 30% 14%;
 
     --card: 0 0% 100%;
     --card-foreground: 270 30% 15%;
@@ -13,14 +13,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 270 30% 15%;
 
-    --primary: 275 55% 60%;
+    --primary: 330 81% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 55% 65%;
+    --secondary: 271 81% 66%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 270 25% 96%;
-    --muted-foreground: 270 15% 45%;
+    --muted: 327 60% 97%;
+    --muted-foreground: 300 10% 42%;
 
     --accent: 210 65% 60%;
     --accent-foreground: 0 0% 100%;
@@ -28,39 +28,39 @@
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 270 25% 91%;
-    --input: 270 25% 91%;
-    --ring: 275 55% 60%;
+    --border: 327 50% 91%;
+    --input: 327 50% 91%;
+    --ring: 330 81% 60%;
 
-    --radius: 0.75rem;
+    --radius: 0.9rem;
 
     --sidebar-background: 270 30% 98%;
     --sidebar-foreground: 270 30% 15%;
-    --sidebar-primary: 275 55% 60%;
+    --sidebar-primary: 330 81% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 270 25% 95%;
     --sidebar-accent-foreground: 270 30% 15%;
     --sidebar-border: 270 25% 91%;
-    --sidebar-ring: 275 55% 60%;
+    --sidebar-ring: 330 81% 60%;
   }
 
   .dark {
-    --background: 260 25% 8%;
+    --background: 290 30% 7%;
     --foreground: 270 15% 92%;
 
-    --card: 260 25% 12%;
+    --card: 290 25% 11%;
     --card-foreground: 270 15% 92%;
 
-    --popover: 260 25% 12%;
+    --popover: 290 25% 11%;
     --popover-foreground: 270 15% 92%;
 
-    --primary: 275 55% 65%;
+    --primary: 330 81% 66%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 330 50% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 260 20% 18%;
+    --muted: 290 20% 17%;
     --muted-foreground: 270 15% 65%;
 
     --accent: 210 55% 50%;
@@ -69,18 +69,18 @@
     --destructive: 0 55% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 20% 22%;
-    --input: 260 20% 22%;
-    --ring: 275 55% 65%;
+    --border: 290 20% 21%;
+    --input: 290 20% 21%;
+    --ring: 330 81% 66%;
 
     --sidebar-background: 260 25% 10%;
     --sidebar-foreground: 270 15% 92%;
-    --sidebar-primary: 275 55% 65%;
+    --sidebar-primary: 330 81% 66%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 260 20% 16%;
     --sidebar-accent-foreground: 270 15% 92%;
     --sidebar-border: 260 20% 22%;
-    --sidebar-ring: 275 55% 65%;
+    --sidebar-ring: 330 81% 66%;
   }
 }
 
@@ -91,7 +91,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    @apply font-sans antialiased;
   }
 }
 
@@ -101,7 +101,13 @@
   }
 
   .gradient-bg {
-    @apply bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50;
+    @apply bg-gradient-to-br from-pink-50 via-rose-50 to-violet-50;
+  }
+
+  /* Fundo com rabiscos de STEM (átomo, frasco, engrenagem, π, código, molécula, lâmpada, Σ) */
+  .stem-doodles {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22220%22 height=%22220%22 viewBox=%220 0 220 220%22 fill=%22none%22 stroke=%22%23db2777%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cg transform=%22translate(28 30)%22%3E%3Cellipse rx=%2216%22 ry=%226%22/%3E%3Cellipse rx=%2216%22 ry=%226%22 transform=%22rotate(60)%22/%3E%3Cellipse rx=%2216%22 ry=%226%22 transform=%22rotate(-60)%22/%3E%3Ccircle r=%222%22 fill=%22%23db2777%22/%3E%3C/g%3E%3Cg transform=%22translate(120 20)%22%3E%3Cpath d=%22M-5 0v10l-9 16a3 3 0 0 0 2.6 4.5h22.8a3 3 0 0 0 2.6-4.5l-9-16V0M-7 0h14%22/%3E%3C/g%3E%3Cg transform=%22translate(190 60)%22%3E%3Ccircle r=%226%22/%3E%3Cpath d=%22M0-14v4M0 10v4M-14 0h4M10 0h4M-10-10l3 3M7 7l3 3M-10 10l3-3M7-7l3-3%22/%3E%3C/g%3E%3Ctext x=%2260%22 y=%22102%22 font-family=%22Georgia,serif%22 font-size=%2222%22 fill=%22%23db2777%22 stroke=%22none%22%3E%CF%80%3C/text%3E%3Cg transform=%22translate(150 110)%22%3E%3Cpath d=%22M-8-6l-7 6 7 6M8-6l7 6-7 6M3-9l-6 18%22/%3E%3C/g%3E%3Cg transform=%22translate(30 150)%22%3E%3Cpath d=%22M0-10l8.7 5v10L0 10l-8.7-5v-10z%22/%3E%3Cpath d=%22M8.7-5l9-5M0 10v9%22/%3E%3C/g%3E%3Cg transform=%22translate(110 170)%22%3E%3Cpath d=%22M-6 6a9 9 0 1 1 12 0c-1.5 1.3-2 2.5-2 4h-8c0-1.5-.5-2.7-2-4zM-3 14h6%22/%3E%3C/g%3E%3Ctext x=%22176%22 y=%22186%22 font-family=%22Georgia,serif%22 font-size=%2220%22 fill=%22%23db2777%22 stroke=%22none%22%3E%CE%A3%3C/text%3E%3Cpath d=%22M95 60l1.5 4.5 4.5 1.5-4.5 1.5L95 72l-1.5-4.5L89 66l4.5-1.5z%22 fill=%22%23db2777%22 stroke=%22none%22/%3E%3Cpath d=%22M200 140c-2-3-7-2-7 2 0 3 7 7 7 7s7-4 7-7c0-4-5-5-7-2z%22/%3E%3Cpath d=%22M60 205l1.2 3.6 3.6 1.2-3.6 1.2L60 215l-1.2-3.6-3.6-1.2 3.6-1.2z%22 fill=%22%23db2777%22 stroke=%22none%22/%3E%3C/svg%3E");
+    background-size: 220px 220px;
   }
 
   .gradient-bg-dark {
@@ -131,8 +137,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 130, 220, 0.35); }
-  50% { box-shadow: 0 0 20px 4px rgba(168, 130, 220, 0.18); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.35); }
+  50% { box-shadow: 0 0 20px 4px rgba(236, 72, 153, 0.18); }
 }
 
 @keyframes confetti-fall {
@@ -185,3 +191,27 @@
 .stagger-3 { animation-delay: 0.3s; }
 .stagger-4 { animation-delay: 0.4s; }
 .stagger-5 { animation-delay: 0.5s; }
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+.animate-bob { animation: bob 3.2s ease-in-out infinite; }
+
+@keyframes ping-soft {
+  0% { transform: scale(1); opacity: .55; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-ping-soft { animation: ping-soft 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+
+/* Botão "3D" estilo Duolingo */
+.btn-3d {
+  box-shadow: 0 5px 0 0 var(--btn-shadow, #be185d);
+  transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+}
+.btn-3d:hover { filter: brightness(1.05); }
+.btn-3d:active { transform: translateY(4px); box-shadow: 0 1px 0 0 var(--btn-shadow, #be185d); }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bob, .animate-ping-soft, .animate-float, .animate-pulse-glow, .animate-streak-fire { animation: none; }
+}

@@ -17,6 +17,7 @@ import { ForgotPassword } from "@/components/ForgotPassword";
 import { StaffWorkspace } from "@/components/staff/StaffWorkspace";
 import { AreaSelection } from "@/components/AreaSelection";
 import { Footer } from "@/components/Footer";
+import { StemBackdrop } from "@/components/StemBackdrop";
 const About = lazy(() => import("@/pages/About").then(m => ({ default: m.About })));
 const Blog = lazy(() => import("@/pages/Blog").then(m => ({ default: m.Blog })));
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -155,11 +156,15 @@ const AppContent = () => {
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
+            onNavigate={setActiveSection}
+            completedLessons={stats.completedLessonIds}
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
+            lessonsCompleted={stats.lessonsCompleted}
             studyHours={studyHours}
             streak={streak.current}
             longestStreak={streak.longest}
+            studiedToday={streak.studiedToday}
             todayXp={streak.todayXp}
           />
         );
@@ -246,11 +251,15 @@ const AppContent = () => {
             currentActiveArea={selectedArea || "science"}
             onAreaChange={handleSelectArea}
             onAddArea={handleAddArea}
+            onNavigate={setActiveSection}
+            completedLessons={stats.completedLessonIds}
             modulesCompleted={stats.modulesCompleted}
             experimentsCompleted={stats.experimentsCompleted}
+            lessonsCompleted={stats.lessonsCompleted}
             studyHours={studyHours}
             streak={streak.current}
             longestStreak={streak.longest}
+            studiedToday={streak.studiedToday}
             todayXp={streak.todayXp}
           />
         );
@@ -259,7 +268,7 @@ const AppContent = () => {
 
   if (authLoading || adminLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-violet-50 dark:from-[#1a0b1f] dark:to-[#120d24] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -380,7 +389,8 @@ const AppContent = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950 flex flex-col transition-colors duration-300">
+    <div className="relative isolate min-h-screen flex flex-col transition-colors duration-300">
+      <StemBackdrop />
       <Header
         userPoints={progress?.points || 0}
         userLevel={progress?.level || 1}
@@ -390,7 +400,7 @@ const AppContent = () => {
         studiedToday={streak.studiedToday}
       />
       {isEditor && previewStudent && (
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 sm:px-6 py-2 text-white">
+        <div className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-4 sm:px-6 py-2 text-white">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Eye className="w-4 h-4 shrink-0" />

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Brand } from "@/components/Brand";
+import { StemBackdrop } from "@/components/StemBackdrop";
 
 /**
  * RASCUNHO — revisar com advogada(o) antes do lançamento.
@@ -12,18 +13,16 @@ const DPO = "[NOME DA ENCARREGADA PELO TRATAMENTO DE DADOS]";
 const LAST_UPDATE = "[DD/MM/AAAA]";
 
 const Shell = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-950">
+  <div className="min-h-screen relative isolate">
+    <StemBackdrop />
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
       <div className="flex items-center gap-3 mb-6">
-        <Logo size={40} />
-        <span className="text-lg font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Conscientistas
-        </span>
+        <Brand size={40} textClassName="text-lg" />
       </div>
-      <article className="bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-xl p-6 sm:p-10 prose prose-purple dark:prose-invert max-w-none">
+      <article className="bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-xl p-6 sm:p-10 prose prose-pink dark:prose-invert max-w-none">
         <h1>{title}</h1>
         <p className="text-sm text-muted-foreground">Última atualização: {LAST_UPDATE}</p>
         {children}
@@ -38,7 +37,7 @@ const Shell = ({ title, children }: { title: string; children: React.ReactNode }
 
 export const PrivacyPolicy = () => (
   <Shell title="Política de Privacidade">
-    <div className="not-prose rounded-2xl bg-purple-50 dark:bg-purple-900/30 p-4 mb-6 text-sm">
+    <div className="not-prose rounded-2xl bg-pink-50 dark:bg-pink-500/10 p-4 mb-6 text-sm">
       <strong>Resumo para quem tem pressa:</strong> pedimos só o necessário para você estudar (nome ou apelido, email, idade e
       suas áreas favoritas). Não vendemos seus dados, não mostramos anúncios e não usamos rastreadores de publicidade. Você pode
       apagar sua conta e tudo o que está nela quando quiser, direto no seu perfil.

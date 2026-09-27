@@ -51,10 +51,10 @@ export const AreaTabs = ({ value, onChange }: { value: AreaKey; onChange: (a: Ar
           aria-selected={active}
           onClick={() => onChange(a.key)}
           className={cn(
-            "shrink-0 flex items-center gap-2 h-10 px-4 rounded-full text-sm font-semibold transition-all",
+            "shrink-0 flex items-center gap-2 h-11 px-4 rounded-2xl border-2 font-display text-[15px] font-semibold transition-all",
             active
-              ? `bg-gradient-to-r ${a.pill} text-white shadow-md`
-              : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+              ? `border-transparent bg-gradient-to-r ${a.pill} text-white shadow-md`
+              : "border-pink-100 bg-white/80 text-gray-600 hover:-translate-y-0.5 hover:border-pink-300 hover:text-gray-900 dark:bg-white/5 dark:text-gray-300 dark:border-white/10"
           )}
         >
           <span>{a.emoji}</span>
@@ -113,7 +113,7 @@ const ItemGrid = ({
   if (loading) {
     return (
       <div className="flex justify-center py-16">
-        <Loader2 className="w-7 h-7 animate-spin text-purple-500" />
+        <Loader2 className="w-7 h-7 animate-spin text-pink-500" />
       </div>
     );
   }
@@ -128,7 +128,7 @@ const ItemGrid = ({
       )}
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-12 text-center text-gray-500">
+        <div className="rounded-3xl border-2 border-dashed border-pink-200 bg-white/50 dark:border-white/10 dark:bg-white/[0.02] py-12 text-center text-gray-500">
           {search ? "Nada encontrado com essa busca." : emptyText}
         </div>
       ) : (
@@ -136,20 +136,20 @@ const ItemGrid = ({
           {filtered.map((item) => (
             <article
               key={item.key}
-              className="group relative flex flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+              className="group relative flex flex-col rounded-3xl border-2 border-pink-100 bg-white/90 p-4 shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100 dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-none"
             >
               <div className="flex items-start gap-3">
                 {item.image ? (
                   <img src={item.image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" loading="lazy" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 flex items-center justify-center text-2xl shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-100 to-violet-100 dark:from-pink-500/15 dark:to-violet-500/15 flex items-center justify-center text-2xl shrink-0">
                     {item.visual || "📘"}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-gray-900 dark:text-white leading-snug line-clamp-2">{item.title}</h3>
+                  <h3 className="font-display text-[17px] font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2">{item.title}</h3>
                   {item.badge && (
-                    <span className="mt-1 inline-block rounded-full bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-200">
+                    <span className="mt-1 inline-block rounded-full bg-pink-50 px-2 py-0.5 text-xs font-semibold text-pink-700 dark:bg-pink-500/15 dark:text-pink-200">
                       {item.badge}
                     </span>
                   )}

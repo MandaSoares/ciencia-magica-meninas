@@ -1,8 +1,9 @@
-import { Flame, Moon, Star, Sun } from "lucide-react";
+import { Flame, Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 import { StudyReminder } from "./StudyReminder";
-import { Logo } from "./Logo";
+import { Brand } from "./Brand";
 
 interface HeaderProps {
   userPoints: number;
@@ -15,63 +16,49 @@ interface HeaderProps {
 
 export const Header = ({ userPoints, userLevel, userName = "Estudante", userProfileImage, streak = 0, studiedToday = false }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
-  const getUserInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
+  const initials = userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-purple-100 dark:border-gray-700 sticky top-0 z-50 transition-colors">
-      <div className="px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <Logo size={40} />
-          <h1 className="text-xl font-extrabold bg-gradient-to-r from-purple-500 to-pink-500 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-            Conscientistas
-          </h1>
-        </div>
+    <header className="sticky top-0 z-50 h-16 border-b-2 border-pink-100 bg-white/85 backdrop-blur-md transition-colors dark:border-white/5 dark:bg-[#170b1c]/85">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6">
+        <Brand size={38} compact />
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <div
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${
-              studiedToday
-                ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700"
-                : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-            }`}
-            title={studiedToday ? `${streak} dia(s) seguidos` : "Estude hoje para manter sua sequência"}
-            aria-label={`Sequência: ${streak} dia(s) seguidos`}
+            className={cn(
+              "flex items-center gap-1 rounded-full px-2.5 py-1.5",
+              studiedToday ? "bg-orange-50 dark:bg-orange-500/10" : "bg-gray-100 dark:bg-white/5"
+            )}
+            title={studiedToday ? `${streak} dia(s) seguidos` : "Estude hoje para manter sua ofensiva"}
+            aria-label={`Ofensiva: ${streak} dia(s) seguidos`}
           >
-            <Flame className={`w-4 h-4 ${studiedToday ? "text-orange-500 fill-orange-400" : "text-gray-400"}`} />
-            <span className={`text-sm font-bold ${studiedToday ? "text-orange-600 dark:text-orange-300" : "text-gray-500"}`}>{streak}</span>
+            <Flame className={cn("h-5 w-5", studiedToday ? "fill-orange-400 text-orange-500" : "text-gray-400")} />
+            <span className={cn("font-display text-base font-bold", studiedToday ? "text-orange-500" : "text-gray-400")}>{streak}</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/30 px-3 py-1.5 rounded-full">
-            <span className="text-sm font-bold text-purple-600 dark:text-purple-300">{userPoints}</span>
-            <span className="text-xs text-purple-400 dark:text-purple-500 font-semibold">XP</span>
+          <div className="flex items-center gap-1 rounded-full bg-pink-50 px-2.5 py-1.5 dark:bg-pink-500/10" title="Pontos de experiência">
+            <span aria-hidden className="grid h-5 w-5 place-items-center rounded-md bg-gradient-to-br from-pink-400 to-fuchsia-500 text-[10px] font-black text-white">XP</span>
+            <span className="font-display text-base font-bold text-pink-600 dark:text-pink-300">{userPoints}</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 px-3 py-1.5 rounded-full border border-amber-200 dark:border-amber-700">
-            <Star className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-bold text-amber-700 dark:text-amber-300">Nv {userLevel}</span>
+          <div className="hidden items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1.5 sm:flex dark:bg-violet-500/10" title="Seu nível">
+            <span aria-hidden className="text-base leading-none">⭐</span>
+            <span className="font-display text-base font-bold text-violet-600 dark:text-violet-300">Nv {userLevel}</span>
           </div>
 
           <StudyReminder />
 
           <button
             onClick={toggleTheme}
-            className="w-9 h-9 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100 transition-colors hover:bg-pink-100 dark:bg-white/5 dark:hover:bg-white/10"
             aria-label="Alternar tema"
           >
-            {theme === "light" ? (
-              <Moon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-            ) : (
-              <Sun className="w-4 h-4 text-yellow-500" />
-            )}
+            {theme === "light" ? <Moon className="h-4 w-4 text-gray-600" /> : <Sun className="h-4 w-4 text-yellow-400" />}
           </button>
 
-          <Avatar className="w-9 h-9 ring-2 ring-purple-200 dark:ring-purple-700 ring-offset-2 ring-offset-white dark:ring-offset-gray-900">
+          <Avatar className="h-9 w-9 ring-2 ring-pink-300 ring-offset-2 ring-offset-white dark:ring-pink-500/60 dark:ring-offset-[#170b1c]">
             <AvatarImage src={userProfileImage} />
-            <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-500 text-white font-bold text-sm">
-              {getUserInitials(userName)}
-            </AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-pink-400 to-violet-500 text-sm font-bold text-white">{initials}</AvatarFallback>
           </Avatar>
         </div>
       </div>

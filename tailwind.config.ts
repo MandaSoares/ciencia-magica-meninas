@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['"Nunito Variable"', 'Nunito', 'system-ui', 'sans-serif'],
+				display: ['"Fredoka Variable"', 'Fredoka', '"Nunito Variable"', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
