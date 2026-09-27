@@ -2,12 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, BookOpen, Briefcase, FlaskConical, Map, MessageSquare, Newspaper, Plus, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AREAS, areaByStem } from "./areas";
+import { Lumi } from "@/components/Lumi";
 import type { StaffSection } from "./StaffWorkspace";
 
 type Table = "learning_path_content" | "modules_content" | "experiments_content" | "career_areas_content";
 
 const CONTENT: { table: Table; section: StaffSection; label: string; icon: typeof Map; color: string }[] = [
-  { table: "learning_path_content", section: "trilhas", label: "Níveis de trilha", icon: Map, color: "from-purple-500 to-pink-500" },
+  { table: "learning_path_content", section: "trilhas", label: "Níveis de trilha", icon: Map, color: "from-fuchsia-400 to-violet-500" },
   { table: "modules_content", section: "modulos", label: "Módulos", icon: BookOpen, color: "from-blue-500 to-indigo-500" },
   { table: "experiments_content", section: "laboratorio", label: "Experimentos", icon: FlaskConical, color: "from-emerald-500 to-teal-500" },
   { table: "career_areas_content", section: "carreiras", label: "Carreiras", icon: Briefcase, color: "from-orange-500 to-amber-500" },
@@ -76,10 +77,35 @@ export const StaffOverview = ({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">Olá, {firstName}! 👋</h2>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">Aqui está o resumo do conteúdo e da comunidade da plataforma.</p>
-      </div>
+      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-pink-500 via-fuchsia-500 to-violet-500 p-6 sm:p-8 text-white shadow-xl shadow-pink-300/40 dark:shadow-none">
+        <div aria-hidden className="stem-doodles absolute inset-0 opacity-20 mix-blend-overlay" />
+        <div aria-hidden className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
+        <div className="relative flex items-center gap-5">
+          <Lumi size={96} mood="cheer" className="hidden shrink-0 drop-shadow-lg sm:block" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-sm font-medium uppercase tracking-widest text-white/80">Painel da equipe</p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold">Olá, {firstName}! 👋</h2>
+            <p className="mt-1 text-white/90">O que vamos criar hoje para as meninas?</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {([
+                ["trilhas", "Nova lição"],
+                ["laboratorio", "Novo experimento"],
+                ["blog", "Novo post"],
+              ] as [StaffSection, string][]).map(([s, label]) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onNavigate(s)}
+                  style={{ ["--btn-shadow" as string]: "#fbcfe8" }}
+                  className="btn-3d inline-flex h-10 items-center gap-1.5 rounded-xl bg-white px-4 font-display text-sm font-bold text-pink-600"
+                >
+                  <Plus className="h-4 w-4" /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {pending > 0 && (
         <button
@@ -97,7 +123,7 @@ export const StaffOverview = ({
 
       {/* Conteúdo */}
       <section>
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Conteúdo</h3>
+        <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-widest text-pink-500">Conteúdo</h3>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {CONTENT.map((c) => {
             const stats = data?.perArea.find((p) => p.table === c.table);
@@ -107,13 +133,13 @@ export const StaffOverview = ({
                 key={c.table}
                 type="button"
                 onClick={() => onNavigate(c.section)}
-                className="group rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+                className="group rounded-3xl border-2 border-pink-100 bg-white/90 p-5 text-left shadow-sm backdrop-blur transition-all hover:-translate-y-1 hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100 dark:border-white/10 dark:bg-white/[0.04] dark:hover:shadow-none"
               >
                 <div className="flex items-center justify-between">
                   <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center shadow`}>
                     <Icon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-3xl font-black text-gray-900 dark:text-white">{isLoading ? "–" : stats?.total ?? 0}</span>
+                  <span className="font-display text-4xl font-bold text-gray-900 dark:text-white">{isLoading ? "–" : stats?.total ?? 0}</span>
                 </div>
                 <p className="mt-3 font-semibold text-gray-800 dark:text-gray-100">
                   {c.label}
@@ -126,13 +152,13 @@ export const StaffOverview = ({
                     <span
                       key={a.key}
                       title={`${a.label}: ${stats?.byArea[a.stem] || 0}`}
-                      className="flex-1 rounded-lg bg-gray-50 py-1 text-center text-xs font-semibold text-gray-600 dark:bg-gray-900/60 dark:text-gray-300"
+                      className="flex-1 rounded-lg bg-pink-50/80 py-1 text-center text-xs font-semibold text-gray-600 dark:bg-white/5 dark:text-gray-300"
                     >
                       {a.emoji} {stats?.byArea[a.stem] || 0}
                     </span>
                   ))}
                 </div>
-                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-purple-600 opacity-0 transition group-hover:opacity-100 dark:text-purple-300">
+                <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-pink-600 opacity-0 transition group-hover:opacity-100 dark:text-pink-300">
                   <Plus className="w-4 h-4" /> Gerenciar
                 </span>
               </button>
@@ -143,12 +169,12 @@ export const StaffOverview = ({
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Comunidade */}
-        <section className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="lg:col-span-2 rounded-3xl border-2 border-pink-100 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.04]">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-purple-500" /> Últimos comentários
+            <h3 className="font-display text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-pink-500" /> Últimos comentários
             </h3>
-            <button type="button" onClick={() => onNavigate("comentarios")} className="text-sm font-semibold text-purple-600 hover:underline dark:text-purple-300">
+            <button type="button" onClick={() => onNavigate("comentarios")} className="text-sm font-semibold text-pink-600 hover:underline dark:text-pink-300">
               Ver todos ({data?.comments ?? 0})
             </button>
           </div>
@@ -177,7 +203,7 @@ export const StaffOverview = ({
           <button
             type="button"
             onClick={() => onNavigate("blog")}
-            className="w-full rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+            className="w-full rounded-3xl border-2 border-pink-100 bg-white/90 p-5 text-left shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-pink-300 dark:border-white/10 dark:bg-white/[0.04]"
           >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
@@ -194,7 +220,7 @@ export const StaffOverview = ({
             <button
               type="button"
               onClick={() => onNavigate("pessoas")}
-              className="w-full rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+              className="w-full rounded-3xl border-2 border-pink-100 bg-white/90 p-5 text-left shadow-sm backdrop-blur transition hover:-translate-y-1 hover:border-pink-300 dark:border-white/10 dark:bg-white/[0.04]"
             >
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { Home, BookOpen, Briefcase, Star, Map, User, Beaker, Trophy } from "lucide-react";
+import { Home, BookOpen, Briefcase, Map, User, FlaskConical, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -12,23 +12,14 @@ interface NavigationProps {
   navItems?: NavItem[];
 }
 
-const iconMap: Record<string, React.ElementType> = {
-  dashboard: Home,
-  path: Map,
-  modules: BookOpen,
-  areas: Briefcase,
-  lab: Beaker,
-  achievements: Trophy,
-  profile: User,
-};
-
-const emojiMap: Record<string, string> = {
-  dashboard: "🏠",
-  path: "🗺️",
-  modules: "📚",
-  areas: "💼",
-  lab: "🧪",
-  profile: "👤",
+export const NAV_STYLE: Record<string, { icon: React.ElementType; color: string }> = {
+  dashboard: { icon: Home, color: "from-pink-400 to-rose-500" },
+  path: { icon: Map, color: "from-fuchsia-400 to-violet-500" },
+  modules: { icon: BookOpen, color: "from-sky-400 to-indigo-500" },
+  areas: { icon: Briefcase, color: "from-amber-400 to-orange-500" },
+  lab: { icon: FlaskConical, color: "from-emerald-400 to-teal-500" },
+  achievements: { icon: Trophy, color: "from-yellow-300 to-amber-500" },
+  profile: { icon: User, color: "from-rose-400 to-pink-600" },
 };
 
 export const Navigation = ({ activeSection, setActiveSection, navItems }: NavigationProps) => {
@@ -42,39 +33,41 @@ export const Navigation = ({ activeSection, setActiveSection, navItems }: Naviga
   ];
 
   return (
-    <nav className="w-64 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-r border-purple-100 dark:border-gray-700 h-screen sticky top-0 hidden md:block transition-colors">
-      <div className="p-4 pt-6">
-        <ul className="space-y-1.5">
-          {items.map((item) => {
-            const Icon = iconMap[item.id] || Home;
-            const isActive = activeSection === item.id;
-
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => setActiveSection(item.id)}
+    <nav
+      className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 border-r-2 border-pink-100 bg-white/70 backdrop-blur-md transition-colors md:block dark:border-white/5 dark:bg-[#170b1c]/70"
+      aria-label="Menu principal"
+    >
+      <ul className="space-y-1.5 p-4 pt-6">
+        {items.map((item) => {
+          const style = NAV_STYLE[item.id] || NAV_STYLE.dashboard;
+          const Icon = style.icon;
+          const isActive = activeSection === item.id;
+          return (
+            <li key={item.id}>
+              <button
+                onClick={() => setActiveSection(item.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "group flex w-full items-center gap-3 rounded-2xl border-2 px-3 py-2.5 transition-all",
+                  isActive
+                    ? "border-pink-300 bg-pink-50 text-pink-600 dark:border-pink-500/50 dark:bg-pink-500/10 dark:text-pink-300"
+                    : "border-transparent text-gray-600 hover:bg-pink-50/70 hover:text-pink-600 dark:text-gray-300 dark:hover:bg-white/5"
+                )}
+              >
+                <span
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group",
-                    isActive
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-200 dark:shadow-purple-900/30 scale-[1.02]"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-gray-800 hover:text-purple-700 dark:hover:text-purple-300 hover:scale-[1.01]"
+                    "grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br text-white shadow-sm transition-transform group-hover:scale-110",
+                    style.color
                   )}
                 >
-                  <div className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
-                    isActive
-                      ? "bg-white/20"
-                      : "bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-100 dark:group-hover:bg-gray-600"
-                  )}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="font-bold text-sm">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+                  <Icon className="h-[18px] w-[18px]" />
+                </span>
+                <span className="font-display text-base font-semibold whitespace-nowrap">{item.label}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 };
