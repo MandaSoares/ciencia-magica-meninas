@@ -1,4 +1,4 @@
-project_id = "pocdgiysxjipmlmyzfhd"
+project_id = "iintsexwxemwycczvkyd"
 # Configuração de autenticação (aplicar no projeto hospedado com `supabase config push`
 # ou copiando os valores para o painel: Authentication → Sign In / Providers, Emails, URL Configuration).
 [auth]
