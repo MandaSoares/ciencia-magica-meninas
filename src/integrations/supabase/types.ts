@@ -549,6 +549,7 @@ export type Database = {
         Args: { _kind: string; _ref: string; _stem_area: string }
         Returns: Json
       }
+      admin_remove_user: { Args: { _user_id: string }; Returns: undefined }
       decrement_likes: { Args: { comment_id: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
       moderate_comment: {
@@ -564,6 +565,8 @@ export type Database = {
         }[]
       }
       get_my_streak: { Args: never; Returns: Json }
+      invite_staff: { Args: { _email: string; _role: string }; Returns: string }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -571,10 +574,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_user_role: { Args: { _role: string; _user_id: string }; Returns: undefined }
       increment_likes: { Args: { comment_id: string }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "editor" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -702,7 +706,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "editor", "user"],
     },
   },
 } as const

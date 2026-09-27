@@ -27,11 +27,11 @@ export const AdminPanel = ({ onBack }: AdminPanelProps) => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Painel de Administração</h1>
-              <p className="text-muted-foreground">Modere comentários e gerencie usuários</p>
+              <p className="text-muted-foreground">Gerencie pessoas, convide editoras e modere comentários</p>
             </div>
           </div>
 
-          <Tabs defaultValue="comments" className="w-full">
+          <Tabs defaultValue="users" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6 rounded-xl">
               <TabsTrigger value="comments" className="gap-2 rounded-lg">
                 <MessageSquare className="w-4 h-4" />
@@ -39,7 +39,7 @@ export const AdminPanel = ({ onBack }: AdminPanelProps) => {
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-2 rounded-lg">
                 <Users className="w-4 h-4" />
-                Usuários
+                Pessoas e equipe
               </TabsTrigger>
             </TabsList>
 

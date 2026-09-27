@@ -13,7 +13,7 @@ import { QuizOptionsEditor, optionsToContent, parseQuizContent } from "./QuizOpt
 interface AddModuleInlineProps {
   selectedArea: string;
   onContentChange: () => void;
-  isAdmin: boolean;
+  canEditContent: boolean;
 }
 
 interface ModuleLesson {
@@ -54,7 +54,7 @@ const ESTIMATED_TIME_OPTIONS = [
   "1 hora", "2 horas", "3 horas", "4 horas", "5 horas", "6 horas", "8 horas", "10 horas"
 ];
 
-export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddModuleInlineProps) => {
+export const AddModuleInline = ({ selectedArea, onContentChange, canEditContent }: AddModuleInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [step, setStep] = useState<'info' | 'lessons' | 'project'>('info');
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +90,7 @@ export const AddModuleInline = ({ selectedArea, onContentChange, isAdmin }: AddM
 
   const stemArea = areaMap[selectedArea] || "Ciência";
 
-  if (!isAdmin) return null;
+  if (!canEditContent) return null;
 
   const resetForm = () => {
     setTitle("");

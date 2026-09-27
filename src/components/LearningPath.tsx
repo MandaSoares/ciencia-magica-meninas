@@ -71,7 +71,7 @@ export const LearningPath = ({
   const [deleteLevelId, setDeleteLevelId] = useState<string | null>(null);
   const [editingLevel, setEditingLevel] = useState<PathLevel | null>(null);
 
-  const { isAdmin } = useAdminCheck();
+  const { canEditContent } = useAdminCheck();
   const queryClient = useQueryClient();
 
   const { data: dbPathLevels, isLoading } = useLearningPathContent(selectedArea);
@@ -294,7 +294,7 @@ export const LearningPath = ({
                     </div>
 
                     {/* Admin controls */}
-                    {isAdmin && level.dbId && (
+                    {canEditContent && level.dbId && (
                       <div className="absolute -top-2 -right-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           size="sm" variant="outline" className="h-7 w-7 p-0"
@@ -316,12 +316,12 @@ export const LearningPath = ({
             );
           })}
 
-          {isAdmin && (
+          {canEditContent && (
             <div className="mt-4">
               <AddLearningPathInline
                 selectedArea={selectedArea}
                 onContentChange={handleContentChange}
-                isAdmin={isAdmin}
+                canEditContent={canEditContent}
               />
             </div>
           )}

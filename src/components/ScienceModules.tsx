@@ -112,7 +112,7 @@ export const ScienceModules = ({ onActivity, selectedArea, userName, onModuleCom
   const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
 
-  const { isAdmin } = useAdminCheck();
+  const { canEditContent } = useAdminCheck();
   const queryClient = useQueryClient();
 
   // Fetch from database with fallback to static data
@@ -648,7 +648,7 @@ export const ScienceModules = ({ onActivity, selectedArea, userName, onModuleCom
                 </div>
                 
                 {/* Admin controls */}
-                {isAdmin && module.dbId && (
+                {canEditContent && module.dbId && (
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       size="sm"
@@ -682,7 +682,7 @@ export const ScienceModules = ({ onActivity, selectedArea, userName, onModuleCom
           <AddModuleInline
             selectedArea={selectedArea}
             onContentChange={handleContentChange}
-            isAdmin={isAdmin}
+            canEditContent={canEditContent}
           />
         </div>
       )}

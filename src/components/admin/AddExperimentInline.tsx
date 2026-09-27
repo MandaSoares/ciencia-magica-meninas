@@ -14,7 +14,7 @@ import { EmojiPicker } from "./EmojiPicker";
 interface AddExperimentInlineProps {
   selectedArea: string;
   onContentChange: () => void;
-  isAdmin: boolean;
+  canEditContent: boolean;
 }
 
 interface ExperimentStep {
@@ -33,7 +33,7 @@ const TIME_OPTIONS = [
   "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora", "1h30", "2 horas"
 ];
 
-export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: AddExperimentInlineProps) => {
+export const AddExperimentInline = ({ selectedArea, onContentChange, canEditContent }: AddExperimentInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +59,7 @@ export const AddExperimentInline = ({ selectedArea, onContentChange, isAdmin }: 
   // Steps: 0 = info, 1 = materials, 2 = steps
   const stepLabels = ['Informações', 'Materiais', 'Passos'];
 
-  if (!isAdmin) return null;
+  if (!canEditContent) return null;
 
   const resetForm = () => {
     setTitle("");

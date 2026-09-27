@@ -13,7 +13,7 @@ import { QuizOptionsEditor, optionsToContent } from "./QuizOptionsEditor";
 interface AddLearningPathInlineProps {
   selectedArea: string;
   onContentChange: () => void;
-  isAdmin: boolean;
+  canEditContent: boolean;
 }
 
 interface LessonStep {
@@ -44,7 +44,7 @@ const DURATION_OPTIONS = [
   "5 min", "10 min", "15 min", "20 min", "25 min", "30 min", "45 min", "1 hora"
 ];
 
-export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }: AddLearningPathInlineProps) => {
+export const AddLearningPathInline = ({ selectedArea, onContentChange, canEditContent }: AddLearningPathInlineProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [step, setStep] = useState<'info' | 'lessons'>('info');
   const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +73,7 @@ export const AddLearningPathInline = ({ selectedArea, onContentChange, isAdmin }
 
   const stemArea = areaMap[selectedArea] || "Ciência";
 
-  if (!isAdmin) return null;
+  if (!canEditContent) return null;
 
   const resetForm = () => {
     setTitle("");
