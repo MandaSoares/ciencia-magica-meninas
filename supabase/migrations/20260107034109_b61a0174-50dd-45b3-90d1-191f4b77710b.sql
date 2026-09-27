@@ -55,9 +55,12 @@ ON public.user_roles
 FOR DELETE
 USING (public.has_role(auth.uid(), 'admin'));
 
--- Insert first admin (Amanda Silva Soares)
-INSERT INTO public.user_roles (user_id, role) 
-VALUES ('9fa255a2-7e19-4a11-a705-837c9976b5f3', 'admin');
+-- Primeira admin: só insere se a conta existir neste projeto.
+-- Em um projeto novo, a admin é definida depois do cadastro (ver docs/MIGRAR_PARA_SUPABASE.md).
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'::public.app_role FROM auth.users
+WHERE id = '9fa255a2-7e19-4a11-a705-837c9976b5f3'
+ON CONFLICT DO NOTHING;
 
 -- Update experiment_comments policy for admin deletion
 CREATE POLICY "Admins can delete any comment"
