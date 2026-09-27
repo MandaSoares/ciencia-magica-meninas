@@ -39,7 +39,15 @@ interface DashboardProps {
   modulesCompleted?: number;
   experimentsCompleted?: number;
   studyHours?: number;
+  /** Sequência real de dias (servidor) */
+  streak?: number;
+  longestStreak?: number;
+  /** XP ganho hoje, para a meta diária */
+  todayXp?: number;
 }
+
+/** Meta diária de XP (estilo Duolingo) */
+export const DAILY_XP_GOAL = 100;
 
 const areaInfo: Record<string, { icon: string; color: string; bgColor: string; name: string }> = {
   science: { icon: "🔬", color: "bg-emerald-500", bgColor: "bg-emerald-50 dark:bg-emerald-900/20", name: "Ciência" },
@@ -80,6 +88,9 @@ export const Dashboard = ({
   modulesCompleted = 0,
   experimentsCompleted = 0,
   studyHours = 0,
+  streak = 0,
+  longestStreak = 0,
+  todayXp = 0,
 }: DashboardProps) => {
   const formatStudyHours = (hours: number) => {
     if (hours < 1) {
@@ -89,8 +100,7 @@ export const Dashboard = ({
     return `${hours.toFixed(1)}h`;
   };
 
-  const streak = Math.max(1, Math.floor(studyHours / 0.5));
-  const dailyGoalPercent = Math.min(100, Math.round((studyHours % 1) * 100 / 0.5));
+  const dailyGoalPercent = Math.min(100, Math.round((todayXp / DAILY_XP_GOAL) * 100));
   const hasAnyProgress = trilhaProgress || moduloProgress;
   const xpProgress = getLevelProgress(userPoints, userLevel);
 
@@ -160,7 +170,7 @@ export const Dashboard = ({
             </div>
             <div>
               <p className="text-2xl font-black text-blue-600 dark:text-blue-300">{dailyGoalPercent}%</p>
-              <p className="text-xs text-blue-500 dark:text-blue-400 font-semibold">meta do dia</p>
+              <p className="text-xs text-blue-500 dark:text-blue-400 font-semibold">meta do dia ({Math.min(todayXp, DAILY_XP_GOAL)}/{DAILY_XP_GOAL} XP)</p>
             </div>
           </div>
         </Card>
@@ -326,10 +336,10 @@ export const Dashboard = ({
         <div className="flex gap-4 overflow-x-auto pb-2">
           {[
             { icon: "🌟", label: "Primeira aula", unlocked: modulesCompleted > 0 || experimentsCompleted > 0 },
-            { icon: "🔥", label: "3 dias seguidos", unlocked: streak >= 3 },
+            { icon: "🔥", label: "3 dias seguidos", unlocked: longestStreak >= 3 },
             { icon: "🧪", label: "Cientista júnior", unlocked: experimentsCompleted >= 3 },
             { icon: "📚", label: "Leitora voraz", unlocked: modulesCompleted >= 2 },
-            { icon: "⚡", label: "Super streak", unlocked: streak >= 7 },
+            { icon: "⚡", label: "Super streak", unlocked: longestStreak >= 7 },
             { icon: "👑", label: "Mestra", unlocked: userLevel >= 5 },
           ].map((achievement, i) => (
             <div
