@@ -1,6 +1,5 @@
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight, Atom, Calculator, Code, Heart, Microscope, Rocket, Star } from "lucide-react";
 import { Brand } from "./Brand";
-import { Lumi } from "./Lumi";
 import { StemBackdrop } from "./StemBackdrop";
 
 interface LandingPageProps {
@@ -22,12 +21,11 @@ const FEATURES = [
   { emoji: "👩‍🔬", title: "Mulheres que inspiram", desc: "Conheça cientistas incríveis e as carreiras de STEM." },
 ];
 
-const STICKERS = [
-  { t: "⚛️", c: "left-2 top-6 sm:-left-6", d: "0s" },
-  { t: "π", c: "right-4 top-2 sm:-right-2 font-display font-bold text-violet-500", d: ".6s" },
-  { t: "⚙️", c: "left-0 bottom-16 sm:-left-10", d: "1.2s" },
-  { t: "</>", c: "right-0 bottom-24 sm:-right-10 font-display font-bold text-sky-500 text-2xl", d: ".3s" },
-  { t: "🧬", c: "left-1/2 -top-4 -translate-x-1/2", d: ".9s" },
+const HERO_AREAS = [
+  { icon: Atom, label: "Ciências", color: "from-purple-400 to-purple-600", bg: "bg-purple-100" },
+  { icon: Calculator, label: "Matemática", color: "from-pink-400 to-pink-600", bg: "bg-pink-100" },
+  { icon: Code, label: "Tecnologia", color: "from-blue-400 to-blue-600", bg: "bg-blue-100" },
+  { icon: Microscope, label: "Engenharia", color: "from-emerald-400 to-emerald-600", bg: "bg-emerald-100" },
 ];
 
 export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => (
@@ -46,22 +44,38 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => (
     </header>
 
     <main className="mx-auto flex max-w-6xl flex-col items-center gap-10 px-5 pb-16 pt-6 sm:px-8 lg:flex-row lg:gap-16 lg:pt-14">
-      {/* Mascote com adesivos de STEM */}
-      <div className="relative flex w-full max-w-sm justify-center py-8 animate-slide-up">
-        <div aria-hidden className="absolute inset-6 rounded-full bg-gradient-to-br from-pink-300/60 via-fuchsia-300/50 to-violet-300/60 blur-2xl" />
-        <div className="relative grid h-72 w-72 place-items-center rounded-full border-4 border-white bg-gradient-to-br from-pink-100 to-violet-100 shadow-2xl shadow-pink-300/40 sm:h-80 sm:w-80">
-          <Lumi size={190} mood="cheer" />
+      {/* Cartão com as 4 áreas de STEM */}
+      <div className="relative w-full max-w-md lg:max-w-lg animate-slide-up">
+        <div className="absolute -top-6 -left-6 w-20 h-20 bg-purple-200/60 rounded-full animate-float" />
+        <div className="absolute -bottom-4 -right-4 w-28 h-28 bg-pink-200/60 rounded-full animate-float" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/3 -right-8 w-14 h-14 bg-blue-200/60 rounded-full animate-float" style={{ animationDelay: "2s" }} />
+
+        <div className="relative bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/80">
+          <div className="grid grid-cols-2 gap-5">
+            {HERO_AREAS.map((area, i) => (
+              <div
+                key={area.label}
+                className={`${area.bg} rounded-2xl p-5 flex flex-col items-center gap-3 transform hover:scale-110 hover:-rotate-2 transition-all duration-300 cursor-pointer animate-pop-in`}
+                style={{ animationDelay: `${i * 0.15}s` }}
+              >
+                <div className={`w-16 h-16 bg-gradient-to-br ${area.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                  <area.icon className="w-8 h-8 text-white" />
+                </div>
+                <span className="font-display text-base font-semibold text-gray-700">{area.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="absolute -top-5 right-10">
+            <Star className="w-8 h-8 text-yellow-400 fill-yellow-400 animate-float" />
+          </div>
+          <div className="absolute -bottom-4 left-14">
+            <Heart className="w-7 h-7 text-pink-400 fill-pink-400 animate-float" style={{ animationDelay: "0.5s" }} />
+          </div>
+          <div className="absolute top-1/2 -left-5">
+            <Rocket className="w-8 h-8 text-purple-500 transform -rotate-45 animate-float" style={{ animationDelay: "1.5s" }} />
+          </div>
         </div>
-        {STICKERS.map((s) => (
-          <span
-            key={s.t}
-            aria-hidden
-            className={`absolute grid h-14 w-14 place-items-center rounded-2xl border-2 border-white bg-white/90 text-3xl shadow-lg animate-float ${s.c}`}
-            style={{ animationDelay: s.d }}
-          >
-            {s.t}
-          </span>
-        ))}
       </div>
 
       <div className="flex max-w-xl flex-col items-center gap-6 text-center lg:items-start lg:text-left animate-slide-up stagger-2">
@@ -74,7 +88,7 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => (
           aprender STEM!
         </h1>
         <p className="text-lg leading-relaxed text-gray-600">
-          Ciência, tecnologia, engenharia e matemática em lições curtinhas, desafios, experimentos e muitas conquistas. Com a Lumi, você aprende um pouquinho por dia.
+          Ciência, tecnologia, engenharia e matemática em lições curtinhas, desafios, experimentos e muitas conquistas. Aprenda um pouquinho por dia, no seu ritmo.
         </p>
 
         <div className="flex w-full max-w-sm flex-col gap-4">
