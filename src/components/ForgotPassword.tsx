@@ -102,7 +102,7 @@ export const ForgotPassword = ({ onBack, onGoToLogin, initialStep = "email", onP
           onGoToLogin();
         }}
       >
-        <AuthTitle title="Crie uma nova senha" subtitle="Escolha uma senha que você não usa em outros sites." />
+        <AuthTitle title="Crie uma nova senha" subtitle="Ela precisa ser diferente da senha anterior e de senhas que você usa em outros sites." />
         <form onSubmit={handleUpdatePassword} className="flex-1 flex flex-col" noValidate>
           {/* ajuda o gerenciador de senhas do navegador a salvar a nova senha */}
           <input type="email" autoComplete="username" value={email || user?.email || ""} readOnly hidden />

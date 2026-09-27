@@ -30,9 +30,13 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
             Conscientistas
           </span>
         </div>
-        <Button variant="ghost" onClick={onLogin} className="text-gray-600 hover:text-purple-600 font-semibold">
+        <button
+          type="button"
+          onClick={onLogin}
+          className="h-10 px-5 rounded-full border border-purple-200 bg-white/80 backdrop-blur text-sm font-semibold text-purple-700 shadow-sm transition-all hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 hover:border-transparent hover:text-white hover:shadow-md hover:shadow-purple-300/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2"
+        >
           Entrar na conta
-        </Button>
+        </button>
       </header>
 
       <main className="flex flex-col lg:flex-row items-center justify-center gap-16 px-6 py-12 md:px-12 lg:px-20 min-h-[calc(100vh-260px)]">
@@ -93,13 +97,13 @@ export const LandingPage = ({ onGetStarted, onLogin }: LandingPageProps) => {
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
 
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={onLogin}
-              className="w-full py-6 text-lg font-bold rounded-2xl border-2 border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400"
+              className="w-full h-12 text-lg font-bold rounded-2xl border-2 border-purple-200 bg-white/80 text-purple-700 shadow-sm transition-all hover:border-purple-400 hover:bg-purple-50 hover:text-purple-800 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2"
             >
               Já tenho uma conta
-            </Button>
+            </button>
           </div>
 
           <p className="text-sm text-gray-400 flex items-center gap-1">
